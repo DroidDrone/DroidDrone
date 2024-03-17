@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">DroidDrone - Flight</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="status_network">Network connection status:&#160;</string>
+    <string name="status_fc">FC connection status:&#160;</string>
+    <string name="status_disconnected">Disconnected</string>
+    <string name="status_connected">Connected</string>
+    <string name="status_connecting">Connecting…</string>
+    <string name="fc_status_device_found">USB device found. Check permissions…</string>
+    <string name="fc_status_permission_requested">USB device permissions requested…</string>
+    <string name="fc_status_permission_denied">USB device permissions denied.</string>
+    <string name="fc_status_permission_granted">USB device permissions granted. Try to open serial port connection…</string>
+    <string name="fc_status_serial_port_error">Serial port error / port closed.</string>
+    <string name="fc_status_serial_port_opened">Serial port opened.</string>
+    <string name="check_fc_version">&#160;Check FC version…</string>
+    <string name="detected">&#160;detected.</string>
+    <string name="msp_api_compatibility_error">&#160;!!! Error - MSP API is not compatible !!!</string>
+    <string name="msp_api_compatibility_warning">&#160;Warning - MSP API minor version is not compatible.</string>
+    <string name="version">Ver.:&#160;%1$s</string>
+    <string name="ip">IP</string>
+    <string name="port">Port</string>
+    <string name="server_key">Server key</string>
+    <string-array name="connection_modes">
+        <item>Connect over server</item>
+        <item>Direct connection</item>
+    </string-array>
+</resources>

@@ -1,0 +1,219 @@
+<resources>
+    <string name="app_name">DroidDrone - Control</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="settings">Settings</string>
+    <string name="channels_mapping">Channels mapping</string>
+    <string name="channels_mapping_summary">Mapping controller sticks to RC channels</string>
+    <string name="channels_mapping_content_description">Tap the channel and move the stick to match it.</string>
+    <string name="not_set">Not set</string>
+    <string name="show_video_stream">Show video stream</string>
+    <string name="status_network">Network connection status:&#160;</string>
+    <string name="status_controller">Controller status:&#160;</string>
+    <string name="channels_detected">Channels detected:&#160;</string>
+    <string name="move_sticks_note">Note: Move the sticks and switches to detect all channels.</string>
+    <string name="status_disconnected">Disconnected</string>
+    <string name="status_connected">Connected</string>
+    <string name="status_connected_no_video">Connected - Awaiting video stream</string>
+    <string name="status_connected_send_config">Connected - Send configuration data</string>
+    <string name="status_connecting">Connecting…</string>
+    <string name="version">Ver.:&#160;%1$s</string>
+    <string name="ip">IP</string>
+    <string name="port">Port</string>
+    <string name="server_key">Key</string>
+    <string name="start_as_viewer">Start as viewer</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="video">Video</string>
+    <string name="camera_id">Camera ID</string>
+    <string name="camera_resolution">Camera target resolution</string>
+    <string name="camera_fps">Camera target FPS</string>
+    <string name="bitrate_limit">Video stream bitrate limit</string>
+    <string name="use_extra_encoder">Use extra codec to record video</string>
+    <string name="use_extra_encoder_on">On - turn off if you have problems during video recording</string>
+    <string name="use_extra_encoder_off">Off - worst recorded video quality</string>
+    <string name="recorded_video_bitrate">Recorded video bitrate</string>
+    <string name="invert_video_axis_x">Invert video frame axis X</string>
+    <string name="invert_video_axis_y">Invert video frame axis Y</string>
+    <string name="audio">Audio</string>
+    <string name="send_audio_stream">Send audio stream</string>
+    <string name="audio_stream_bitrate">Audio stream bitrate</string>
+    <string name="record_audio">Record with audio</string>
+    <string name="recorded_audio_bitrate">Recorded audio bitrate</string>
+    <string name="osd">OSD</string>
+    <string name="show_phone_battery">Show phones battery percentage</string>
+    <string name="show_camera_fps">Show camera FPS</string>
+    <string name="show_screen_fps">Show screen FPS</string>
+    <string name="show_video_bitrate">Show video bitrate</string>
+    <string name="show_ping">Show network latency (ping)</string>
+    <string name="show_video_record_button">Show video record button</string>
+    <string name="show_video_record_indication">Show video record indication</string>
+    <string name="osd_text_color">OSD text color</string>
+    <string name="fc">FC</string>
+    <string name="rc">RC</string>
+    <string name="msp_telemetry_refresh_rate">MSP telemetry refresh rate</string>
+    <string name="msp_rc_refresh_rate">MSP RC refresh rate</string>
+    <string name="serial_baud_rate">Serial port baud rate</string>
+    <string name="serial_port_index">Serial port index</string>
+    <string name="version_mismatch">Control/Flight version mismatch!</string>
+
+    <string-array name="cameraResolutionsEntries">
+        <item>3280x2464</item>
+        <item>2592x1944</item>
+        <item>2400x1080</item>
+        <item>2320x1744</item>
+        <item>1920x1080</item>
+        <item>1600x1200</item>
+        <item>1600x720</item>
+        <item>1560x720</item>
+        <item>1440x1080</item>
+        <item>1440x720</item>
+        <item>1280x960</item>
+        <item>1280x720</item>
+        <item>1024x768</item>
+        <item>800x600</item>
+        <item>720x480</item>
+        <item>640x480</item>
+    </string-array>
+
+    <string-array name="cameraResolutionsValues">
+        <item>3280x2464</item>
+        <item>2592x1944</item>
+        <item>2400x1080</item>
+        <item>2320x1744</item>
+        <item>1920x1080</item>
+        <item>1600x1200</item>
+        <item>1600x720</item>
+        <item>1560x720</item>
+        <item>1440x1080</item>
+        <item>1440x720</item>
+        <item>1280x960</item>
+        <item>1280x720</item>
+        <item>1024x768</item>
+        <item>800x600</item>
+        <item>720x480</item>
+        <item>640x480</item>
+    </string-array>
+
+    <string-array name="cameraFpsEntries">
+        <item>90 – 120 FPS</item>
+        <item>60 – 90 FPS</item>
+        <item>30 – 60 FPS</item>
+        <item>30 – 30 FPS</item>
+    </string-array>
+
+    <string-array name="cameraFpsValues">
+        <item>90-120</item>
+        <item>60-90</item>
+        <item>30-60</item>
+        <item>30-30</item>
+    </string-array>
+
+    <string-array name="bitrateLimitEntries">
+        <item>Max available</item>
+        <item>20 Mbit/s</item>
+        <item>10 Mbit/s</item>
+        <item>6 Mbit/s</item>
+        <item>4 Mbit/s</item>
+        <item>2 Mbit/s</item>
+    </string-array>
+
+    <string-array name="bitrateLimitValues">
+        <item>0</item>
+        <item>20000000</item>
+        <item>10000000</item>
+        <item>6000000</item>
+        <item>4000000</item>
+        <item>2000000</item>
+    </string-array>
+
+    <string-array name="audioStreamBitrateEntries">
+        <item>192 Kbit/s</item>
+        <item>128 Kbit/s</item>
+        <item>96 Kbit/s</item>
+        <item>64 Kbit/s</item>
+    </string-array>
+
+    <string-array name="audioStreamBitrateValues">
+        <item>192000</item>
+        <item>128000</item>
+        <item>96000</item>
+        <item>64000</item>
+    </string-array>
+
+    <string-array name="recordedAudioBitrateEntries">
+        <item>256 Kbit/s</item>
+        <item>192 Kbit/s</item>
+        <item>128 Kbit/s</item>
+        <item>96 Kbit/s</item>
+    </string-array>
+
+    <string-array name="recordedAudioBitrateValues">
+        <item>256000</item>
+        <item>192000</item>
+        <item>128000</item>
+        <item>96000</item>
+    </string-array>
+
+    <string-array name="recordedVideoBitrateEntries">
+        <item>100 Mbit/s</item>
+        <item>50 Mbit/s</item>
+        <item>30 Mbit/s</item>
+        <item>20 Mbit/s</item>
+        <item>10 Mbit/s</item>
+        <item>6 Mbit/s</item>
+    </string-array>
+
+    <string-array name="recordedVideoBitrateValues">
+        <item>100000000</item>
+        <item>50000000</item>
+        <item>30000000</item>
+        <item>20000000</item>
+        <item>10000000</item>
+        <item>6000000</item>
+    </string-array>
+
+    <string-array name="mspTelemetryRefreshRateEntries">
+        <item>20 Hz</item>
+        <item>15 Hz</item>
+        <item>10 Hz</item>
+        <item>5 Hz</item>
+    </string-array>
+
+    <string-array name="mspTelemetryRefreshRateValues">
+        <item>20</item>
+        <item>15</item>
+        <item>10</item>
+        <item>5</item>
+    </string-array>
+
+    <string-array name="mspRcRefreshRateEntries">
+        <item>50 Hz</item>
+        <item>40 Hz</item>
+        <item>30 Hz</item>
+        <item>20 Hz</item>
+        <item>10 Hz</item>
+    </string-array>
+
+    <string-array name="mspRcRefreshRateValues">
+        <item>50</item>
+        <item>40</item>
+        <item>30</item>
+        <item>20</item>
+        <item>10</item>
+    </string-array>
+
+    <string-array name="serialBaudRateEntries">
+        <item>256000 bits/s</item>
+        <item>128000 bits/s</item>
+        <item>115200 bits/s</item>
+    </string-array>
+
+    <string-array name="serialBaudRateValues">
+        <item>256000</item>
+        <item>128000</item>
+        <item>115200</item>
+    </string-array>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

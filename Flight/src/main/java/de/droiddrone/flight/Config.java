@@ -1,0 +1,213 @@
+package de.droiddrone.flight;
+
+import static de.droiddrone.common.Logcat.log;
+
+import android.content.SharedPreferences;
+import androidx.preference.PreferenceManager;
+
+import de.droiddrone.common.DataReader;
+import de.droiddrone.common.UdpCommon;
+
+public class Config {
+    private final MainActivity activity;
+    private final int versionCode;
+    private String ip;
+    private int port;
+    private String key;
+    private int connectionMode;
+    private String cameraId;
+    private int cameraResolutionWidth;
+    private int cameraResolutionHeight;
+    private int cameraFpsMin;
+    private int cameraFpsMax;
+    private int bitrateLimit;
+    private boolean useExtraEncoder;
+    private int recordedVideoBitrate;
+    private boolean sendAudioStream;
+    private int audioStreamBitrate;
+    private boolean recordAudio;
+    private int recordedAudioBitrate;
+    private int mspTelemetryRefreshRate;
+    private int mspRcRefreshRate;
+    private int serialBaudRate;
+    private int serialPortIndex;
+
+    public Config(MainActivity activity, int versionCode) {
+        this.activity = activity;
+        this.versionCode = versionCode;
+        loadConfig();
+    }
+
+    public String getIp(){
+        return ip;
+    }
+
+    public String getKey(){
+        return key;
+    }
+
+    public int getPort(){
+        return port;
+    }
+
+    public int getConnectionMode(){
+        return connectionMode;
+    }
+
+    public String getCameraId() {
+        return cameraId;
+    }
+
+    public int getCameraResolutionWidth() {
+        return cameraResolutionWidth;
+    }
+
+    public int getCameraResolutionHeight() {
+        return cameraResolutionHeight;
+    }
+
+    public int getCameraFpsMin() {
+        return cameraFpsMin;
+    }
+
+    public int getCameraFpsMax() {
+        return cameraFpsMax;
+    }
+
+    public int getBitrateLimit() {
+        return bitrateLimit;
+    }
+
+    public boolean isUseExtraEncoder() {
+        return useExtraEncoder;
+    }
+
+    public int getRecordedVideoBitrate() {
+        return recordedVideoBitrate;
+    }
+
+    public boolean isSendAudioStream() {
+        return sendAudioStream;
+    }
+
+    public int getAudioStreamBitrate() {
+        return audioStreamBitrate;
+    }
+
+    public boolean isRecordAudio() {
+        return recordAudio;
+    }
+
+    public int getRecordedAudioBitrate() {
+        return recordedAudioBitrate;
+    }
+
+    public int getMspTelemetryRefreshRate() {
+        return mspTelemetryRefreshRate;
+    }
+
+    public int getMspRcRefreshRate() {
+        return mspRcRefreshRate;
+    }
+
+    public int getSerialBaudRate() {
+        return serialBaudRate;
+    }
+
+    public int getSerialPortIndex() {
+        return serialPortIndex;
+    }
+
+    public int processReceivedConfig(DataReader buffer){
+        try {
+            int version = buffer.readShort();
+            if (version != versionCode) return -1;
+            cameraId = buffer.readUTF();
+            cameraResolutionWidth = buffer.readShort();
+            cameraResolutionHeight = buffer.readShort();
+            cameraFpsMin = buffer.readShort();
+            cameraFpsMax = buffer.readShort();
+            bitrateLimit = buffer.readUnsignedByteAsInt() * 1000000;
+            useExtraEncoder = buffer.readBoolean();
+            recordedVideoBitrate = buffer.readUnsignedByteAsInt() * 1000000;
+            sendAudioStream = buffer.readBoolean();
+            audioStreamBitrate = buffer.readShort() * 1000;
+            recordAudio = buffer.readBoolean();
+            recordedAudioBitrate = buffer.readShort() * 1000;
+            mspTelemetryRefreshRate = buffer.readUnsignedByteAsInt();
+            mspRcRefreshRate = buffer.readUnsignedByteAsInt();
+            serialBaudRate = buffer.readInt();
+            serialPortIndex = buffer.readByte();
+            if (!updateConfig()) return -2;
+            return 0;
+        }catch (Exception e){
+            log("processReceivedConfig error: " + e);
+            return -3;
+        }
+    }
+
+    private void loadConfig() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        ip = preferences.getString("ip", "");
+        port = preferences.getInt("port", UdpCommon.defaultPort);
+        key = preferences.getString("key", "DD");
+        connectionMode = preferences.getInt("connectionMode", 0);
+        cameraId = preferences.getString("cameraId", "0");
+        cameraResolutionWidth = preferences.getInt("cameraResolutionWidth", 1920);
+        cameraResolutionHeight = preferences.getInt("cameraResolutionHeight", 1080);
+        cameraFpsMin = preferences.getInt("cameraFpsMin", 60);
+        cameraFpsMax = preferences.getInt("cameraFpsMax", 90);
+        bitrateLimit = preferences.getInt("bitrateLimit", 6000000);
+        useExtraEncoder = preferences.getBoolean("useExtraEncoder", true);
+        recordedVideoBitrate = preferences.getInt("recordedVideoBitrate", 20000000);
+        sendAudioStream = preferences.getBoolean("sendAudioStream", false);
+        audioStreamBitrate = preferences.getInt("audioStreamBitrate", 96000);
+        recordAudio = preferences.getBoolean("recordAudio", true);
+        recordedAudioBitrate = preferences.getInt("recordedAudioBitrate", 192000);
+        mspTelemetryRefreshRate = preferences.getInt("mspTelemetryRefreshRate", 10);
+        mspRcRefreshRate = preferences.getInt("mspRcRefreshRate", 20);
+        serialBaudRate = preferences.getInt("serialBaudRate", 115200);
+        serialPortIndex = preferences.getInt("serialPortIndex", 0);
+    }
+
+    public boolean updateConfig(){
+        ip = activity.etIp.getText().toString();
+        if (ip.isBlank()) return false;
+        try {
+            port = Integer.parseInt(activity.etPort.getText().toString());
+        }catch (NumberFormatException e){
+            return false;
+        }
+        if (port < 1024 || port > 65535) {
+            port = UdpCommon.defaultPort;
+            return false;
+        }
+        key = activity.etKey.getText().toString();
+        connectionMode = activity.connectionMode.getSelectedItemPosition();
+        if (connectionMode < 0) connectionMode = 0;
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("ip", ip);
+        editor.putInt("port", port);
+        editor.putString("key", key);
+        editor.putInt("connectionMode", connectionMode);
+        editor.putString("cameraId", cameraId);
+        editor.putInt("cameraResolutionWidth", cameraResolutionWidth);
+        editor.putInt("cameraResolutionHeight", cameraResolutionHeight);
+        editor.putInt("cameraFpsMin", cameraFpsMin);
+        editor.putInt("cameraFpsMax", cameraFpsMax);
+        editor.putInt("bitrateLimit", bitrateLimit);
+        editor.putBoolean("useExtraEncoder", useExtraEncoder);
+        editor.putInt("recordedVideoBitrate", recordedVideoBitrate);
+        editor.putBoolean("sendAudioStream", sendAudioStream);
+        editor.putInt("audioStreamBitrate", audioStreamBitrate);
+        editor.putBoolean("recordAudio", recordAudio);
+        editor.putInt("recordedAudioBitrate", recordedAudioBitrate);
+        editor.putInt("mspTelemetryRefreshRate", mspTelemetryRefreshRate);
+        editor.putInt("mspRcRefreshRate", mspRcRefreshRate);
+        editor.putInt("serialBaudRate", serialBaudRate);
+        editor.putInt("serialPortIndex", serialPortIndex);
+        editor.apply();
+        return true;
+    }
+}

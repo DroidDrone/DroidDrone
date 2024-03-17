@@ -1,0 +1,40 @@
+package de.droiddrone.control;
+
+public class SpritesMapping {
+    public static final int RSSI = 1;
+    public static final int GPS_SAT = 8;
+    public static final int HOME = 10;
+    public static final int DIST_HOME = 16;
+    public static final int VTX_POWER = 39;
+    public static final int BATT_FULL = 99;
+    public static final int BATT_5 = 100;
+    public static final int BATT_4 = 101;
+    public static final int BATT_3 = 102;
+    public static final int BATT_2 = 103;
+    public static final int BATT_1 = 104;
+    public static final int BATT_EMPTY = 105;
+    public static final int TRIP_DIST = 117;
+    public static final int ALTITUDE = 118;
+    public static final int THROTTLE = 149;
+    public static final int ON_TIME = 158;
+    public static final int FLY_TIME = 159;
+    public static final int TEMPERATURE = 194;
+    public static final int HEADING_N = 200;
+    public static final int HEADING_S = 201;
+    public static final int HEADING_E = 202;
+    public static final int HEADING_W = 203;
+    public static final int HEADING_DIVIDED_LINE = 204;
+    public static final int HEADING_LINE = 205;
+    public static final int ALERT = 221;
+    public static final int SIDEBAR = 302;
+    public static final int DIR_TO_HOME = 316;
+    public static final int ARTIFICIAL_HORIZON = 332;
+    public static final int CROSSHAIR_4 = 403;
+    public static final int VIDEO_RECORDING = 3000;
+    public static final int BUTTON_REC = 3001;
+    public static final int BUTTON_REC_DOWN = 3002;
+    public static final int BUTTON_STOP = 3003;
+    public static final int BUTTON_STOP_DOWN = 3004;
+    public static final int HEADING_CENTER_ARROW = 3005;
+    public static final int BATT_ALERT = 3006;
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="de/droiddrone/common/FcCommon.java|de/droiddrone/common/FcInfo.java|de/droiddrone/common/Logcat.java|de/droiddrone/common/MediaCodecBuffer.java|de/droiddrone/common/MediaCommon.java|de/droiddrone/common/OsdCommon.java" kind="src" path="java"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
