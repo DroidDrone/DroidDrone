@@ -120,7 +120,11 @@ public class MainActivity extends Activity {
                 tvNetworkStatus.setText(getResources().getString(R.string.status_connected));
                 tvNetworkStatus.setTextColor(Color.GREEN);
             }else{
-                tvNetworkStatus.setText(getResources().getString(R.string.status_connecting));
+                if (config.getConnectionMode() == 0) {
+                    tvNetworkStatus.setText(getResources().getString(R.string.status_connecting));
+                }else{
+                    tvNetworkStatus.setText(getResources().getString(R.string.status_awaiting_connection));
+                }
                 tvNetworkStatus.setTextColor(Color.BLACK);
             }
             int serialPortStatus = DDService.getSerialPortStatus();
