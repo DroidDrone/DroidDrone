@@ -18,7 +18,7 @@
 package de.droiddrone.common;
 
 public class Logcat {
-    private final static String tag = "DD";
+    private final static String tag = "DDLog";
     public static void log(String msg){
         android.util.Log.i(tag, msg);
     }
