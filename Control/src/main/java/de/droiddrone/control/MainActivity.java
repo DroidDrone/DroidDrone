@@ -354,7 +354,7 @@ public class MainActivity extends AppCompatActivity {
                     osd.setGlFps((short) renderer.getFps());
                     updateBatteryState();
                 }
-                processBitRateChange();
+                if (isRunning && isConnected()) processBitRateChange();
                 runOnUiThread(() -> {
                     startFragment.updateUi();
                     channelsMappingFragment.updateStatus();

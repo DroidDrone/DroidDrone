@@ -110,7 +110,7 @@ public class Udp {
                         		senders[type] = new UdpSender(socket);
                         		senders[type].setAddress(ip, port);
                         		if (receiverBuffers[type] != null) receiverBuffers[type].close();
-                        		receiverBuffers[type] = new ReceiverBuffer(senders[type], true, config.getKey());
+                        		receiverBuffers[type] = new ReceiverBuffer(senders[type], true, config.getKey(), config.getViewerKey());
                         		connected = true;
                         		clientId = type;
                         		if (type == 0) timeLog("Drone is connected. IP: " + ip + ", port: " + port);
@@ -125,7 +125,7 @@ public class Udp {
                         		senders[viewerId] = new UdpSender(socket);
                         		senders[viewerId].setAddress(ip, port);
                         		if (receiverBuffers[viewerId] != null) receiverBuffers[viewerId].close();
-                        		receiverBuffers[viewerId] = new ReceiverBuffer(senders[viewerId], true, config.getKey());
+                        		receiverBuffers[viewerId] = new ReceiverBuffer(senders[viewerId], true, config.getKey(), config.getViewerKey());
                         		connected = true;
                         		clientId = viewerId;
                         		timeLog("Viewer " + (viewerId - 1) + " is connected. IP: " + ip + ", port: " + port);

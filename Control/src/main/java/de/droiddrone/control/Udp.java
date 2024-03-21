@@ -88,7 +88,7 @@ public class Udp {
             socket.setSendBufferSize(UdpCommon.packetLength * 15);
             udpSender = new UdpSender(socket);
             udpSender.connect(destIp, port);
-            receiverBuffer = new ReceiverBuffer(udpSender, false, key);
+            receiverBuffer = new ReceiverBuffer(udpSender, false, key, key);
             receiverPacket = new DatagramPacket(receiverBuf, receiverBuf.length);
             wrongFramesCount = 0;
             withoutWrongFramesCount = 0;
@@ -173,10 +173,12 @@ public class Udp {
             final int id = threadsId;
             while (id == threadsId) {
                 try {
-                    if (isViewer){
-                        udpSender.sendPingForViewer();
-                    }else{
-                        udpSender.sendPing(true);
+                    if (isConnected()) {
+                        if (isViewer) {
+                            udpSender.sendPingForViewer();
+                        } else {
+                            udpSender.sendPing(true);
+                        }
                     }
                     Thread.sleep(500);
                 } catch (Exception e) {

@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class ReceiverBuffer {
     private final boolean isServer;
     private final UdpSender udpSender;
-    private final String key;
+    private final String controlKey, viewerKey;
     private final ConcurrentHashMap<Short, SavedPacket> numberedBuffer = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<SavedPacket> unnumberedBuffer = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<SavedPacket> rejectedPackets = new ConcurrentLinkedQueue<>();
@@ -38,23 +38,24 @@ public class ReceiverBuffer {
     private final ArrayList<Integer> bufferSizes = new ArrayList<>();
     private final ArrayList<Integer> pings = new ArrayList<>();
     private int pingMs;
-    private int connectedTimer;
+    private int lastPacketTimer;
     private boolean isActive;
     private boolean isConnected;
     private int recoverCounter;
     private final long createdTimestamp;
 
-    public ReceiverBuffer(UdpSender udpSender, boolean isServer, String key){
+    public ReceiverBuffer(UdpSender udpSender, boolean isServer, String controlKey, String viewerKey){
         this.udpSender = udpSender;
         this.isServer = isServer;
-        this.key = key;
+        this.controlKey = controlKey;
+        this.viewerKey = viewerKey;
         bufferSize = 30;
         packetCount = 0;
         packetTimer = 0;
         pingTimer = 0;
         nextPacketNum = 0;
         pingMs = 100;
-        connectedTimer = 0;
+        lastPacketTimer = 0;
         recoverCounter = 0;
         isActive = true;
         isConnected = false;
@@ -71,7 +72,6 @@ public class ReceiverBuffer {
         InetAddress ip = packet.getAddress();
         int port = packet.getPort();
         if (packetSize < 1) return;
-        connectedTimer = 10000 + pingMs;
         byte[] tmp = packet.getData();
         byte[] data = new byte[packetSize];
         System.arraycopy(tmp, 0, data, 0, packetSize);
@@ -81,14 +81,20 @@ public class ReceiverBuffer {
             short num = buffer.readShort();
             if (num < -1) return;
             if (packetName == UdpCommon.Connect){
-                buffer.readByte();//clientType
+                if (isConnected()) return;
+                byte clientType = buffer.readByte();
                 String key = buffer.readUTF();
-                if (!key.equals(this.key)) return;
-                restart();
-                udpSender.connect(ip, port);
-                isConnected = true;
+                if (key == null) return;
+                if ((clientType == 0 || clientType == 1) && key.equals(controlKey) || clientType == 2 && key.equals(viewerKey)){
+                    restart();
+                    udpSender.connect(ip, port);
+                    isConnected = true;
+                }else{
+                    return;
+                }
             }
             if (!isConnected) return;
+            lastPacketTimer = 5000;
             int maxPacketNumDiff = 1000;
             if (num >= nextPacketNum && num < nextPacketNum + maxPacketNumDiff || num < nextPacketNum - Short.MAX_VALUE + maxPacketNumDiff){
                 numberedBuffer.put(num, new SavedPacket(packetName, num, data, ip, port));
@@ -105,6 +111,7 @@ public class ReceiverBuffer {
             }
         }else{
             if (!isConnected) return;
+            lastPacketTimer = 5000;
             unnumberedBuffer.add(new SavedPacket(packetName, (short) -1, data, ip, port));
         }
     }
@@ -218,7 +225,7 @@ public class ReceiverBuffer {
     public void processTimer(){
         if (!isActive) return;
         bufferCleanup();
-        processConnectedTimer();
+        processLastPacketTimer();
         processPing();
         calculateBufferSize();
         processRejectedPackets();
@@ -246,11 +253,12 @@ public class ReceiverBuffer {
         }
     }
 
-    private void processConnectedTimer(){
-        if (connectedTimer > 0) connectedTimer--;
+    private void processLastPacketTimer(){
+        if (lastPacketTimer > 0) lastPacketTimer--;
     }
 
     private void processPing(){
+        if (!isConnected()) return;
         pingTimer++;
         if (pingTimer >= 500){
             pingTimer = 0;
@@ -303,7 +311,7 @@ public class ReceiverBuffer {
     }
 
     public boolean isConnected(){
-        return (isActive && isConnected && connectedTimer > 0);
+        return (isActive && isConnected && lastPacketTimer > 0);
     }
 
     private void restart(){
@@ -318,7 +326,7 @@ public class ReceiverBuffer {
     public void close(){
         isActive = false;
         isConnected = false;
-        connectedTimer = 0;
+        lastPacketTimer = 0;
         numberedBuffer.clear();
         unnumberedBuffer.clear();
         rejectedPackets.clear();

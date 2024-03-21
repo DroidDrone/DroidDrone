@@ -96,7 +96,7 @@ public class Udp {
             socket.setSendBufferSize(UdpCommon.packetLength * 150);
             udpSender = new UdpSender(socket);
             if (connectionMode == 0) udpSender.connect(destIp, port);
-            receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key);
+            receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key, null);
             receiverPacket = new DatagramPacket(receiverBuf, receiverBuf.length);
             receiverThread = new Thread(receiverRun);
             receiverThread.setDaemon(false);

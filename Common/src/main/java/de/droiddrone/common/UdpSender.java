@@ -72,7 +72,11 @@ public class UdpSender {
                 if (active && id == timerId) {
                     timerRun();
                 }else{
-                    timer.cancel();
+                    try {
+                        timer.cancel();
+                    }catch (IllegalStateException e){
+                        e.printStackTrace();
+                    }
                 }
             }
         };
