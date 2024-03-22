@@ -172,12 +172,13 @@ public class UdpSender {
         savedPackets.remove(packetNumber);
     }
 
-    public void sendConnect(int clientType, String key){
+    public void sendConnect(int clientType, String key, int version){
         Thread th = new Thread(() -> {
             try {
                 UdpPacketData packetData = new UdpPacketData(UdpCommon.Connect, -1);
                 packetData.daos.writeByte(clientType);
                 packetData.daos.writeUTF(key);
+                packetData.daos.writeShort(version);
                 sendPacket(packetData.getData());
             } catch (Exception e) {
                 e.printStackTrace();

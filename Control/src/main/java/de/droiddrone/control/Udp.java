@@ -602,9 +602,9 @@ public class Udp {
 
     public void sendConnect(){
         if (isViewer){
-            udpSender.sendConnect(2, key);
+            udpSender.sendConnect(2, key, MainActivity.versionCode);
         }else{
-            udpSender.sendConnect(1, key);
+            udpSender.sendConnect(1, key, MainActivity.versionCode);
         }
     }
 

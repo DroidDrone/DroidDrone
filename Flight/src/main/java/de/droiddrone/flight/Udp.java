@@ -119,7 +119,7 @@ public class Udp {
     }
 
     public void sendConnect(){
-        udpSender.sendConnect(0, key);
+        udpSender.sendConnect(0, key, MainActivity.versionCode);
     }
 
     public void disconnect(){

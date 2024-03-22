@@ -39,6 +39,7 @@ public class Udp {
 	private int threadsId = 0;
 	private UdpSender[] senders;
 	private ReceiverBuffer[] receiverBuffers;
+	private int[] clientVersions;
 	private int clientsCount;
 	private boolean connected = false;
     
@@ -58,6 +59,7 @@ public class Udp {
             clientsCount = config.getViewerCount() + 2;
             senders = new UdpSender[clientsCount];
             receiverBuffers = new ReceiverBuffer[clientsCount];
+            clientVersions = new int[clientsCount];
             receiverThread = new Thread(receiverRun);
             receiverThread.setDaemon(false);
             receiverThread.setName("receiverThread");
@@ -101,6 +103,7 @@ public class Udp {
                     	buffer.readShort();//num
                     	byte type = buffer.readByte();
                     	String key = buffer.readUTF();
+                    	short version = buffer.readShort();
                     	switch (type) {
                         	case 0://drone
                         	case 1://control
@@ -111,6 +114,7 @@ public class Udp {
                         		senders[type].setAddress(ip, port);
                         		if (receiverBuffers[type] != null) receiverBuffers[type].close();
                         		receiverBuffers[type] = new ReceiverBuffer(senders[type], true, config.getKey(), config.getViewerKey());
+                        		clientVersions[type] = version;
                         		connected = true;
                         		clientId = type;
                         		if (type == 0) timeLog("Drone is connected. IP: " + ip + ", port: " + port);
@@ -126,6 +130,7 @@ public class Udp {
                         		senders[viewerId].setAddress(ip, port);
                         		if (receiverBuffers[viewerId] != null) receiverBuffers[viewerId].close();
                         		receiverBuffers[viewerId] = new ReceiverBuffer(senders[viewerId], true, config.getKey(), config.getViewerKey());
+                        		clientVersions[viewerId] = version;
                         		connected = true;
                         		clientId = viewerId;
                         		timeLog("Viewer " + (viewerId - 1) + " is connected. IP: " + ip + ", port: " + port);
@@ -238,6 +243,7 @@ public class Udp {
 		if (receiverBuffers[clientId] != null) receiverBuffers[clientId].close();
 		senders[clientId] = null;
 		receiverBuffers[clientId] = null;
+		clientVersions[clientId] = 0;
 		if (clientId == 0) timeLog("Drone is disconnected.");
 		if (clientId == 1) timeLog("Controller is disconnected.");
 		if (clientId > 1) timeLog("Viewer " + (clientId - 1) + " is disconnected.");
