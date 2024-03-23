@@ -53,8 +53,6 @@ public class UdpCommon {
         switch (packetName){
             case VideoInitialFrame:
             case AudioInitialFrame:
-            case KeyFrame:
-            case VideoFrame:
             case StartVideo:
             case GetVideoConfig:
             case ChangeBitRate:

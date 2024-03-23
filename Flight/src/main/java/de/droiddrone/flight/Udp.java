@@ -92,8 +92,8 @@ public class Udp {
         try {
             if (socket != null) socket.close();
             socket = new DatagramSocket(port);
-            socket.setReceiveBufferSize(UdpCommon.packetLength * 15);
-            socket.setSendBufferSize(UdpCommon.packetLength * 150);
+            socket.setReceiveBufferSize(UdpCommon.packetLength * 5);
+            socket.setSendBufferSize(UdpCommon.packetLength * 10);
             udpSender = new UdpSender(socket);
             if (connectionMode == 0) udpSender.connect(destIp, port);
             receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key, null);

@@ -323,11 +323,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void processBitRateChange(){
+    private void processBitRateChange() {
         if (udp == null || config.isViewer()) return;
-        if (changeBitRatePause > 0){
+        if (changeBitRatePause > 0) {
             changeBitRatePause--;
-        }else {
+        } else {
             if (udp.wrongFramesCount > 0) {
                 udp.withoutWrongFramesCount = 0;
                 udp.sendChangeBitRate(false);
@@ -335,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 udp.withoutWrongFramesCount++;
             }
-            if (udp.withoutWrongFramesCount > 7) {
+            if (udp.withoutWrongFramesCount > 10) {
                 udp.withoutWrongFramesCount = 0;
                 udp.sendChangeBitRate(true);
             }

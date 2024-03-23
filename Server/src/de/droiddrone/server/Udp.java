@@ -52,8 +52,8 @@ public class Udp {
         try {
             if (socket != null) socket.close();
             socket = new DatagramSocket(config.getPort());
-            socket.setReceiveBufferSize(UdpCommon.packetLength * 150);
-			socket.setSendBufferSize(UdpCommon.packetLength * 150);
+            socket.setReceiveBufferSize(UdpCommon.packetLength * 10);
+			socket.setSendBufferSize(UdpCommon.packetLength * 10);
             receiverPacket = new DatagramPacket(receiverBuf, receiverBuf.length);
             log("Start UDP Socket. Port: " + config.getPort() + " - OK");
             clientsCount = config.getViewerCount() + 2;
