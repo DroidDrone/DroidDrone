@@ -103,6 +103,7 @@ public class Osd {
     private boolean isVideoRecorded;
     private int videoRecordingTimeSec;
     private long videoRecordingBlinkTimestamp;
+    private final ArrayList<Integer> pings = new ArrayList<>();
     private int pingMs;
     private long lastPingTimestamp;
     private long lastDataTimestamp;
@@ -970,9 +971,14 @@ public class Osd {
     }
 
     public void setPing(int pingMs){
-        this.pingMs = pingMs;
+        pings.add(pingMs);
+        int avgPing = 0;
+        for (int p : pings) avgPing += p;
+        avgPing = avgPing / pings.size();
+        if (pings.size() >= 10) pings.remove(0);
+        this.pingMs = avgPing;
         lastPingTimestamp = System.currentTimeMillis();
-        osdStats.setPing(pingMs);
+        osdStats.setPing(avgPing);
     }
 
     private int getPing(){

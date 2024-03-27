@@ -52,6 +52,7 @@ public class Udp {
     private final Osd osd;
     private FcInfo fcInfo = null;
     public int wrongFramesCount, withoutWrongFramesCount;
+    public long lastFrameReceivedTs;
     private UdpSender udpSender;
     private ReceiverBuffer receiverBuffer;
     private final MainActivity activity;
@@ -60,6 +61,8 @@ public class Udp {
     private boolean videoInitialFrameReceived;
     private boolean configReceived;
     private boolean versionMismatch;
+    private int pingMs;
+    private long lastPingTimestamp;
 
     public Udp(Config config, Decoder decoder, Osd osd, Rc rc, MainActivity activity) {
         this.config = config;
@@ -84,8 +87,8 @@ public class Udp {
         try {
             if (socket != null) socket.close();
             socket = new DatagramSocket(port);
-            socket.setReceiveBufferSize(UdpCommon.packetLength * 10);
-            socket.setSendBufferSize(UdpCommon.packetLength * 5);
+            socket.setReceiveBufferSize(UdpCommon.packetLength * 300);
+            socket.setSendBufferSize(UdpCommon.packetLength);
             udpSender = new UdpSender(socket);
             udpSender.connect(destIp, port);
             receiverBuffer = new ReceiverBuffer(udpSender, false, key, key);
@@ -225,6 +228,7 @@ public class Udp {
                         if (!frame.isCompleted) wrongFramesCount++;
                         byte[] frameData = frame.getFrame();
                         if (frameData != null && frameData.length > 0) {
+                            lastFrameReceivedTs = System.currentTimeMillis();
                             if (frame.isKeyFrame){
                                 decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_KEY_FRAME, frameData));
                             }else{
@@ -266,6 +270,7 @@ public class Udp {
                     if (videoInitialFrameReceived && decoder.isVideoDecoderStarted()) break;
                     videoInitialFrameReceived = true;
                     activity.showGlFragment(true);
+                    lastFrameReceivedTs = System.currentTimeMillis();
                     decoder.videoInputBuffer.clear();
                     decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_CODEC_CONFIG, buf));
                     Thread t1 = new Thread(() -> decoder.initializeVideo(isHevc, width, height, isFrontCamera));
@@ -318,6 +323,7 @@ public class Udp {
                 long time = buffer.readLong();
                 if (toEndPoint){
                     int ping = (int) (System.currentTimeMillis() - time);
+                    setPing(ping);
                     osd.setPing(ping);
                 }
                 break;
@@ -333,6 +339,19 @@ public class Udp {
                 versionMismatch = true;
                 break;
             }
+        }
+    }
+
+    private void setPing(int pingMs){
+        this.pingMs = pingMs;
+        lastPingTimestamp = System.currentTimeMillis();
+    }
+
+    public int getPing(){
+        if (System.currentTimeMillis() - lastPingTimestamp > 2000){
+            return -1;
+        }else{
+            return pingMs;
         }
     }
 

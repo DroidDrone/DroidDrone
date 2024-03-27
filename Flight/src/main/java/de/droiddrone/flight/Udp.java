@@ -92,8 +92,8 @@ public class Udp {
         try {
             if (socket != null) socket.close();
             socket = new DatagramSocket(port);
-            socket.setReceiveBufferSize(UdpCommon.packetLength * 5);
-            socket.setSendBufferSize(UdpCommon.packetLength * 10);
+            socket.setReceiveBufferSize(UdpCommon.packetLength * 2);
+            socket.setSendBufferSize(UdpCommon.packetLength * 15);
             udpSender = new UdpSender(socket);
             if (connectionMode == 0) udpSender.connect(destIp, port);
             receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key, null);
@@ -370,7 +370,7 @@ public class Udp {
             log("Video sender thread is running");
             while (id == videoSenderThreadId) {
                 try {
-                    MediaCodecBuffer buf = streamEncoder.videoStreamOutputBuffer.take();
+                    MediaCodecBuffer buf = streamEncoder.videoStreamOutputBuffer.poll();
                     if (buf == null) continue;
                     switch (buf.flags){
                         case MediaCodec.BUFFER_FLAG_CODEC_CONFIG:
@@ -382,6 +382,9 @@ public class Udp {
                         default:
                             sendVideoFrame(buf.data);
                             break;
+                    }
+                    if (streamEncoder.videoStreamOutputBuffer.size() > 5){
+                        streamEncoder.changeBitRate(false);
                     }
                 } catch (Exception e) {
                     // do nothing
@@ -400,7 +403,7 @@ public class Udp {
                         streamEncoder.stopAudioEncoder();
                         break;
                     }
-                    MediaCodecBuffer buf = streamEncoder.audioOutputBuffer.take();
+                    MediaCodecBuffer buf = streamEncoder.audioOutputBuffer.poll();
                     if (buf == null) continue;
                     if (buf.flags == MediaCodec.BUFFER_FLAG_CODEC_CONFIG) {
                         sendAudioInitialFrame(buf.data);

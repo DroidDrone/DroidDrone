@@ -154,12 +154,10 @@ public class Camera {
         this.streamEncoderSurface = streamEncoderSurface;
         ArrayList<Surface> targets = new ArrayList<>();
         targets.add(streamEncoderSurface);
-        if (mp4Recorder != null){
-            Surface recorderSurface = mp4Recorder.initialize();
-            if (recorderSurface != null){
-                this.recorderSurface = recorderSurface;
-                targets.add(recorderSurface);
-            }
+        Surface recorderSurface = mp4Recorder.initialize();
+        if (recorderSurface != null){
+            this.recorderSurface = recorderSurface;
+            targets.add(recorderSurface);
         }
         try {
             if (Build.VERSION.SDK_INT >= 28) {

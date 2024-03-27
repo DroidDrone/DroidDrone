@@ -71,6 +71,19 @@ public class Mp4Recorder {
     }
 
     public Surface initialize() {
+        isRecording = false;
+        startRecordingTimestamp = 0;
+        isAudioRecording = false;
+        muxerStarted = false;
+        videoTrackIndex = -1;
+        audioTrackIndex = -1;
+        videoStartTimestamp = -1;
+        audioStartTimestamp = -1;
+        if (!config.isUseExtraEncoder()) {
+            this.surface = null;
+            isInitialized = true;
+            return null;
+        }
         videoBitRate = config.getRecordedVideoBitrate();
 
         String encoderName = MediaCommon.getCodecName(codecType, true);
@@ -100,14 +113,6 @@ public class Mp4Recorder {
             return null;
         }
         this.surface = surface;
-        isRecording = false;
-        startRecordingTimestamp = 0;
-        isAudioRecording = false;
-        muxerStarted = false;
-        videoTrackIndex = -1;
-        audioTrackIndex = -1;
-        videoStartTimestamp = -1;
-        audioStartTimestamp = -1;
         videoEncoder.start();
         isInitialized = true;
         return surface;
@@ -318,7 +323,7 @@ public class Mp4Recorder {
         public void run() {
             while (streamEncoder != null && streamEncoder.isWriteToRecorder()) {
                 try {
-                    MediaCodecBuffer buf = streamEncoder.videoRecorderOutputBuffer.take();
+                    MediaCodecBuffer buf = streamEncoder.videoRecorderOutputBuffer.poll();
                     if (buf == null || !isRecording || buf.info == null) continue;
                     if (videoTrackIndex == -1){
                         videoTrackIndex = muxer.addTrack(streamEncoder.getOutputFormat());
@@ -388,7 +393,7 @@ public class Mp4Recorder {
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitRate);
         mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.frameRate.getUpper());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+        mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 3);
         return mediaFormat;
     }
 

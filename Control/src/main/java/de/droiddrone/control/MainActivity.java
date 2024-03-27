@@ -328,7 +328,8 @@ public class MainActivity extends AppCompatActivity {
         if (changeBitRatePause > 0) {
             changeBitRatePause--;
         } else {
-            if (udp.wrongFramesCount > 0) {
+            if (udp.wrongFramesCount > 1 || System.currentTimeMillis() > udp.lastFrameReceivedTs + 100
+                    || udp.getPing() == -1 || udp.getPing() > 300) {
                 udp.withoutWrongFramesCount = 0;
                 udp.sendChangeBitRate(false);
                 changeBitRatePause = 2;
@@ -354,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
                     osd.setGlFps((short) renderer.getFps());
                     updateBatteryState();
                 }
-                if (isRunning && isConnected()) processBitRateChange();
+                if (isRunning && isConnected() && isVideoStreamStarted()) processBitRateChange();
                 runOnUiThread(() -> {
                     startFragment.updateUi();
                     channelsMappingFragment.updateStatus();

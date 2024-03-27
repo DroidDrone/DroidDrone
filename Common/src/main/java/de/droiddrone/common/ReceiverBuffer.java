@@ -29,6 +29,7 @@ public class ReceiverBuffer {
     private final boolean isServer;
     private final UdpSender udpSender;
     private final String controlKey, viewerKey;
+    private final int disconnectTimeMs = 4000;
     private final ConcurrentHashMap<Short, SavedPacket> numberedBuffer = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<SavedPacket> unnumberedBuffer = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<SavedPacket> rejectedPackets = new ConcurrentLinkedQueue<>();
@@ -94,7 +95,7 @@ public class ReceiverBuffer {
                 }
             }
             if (!isConnected) return;
-            lastPacketTimer = 5000;
+            lastPacketTimer = disconnectTimeMs;
             int maxPacketNumDiff = 1000;
             if (num >= nextPacketNum && num < nextPacketNum + maxPacketNumDiff || num < nextPacketNum - Short.MAX_VALUE + maxPacketNumDiff){
                 numberedBuffer.put(num, new SavedPacket(packetName, num, data, ip, port));
@@ -111,16 +112,15 @@ public class ReceiverBuffer {
             }
         }else{
             if (!isConnected) return;
-            lastPacketTimer = 5000;
+            lastPacketTimer = disconnectTimeMs;
             unnumberedBuffer.add(new SavedPacket(packetName, (short) -1, data, ip, port));
         }
     }
 
     public SavedPacket getNextPacket(){
         if (!isActive) return null;
-        SavedPacket packet = unnumberedBuffer.peek();
+        SavedPacket packet = unnumberedBuffer.poll();
         if (packet != null){
-            unnumberedBuffer.remove();
             if (checkPacket(packet)) {
                 return packet;
             }else{
@@ -284,13 +284,12 @@ public class ReceiverBuffer {
     }
 
     private void processRejectedPackets(){
-        SavedPacket packet = rejectedPackets.peek();
+        SavedPacket packet = rejectedPackets.poll();
         while (packet != null){
-            rejectedPackets.remove();
             if (UdpCommon.isPacketNumbered(packet.packetName) && UdpCommon.isSendPacketReceived(packet.packetName)){
                 udpSender.sendPacketReceived(packet.packetNum);
             }
-            packet = rejectedPackets.peek();
+            packet = rejectedPackets.poll();
         }
     }
 

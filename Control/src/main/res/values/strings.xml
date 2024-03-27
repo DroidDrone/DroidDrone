@@ -30,7 +30,7 @@
     <string name="camera_fps">Camera target FPS</string>
     <string name="bitrate_limit">Video stream bitrate limit</string>
     <string name="use_extra_encoder">Use extra codec to record video</string>
-    <string name="use_extra_encoder_on">On - turn off if you have problems during video recording</string>
+    <string name="use_extra_encoder_on">On - turn off if you have problems during video recording or camera doesn\'t work</string>
     <string name="use_extra_encoder_off">Off - worst recorded video quality</string>
     <string name="recorded_video_bitrate">Recorded video bitrate</string>
     <string name="invert_video_axis_x">Invert video frame axis X</string>

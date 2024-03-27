@@ -30,7 +30,7 @@ import de.droiddrone.common.MediaCodecBuffer;
 import de.droiddrone.common.MediaCommon;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static de.droiddrone.common.Logcat.log;
 
@@ -42,9 +42,10 @@ public class StreamEncoder {
     private final Config config;
     private String codecType = MediaCommon.hevcCodecMime;
     private MediaCodec videoEncoder, audioEncoder;
-    public final ArrayBlockingQueue<MediaCodecBuffer> videoStreamOutputBuffer = new ArrayBlockingQueue<>(30);
-    public final ArrayBlockingQueue<MediaCodecBuffer> videoRecorderOutputBuffer = new ArrayBlockingQueue<>(30);
-    public final ArrayBlockingQueue<MediaCodecBuffer> audioOutputBuffer = new ArrayBlockingQueue<>(30);
+    private final int maxOutputBufferSize = 30;
+    public final ConcurrentLinkedQueue<MediaCodecBuffer> videoStreamOutputBuffer = new ConcurrentLinkedQueue<>();
+    public final ConcurrentLinkedQueue<MediaCodecBuffer> videoRecorderOutputBuffer = new ConcurrentLinkedQueue<>();
+    public final ConcurrentLinkedQueue<MediaCodecBuffer> audioOutputBuffer = new ConcurrentLinkedQueue<>();
     private int audioBitRate;
     private int maxBitRate;
     private long bitRateCounter = 0;
@@ -53,72 +54,62 @@ public class StreamEncoder {
     private int bitRateIndex = 3;
     private boolean encoderBitrateChange = false;
     private boolean sendFrames = false;
-    private int resolutionDiv;
     private boolean writeToRecorder;
     private boolean isAudioSending;
     private int audioThreadId;
+    private long lastBitrateReduceTs;
 
     public StreamEncoder(Camera camera, AudioSource audioSource, Config config){
         this.camera = camera;
         this.audioSource = audioSource;
         this.config = config;
-        resolutionDiv = 1;
         writeToRecorder = false;
         isAudioSending = false;
         audioThreadId = 0;
     }
 
-    public Surface initializeVideo(){
+    public Surface initializeVideo() {
         maxBitRate = config.getBitrateLimit();
 
-        if (videoEncoder != null){
+        if (videoEncoder != null) {
             try {
                 videoEncoder.stop();
-            }catch(IllegalStateException e){
+            } catch (IllegalStateException e) {
                 e.printStackTrace();
             }
             videoEncoder.release();
         }
         String encoderName = MediaCommon.getCodecName(codecType, true);
-        if (encoderName == null){
+        if (encoderName == null) {
             codecType = MediaCommon.avcCodecMime;
             encoderName = MediaCommon.getCodecName(codecType, true);
         }
-        if (encoderName == null){
+        if (encoderName == null) {
             log("No encoder found.");
             return null;
         }
         log("codecType: " + codecType + ", encoderName: " + encoderName);
-        try
-        {
+        try {
             videoEncoder = MediaCodec.createByCodecName(encoderName);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log("createEncoder error: " + e);
             return null;
         }
         videoStreamOutputBuffer.clear();
         videoRecorderOutputBuffer.clear();
         videoEncoder.setCallback(encoderCallback);
-        for (int i = 0; true; i++){
-            try{
-                MediaFormat mediaFormat = getEncoderFormat(resolutionDiv);
-                videoEncoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                break;
-            }catch (Exception e){
-                if (i == 2){
-                    log("StreamEncoder configure error: " + e);
-                    e.printStackTrace();
-                    return null;
-                }
-                resolutionDiv = resolutionDiv * 2;
-            }
+        try {
+            MediaFormat mediaFormat = getEncoderFormat();
+            videoEncoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        } catch (Exception e) {
+            log("StreamEncoder configure error: " + e);
+            e.printStackTrace();
+            return null;
         }
         Surface surface = videoEncoder.createInputSurface();
         try {
             videoEncoder.start();
-        }catch(IllegalStateException e){
+        } catch (IllegalStateException e) {
             log("videoEncoder.start error: " + e);
             e.printStackTrace();
             return null;
@@ -229,8 +220,10 @@ public class StreamEncoder {
             ByteBuffer outputBuffer = audioEncoder.getOutputBuffer(index);
             if (outputBuffer != null) {
                 outputBuffer.get(buf);
-                if (sendFrames || info.flags == MediaCodec.BUFFER_FLAG_CODEC_CONFIG)
+                if (sendFrames || info.flags == MediaCodec.BUFFER_FLAG_CODEC_CONFIG) {
                     audioOutputBuffer.offer(new MediaCodecBuffer(info, buf));
+                    if (audioOutputBuffer.size() > maxOutputBufferSize) audioOutputBuffer.remove();
+                }
             }
             audioEncoder.releaseOutputBuffer(index, false);
         }
@@ -253,6 +246,9 @@ public class StreamEncoder {
                 }
             }
         }else{
+            long currentMs = System.currentTimeMillis();
+            if (currentMs < lastBitrateReduceTs + 2000) return;
+            lastBitrateReduceTs = currentMs;
             if (bitRateIndex > 0) {
                 bitRateIndex--;
                 encoderBitrateChange = true;
@@ -317,8 +313,14 @@ public class StreamEncoder {
             }catch (Exception e){
                 e.printStackTrace();
             }
-            if (sendFrames || info.flags == MediaCodec.BUFFER_FLAG_CODEC_CONFIG) videoStreamOutputBuffer.offer(new MediaCodecBuffer(info, buf));
-            if (writeToRecorder) videoRecorderOutputBuffer.offer(new MediaCodecBuffer(info, buf));
+            if (sendFrames || info.flags == MediaCodec.BUFFER_FLAG_CODEC_CONFIG) {
+                videoStreamOutputBuffer.offer(new MediaCodecBuffer(info, buf));
+                if (videoStreamOutputBuffer.size() > maxOutputBufferSize) videoStreamOutputBuffer.remove();
+            }
+            if (writeToRecorder) {
+                videoRecorderOutputBuffer.offer(new MediaCodecBuffer(info, buf));
+                if (videoRecorderOutputBuffer.size() > maxOutputBufferSize) videoRecorderOutputBuffer.remove();
+            }
             if (encoderBitrateChange){
                 log("Encoder bitrate change: " + baseBitRates[bitRateIndex]);
                 encoderBitrateChange = false;
@@ -339,8 +341,8 @@ public class StreamEncoder {
         }
     };
 
-    private MediaFormat getEncoderFormat(int resolutionDiv){
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.cameraResolution.getWidth()/resolutionDiv, camera.cameraResolution.getHeight()/resolutionDiv);
+    private MediaFormat getEncoderFormat(){
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.cameraResolution.getWidth(), camera.cameraResolution.getHeight());
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, baseBitRates[bitRateIndex]);
         mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.frameRate.getUpper());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
