@@ -40,7 +40,7 @@ public class Rc {
     public Rc(Config config){
         this.config = config;
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-            rcChannels[i] = MIN_CHANNEL_LEVEL;
+            resetChannel(i);
             rcChannelUpdate[i] = false;
         }
     }
@@ -107,8 +107,12 @@ public class Rc {
         }
     }
 
-    public void resetChannel(int channel){
-        rcChannels[channel] = MIN_CHANNEL_LEVEL;
+    public void resetChannel(int channel) {
+        if (channel < 3) {
+            rcChannels[channel] = (MAX_CHANNEL_LEVEL + MIN_CHANNEL_LEVEL) / 2;
+        } else {
+            rcChannels[channel] = MIN_CHANNEL_LEVEL;
+        }
     }
 
     public int getLastMovedStickCode(){
