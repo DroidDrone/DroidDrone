@@ -160,12 +160,18 @@ public class Camera {
             targets.add(recorderSurface);
         }
         try {
+            List<OutputConfiguration> outputConfigurations = new ArrayList<>();
             if (Build.VERSION.SDK_INT >= 28) {
-                List<OutputConfiguration> outputConfigurations = new ArrayList<>();
+                OutputConfiguration outputConfig = null;
                 for (Surface target : targets) {
-                    OutputConfiguration outputConfig = new OutputConfiguration(target);
-                    outputConfigurations.add(outputConfig);
+                    if (outputConfig == null){
+                        outputConfig = new OutputConfiguration(target);
+                    }else{
+                        outputConfig.enableSurfaceSharing();
+                        outputConfig.addSurface(target);
+                    }
                 }
+                outputConfigurations.add(outputConfig);
 
                 final Handler handler = new Handler(handlerThread.getLooper());
                 Executor executor = new Executor() {
@@ -177,13 +183,12 @@ public class Camera {
                 SessionConfiguration config = new SessionConfiguration(SessionConfiguration.SESSION_REGULAR, outputConfigurations, executor, sessionStateCallback);
                 camera.createCaptureSession(config);
             }else{
-                List<OutputConfiguration> outputConfigurations = new ArrayList<>();
                 for (Surface target : targets) {
                     OutputConfiguration outputConfig = new OutputConfiguration(target);
                     outputConfigurations.add(outputConfig);
                 }
 
-                Handler handler = new Handler(handlerThread.getLooper());
+                final Handler handler = new Handler(handlerThread.getLooper());
                 camera.createCaptureSessionByOutputConfigurations(outputConfigurations, sessionStateCallback, handler);
             }
         } catch (CameraAccessException e) {
@@ -235,7 +240,6 @@ public class Camera {
                 cameraFrameTimestamp = System.currentTimeMillis();
             }catch (Exception e){
                 log("Camera - setRepeatingRequest error: "+ e);
-                return;
             }
         }
 
@@ -380,7 +384,7 @@ public class Camera {
     public int getFps(){
         long current = System.currentTimeMillis();
         float timeSec = (current - cameraFrameTimestamp) / 1000f;
-        if (timeSec < 0.2f && lastFps > 0) return lastFps;
+        if (timeSec < 0.5f && lastFps > 0) return lastFps;
         int fps = Math.round(cameraFrameCounter / timeSec);
         cameraFrameCounter = 0;
         cameraFrameTimestamp = current;
