@@ -42,6 +42,7 @@ public class Udp {
     private final int port;
     private final String key;
     private final boolean isViewer;
+    private InetAddress destIp;
     private DatagramSocket socket;
     private DatagramPacket receiverPacket;
     private Thread receiverThread;
@@ -51,8 +52,11 @@ public class Udp {
     private final Decoder decoder;
     private final Osd osd;
     private FcInfo fcInfo = null;
-    public int wrongFramesCount, withoutWrongFramesCount;
-    public long lastFrameReceivedTs;
+    private int wrongFramesCount;
+    private long lastFrameReceivedTs;
+    private long processBitRateChangeTs;
+    private long wrongFramesTs;
+    private long changeBitRatePauseTs;
     private UdpSender udpSender;
     private ReceiverBuffer receiverBuffer;
     private final MainActivity activity;
@@ -63,6 +67,7 @@ public class Udp {
     private boolean versionMismatch;
     private int pingMs;
     private long lastPingTimestamp;
+    private int cameraFps;
 
     public Udp(Config config, Decoder decoder, Osd osd, Rc rc, MainActivity activity) {
         this.config = config;
@@ -77,7 +82,6 @@ public class Udp {
     }
 
     public boolean initialize() {
-        InetAddress destIp;
         try {
             destIp = InetAddress.getByName(destIpStr);
         } catch (UnknownHostException e) {
@@ -89,12 +93,13 @@ public class Udp {
             socket = new DatagramSocket(port);
             socket.setReceiveBufferSize(UdpCommon.packetLength * 300);
             socket.setSendBufferSize(UdpCommon.packetLength);
+            socket.setTrafficClass(0x10);
             udpSender = new UdpSender(socket);
             udpSender.connect(destIp, port);
             receiverBuffer = new ReceiverBuffer(udpSender, false, key, key);
             receiverPacket = new DatagramPacket(receiverBuf, receiverBuf.length);
             wrongFramesCount = 0;
-            withoutWrongFramesCount = 0;
+            wrongFramesTs = System.currentTimeMillis();
             receiverThread = new Thread(receiverRun);
             receiverThread.setDaemon(false);
             receiverThread.setName("receiverThread");
@@ -137,6 +142,7 @@ public class Udp {
         public void run() {
             final int id = threadsId;
             receiverThread.setPriority(Thread.MAX_PRIORITY);
+            socket.connect(destIp, port);
             log("Start receiver thread - OK");
             while (socket != null && !socket.isClosed() && id == threadsId) {
                 try {
@@ -212,6 +218,7 @@ public class Udp {
                 int read = buffer.read(buf, 0, dataSize);
                 if (read == dataSize) {
                     if (dataSize == frameSize) {
+                        processBitRateChange();
                         if (isKeyFrame){
                             decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_KEY_FRAME, buf));
                         }else{
@@ -228,7 +235,7 @@ public class Udp {
                         if (!frame.isCompleted) wrongFramesCount++;
                         byte[] frameData = frame.getFrame();
                         if (frameData != null && frameData.length > 0) {
-                            lastFrameReceivedTs = System.currentTimeMillis();
+                            processBitRateChange();
                             if (frame.isKeyFrame){
                                 decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_KEY_FRAME, frameData));
                             }else{
@@ -339,6 +346,29 @@ public class Udp {
                 versionMismatch = true;
                 break;
             }
+        }
+    }
+
+    private void processBitRateChange() {
+        if (config.isViewer()) return;
+        long current = System.currentTimeMillis();
+        if (current - changeBitRatePauseTs > 2000) {
+            if (wrongFramesCount > Math.round(getCameraFps() / 30f)
+                    || current > lastFrameReceivedTs + 150 || getPing() == -1 || getPing() > 300) {
+                wrongFramesTs = current;
+                wrongFramesCount = 0;
+                changeBitRatePauseTs = current;
+                sendChangeBitRate(false);
+            }
+            if (current - wrongFramesTs >= 10000) {
+                wrongFramesTs = current;
+                sendChangeBitRate(true);
+            }
+        }
+        lastFrameReceivedTs = current;
+        if (current - processBitRateChangeTs >= 1000) {
+            wrongFramesCount = 0;
+            processBitRateChangeTs = current;
         }
     }
 
@@ -599,6 +629,7 @@ public class Udp {
                 }
                 case FcCommon.DD_CAMERA_FPS: {
                     short cameraFps = buffer.readShort();
+                    this.cameraFps = cameraFps;
                     osd.setCameraFps(cameraFps);
                     break;
                 }
@@ -785,6 +816,10 @@ public class Udp {
             }
         });
         t1.start();
+    }
+
+    public int getCameraFps(){
+        return cameraFps;
     }
 
     public void sendConfig() {

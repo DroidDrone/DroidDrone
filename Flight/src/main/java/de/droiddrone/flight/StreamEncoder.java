@@ -52,6 +52,8 @@ public class StreamEncoder {
     private long bitRateTimestamp = 0;
     private float lastBitRateMbs = 0;
     private int bitRateIndex = 3;
+    private boolean lockIncreaseBitrate = false;
+    private long lockIncreaseBitrateTs;
     private boolean encoderBitrateChange = false;
     private boolean sendFrames = false;
     private boolean writeToRecorder;
@@ -106,8 +108,9 @@ public class StreamEncoder {
             e.printStackTrace();
             return null;
         }
-        Surface surface = videoEncoder.createInputSurface();
+        Surface surface;
         try {
+            surface = videoEncoder.createInputSurface();
             videoEncoder.start();
         } catch (IllegalStateException e) {
             log("videoEncoder.start error: " + e);
@@ -239,6 +242,7 @@ public class StreamEncoder {
 
     public void changeBitRate(boolean increase){
         if (increase) {
+            if (lockIncreaseBitrate) return;
             if (bitRateIndex < baseBitRates.length-1){
                 if (baseBitRates[bitRateIndex+1] <= maxBitRate || maxBitRate == 0) {
                     bitRateIndex++;
@@ -246,6 +250,7 @@ public class StreamEncoder {
                 }
             }
         }else{
+            setLockIncreaseBitrate(true);
             long currentMs = System.currentTimeMillis();
             if (currentMs < lastBitrateReduceTs + 2000) return;
             lastBitrateReduceTs = currentMs;
@@ -256,8 +261,21 @@ public class StreamEncoder {
         }
     }
 
+    public void setLockIncreaseBitrate(boolean lockIncreaseBitrate){
+        long current = System.currentTimeMillis();
+        if (!lockIncreaseBitrate && lockIncreaseBitrateTs > current - 5000) return;
+        this.lockIncreaseBitrate = lockIncreaseBitrate;
+        if (lockIncreaseBitrate) lockIncreaseBitrateTs = current;
+    }
+
     public int getTargetBitRate(){// Bit/s
         return baseBitRates[bitRateIndex];
+    }
+
+    public int getNextBitrate(){
+        int index = bitRateIndex + 1;
+        if (index >= baseBitRates.length) index = baseBitRates.length - 1;
+        return baseBitRates[index];
     }
 
     public float getBitRate(){// MBit/s

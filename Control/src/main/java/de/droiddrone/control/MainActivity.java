@@ -60,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
     private int currentFragmentId;
     private MainActivity activity;
     private BatteryManager batteryManager;
-    private int changeBitRatePause;
     private Config config;
     private boolean connectionThreadRunning = false;
     private final int fullScreenFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -323,27 +322,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void processBitRateChange() {
-        if (udp == null || config.isViewer()) return;
-        if (changeBitRatePause > 0) {
-            changeBitRatePause--;
-        } else {
-            if (udp.wrongFramesCount > 1 || System.currentTimeMillis() > udp.lastFrameReceivedTs + 100
-                    || udp.getPing() == -1 || udp.getPing() > 300) {
-                udp.withoutWrongFramesCount = 0;
-                udp.sendChangeBitRate(false);
-                changeBitRatePause = 2;
-            } else {
-                udp.withoutWrongFramesCount++;
-            }
-            if (udp.withoutWrongFramesCount > 10) {
-                udp.withoutWrongFramesCount = 0;
-                udp.sendChangeBitRate(true);
-            }
-        }
-        udp.wrongFramesCount = 0;
-    }
-
     private void startMainTimer() {
         if (mainTimer != null) return;
         mainTimer = new Timer();
@@ -355,7 +333,6 @@ public class MainActivity extends AppCompatActivity {
                     osd.setGlFps((short) renderer.getFps());
                     updateBatteryState();
                 }
-                if (isRunning && isConnected() && isVideoStreamStarted()) processBitRateChange();
                 runOnUiThread(() -> {
                     startFragment.updateUi();
                     channelsMappingFragment.updateStatus();

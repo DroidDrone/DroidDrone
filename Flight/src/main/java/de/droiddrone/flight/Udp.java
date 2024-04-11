@@ -52,6 +52,7 @@ public class Udp {
     private final PhoneTelemetry phoneTelemetry;
     private final Config config;
     private DatagramSocket socket;
+    private InetAddress destIp;
     private DatagramPacket receiverPacket;
     private int videoFrameNum = 0;
     private Thread receiverThread;
@@ -82,7 +83,6 @@ public class Udp {
     }
 
     public boolean initialize(){
-        InetAddress destIp;
         try {
             destIp = InetAddress.getByName(destIpStr);
         } catch (UnknownHostException e) {
@@ -94,6 +94,7 @@ public class Udp {
             socket = new DatagramSocket(port);
             socket.setReceiveBufferSize(UdpCommon.packetLength * 2);
             socket.setSendBufferSize(UdpCommon.packetLength * 15);
+            socket.setTrafficClass(0x10);
             udpSender = new UdpSender(socket);
             if (connectionMode == 0) udpSender.connect(destIp, port);
             receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key, null);
@@ -140,6 +141,7 @@ public class Udp {
         public void run() {
             final int id = udpThreadsId;
             receiverThread.setPriority(Thread.MAX_PRIORITY);
+            if (connectionMode == 0) socket.connect(destIp, port);
             log("Start receiver thread - OK");
             while (socket != null && !socket.isClosed() && id == udpThreadsId) {
                 try {
@@ -383,7 +385,7 @@ public class Udp {
                             sendVideoFrame(buf.data);
                             break;
                     }
-                    if (streamEncoder.videoStreamOutputBuffer.size() > 5){
+                    if (streamEncoder.videoStreamOutputBuffer.size() > Math.round(5 * camera.getFps() / 30f)){
                         streamEncoder.changeBitRate(false);
                     }
                 } catch (Exception e) {
@@ -771,6 +773,7 @@ public class Udp {
         videoFrameNum++;
         int size = buf.length;
         int offset = 0;
+        long start = System.nanoTime();
         while (offset < size && udpSender != null) {
             try {
                 UdpPacketData packetData = new UdpPacketData(UdpCommon.KeyFrame);
@@ -794,6 +797,23 @@ public class Udp {
                 e.printStackTrace();
                 log("sendKeyFrame error: " + e);
             }
+        }
+        long timeMs = (System.nanoTime() - start) / 1000000;
+        processFrameSendTime(timeMs);
+    }
+
+    private void processFrameSendTime(long timeMs){
+        int frameTimeMs = 1000 / camera.getFps();
+        if (timeMs > frameTimeMs + 5){
+            streamEncoder.setLockIncreaseBitrate(true);
+            streamEncoder.changeBitRate(false);
+        }else if (timeMs >= frameTimeMs){
+            streamEncoder.setLockIncreaseBitrate(true);
+        }else{
+            int currentBr = streamEncoder.getTargetBitRate();
+            int nextBr = streamEncoder.getNextBitrate();
+            long nextTime = timeMs * nextBr / currentBr;
+            streamEncoder.setLockIncreaseBitrate(nextTime >= frameTimeMs);
         }
     }
 
