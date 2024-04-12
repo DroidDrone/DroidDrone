@@ -19,7 +19,7 @@ The mobile phones usually do not have a public IP address and you have two optio
    
    ![Server](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_server.JPG?raw=true)
 
-You can also use your home PC as a server, but you have to configure port forwarding in your router first (and don't forget to turn off sleep mode...).
+You can also use your home PC as a server, but you have to configure port forwarding (default is 6286 / UDP) in your router first (and don't forget to turn off sleep mode...).
 
 > Note that the VPN connection has a little more delay due to encryption.
 
