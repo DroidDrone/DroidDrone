@@ -36,7 +36,7 @@ import static de.droiddrone.common.Logcat.log;
 
 public class StreamEncoder {
     private static final int[] baseBitRates = {250000, 500000, 1000000, 2000000, 4000000, 6000000,
-            8000000, 10000000, 15000000, 20000000, 25000000, 30000000};
+            8000000, 10000000, 15000000, 20000000};
     private final Camera camera;
     private final AudioSource audioSource;
     private final Config config;
@@ -120,6 +120,11 @@ public class StreamEncoder {
         bitRateCounter = 0;
         bitRateTimestamp = System.currentTimeMillis();
         lastBitRateMbs = 0;
+        if (maxBitRate != 0){
+            while (getTargetBitRate() > maxBitRate && bitRateIndex > 0){
+                bitRateIndex--;
+            }
+        }
         encoderBitrateChange = true;
         log("videoEncoder started.");
         return surface;

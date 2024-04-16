@@ -111,7 +111,6 @@
 
     <string-array name="bitrateLimitEntries">
         <item>Max available</item>
-        <item>20 Mbit/s</item>
         <item>10 Mbit/s</item>
         <item>6 Mbit/s</item>
         <item>4 Mbit/s</item>
@@ -121,7 +120,6 @@
 
     <string-array name="bitrateLimitValues">
         <item>0</item>
-        <item>20000000</item>
         <item>10000000</item>
         <item>6000000</item>
         <item>4000000</item>
