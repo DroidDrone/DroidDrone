@@ -19,7 +19,7 @@ The mobile phones usually do not have a public IP address and you have two optio
    You should connect the control app to another phone's IP.
    > Note that the VPN connection has a little more delay due to encryption.
    
-2. **Connect over server** - you start a server app (Java) on your PC or virtual server and connect both phones to its public IP address.
+2. **Connect over server** - you start a [Server app](https://github.com/IvanSchulz/DroidDrone/blob/master/Server/release/DD_Server.zip?raw=true) (Java) on your PC or virtual server and connect both phones to its public IP address.
    
    ![Server](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_server.JPG?raw=true)
 
