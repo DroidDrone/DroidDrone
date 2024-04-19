@@ -14,14 +14,17 @@ Flight app controls your drone via MSP commands, so you need to change your rece
 ### Network connection
 
 The mobile phones usually do not have a public IP address and you have two options to connect both together:
-1. Use Direct connection mode - if both phones are in the same VPN network (or Wi-Fi network for testing)
-2. Connect over server - you start a server app (Java) on your PC or virtual server and connect both phones to its public IP address.
+1. Use **Direct connection mode** - if both phones are in the same VPN network (or Wi-Fi network for testing).
+
+   You should connect the control app to another phone's IP.
+   > Note that the VPN connection has a little more delay due to encryption.
+   
+2. **Connect over server** - you start a server app (Java) on your PC or virtual server and connect both phones to its public IP address.
    
    ![Server](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_server.JPG?raw=true)
 
-You can also use your home PC as a server, but you have to configure port forwarding (default is 6286 / UDP) in your router first (and don't forget to turn off sleep mode...).
-
-> Note that the VPN connection has a little more delay due to encryption.
+You can also use your home PC as a server, but you have to configure port forwarding (default is 6286 / UDP) in your router and allow this port in the firewall first (and don't forget to turn off the sleep mode...).
+> Of course, your router should have a public IP for it to work, but most internet providers give one.
 
 If you use the server app, you can also connect other phones as viewers. You need to configure a different key for viewers. The default key is "DD" for both - controller and viewer.
 
