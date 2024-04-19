@@ -53,7 +53,8 @@ public class Udp {
             if (socket != null) socket.close();
             socket = new DatagramSocket(config.getPort());
             socket.setReceiveBufferSize(UdpCommon.packetLength * 300);
-			socket.setSendBufferSize(UdpCommon.packetLength * 15);
+            socket.setSendBufferSize(UdpCommon.packetLength * 30);
+            socket.setTrafficClass(0x10);
             receiverPacket = new DatagramPacket(receiverBuf, receiverBuf.length);
             log("Start UDP Socket. Port: " + config.getPort() + " - OK");
             clientsCount = config.getViewerCount() + 2;

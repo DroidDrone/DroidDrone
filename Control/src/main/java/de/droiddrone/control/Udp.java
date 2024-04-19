@@ -94,6 +94,7 @@ public class Udp {
             socket.setReceiveBufferSize(UdpCommon.packetLength * 300);
             socket.setSendBufferSize(UdpCommon.packetLength);
             socket.setTrafficClass(0x10);
+            socket.connect(destIp, port);
             udpSender = new UdpSender(socket);
             udpSender.connect(destIp, port);
             receiverBuffer = new ReceiverBuffer(udpSender, false, key, key);
@@ -142,7 +143,6 @@ public class Udp {
         public void run() {
             final int id = threadsId;
             receiverThread.setPriority(Thread.MAX_PRIORITY);
-            socket.connect(destIp, port);
             log("Start receiver thread - OK");
             while (socket != null && !socket.isClosed() && id == threadsId) {
                 try {
@@ -232,7 +232,13 @@ public class Udp {
                     if (frame == null) break;
                     frame.putFragment(offset, buf);
                     if (frame.isCompleted || frame.isStartReceived && frame.isEndReceived) {
-                        if (!frame.isCompleted) wrongFramesCount++;
+                        if (!frame.isCompleted) {
+                            if (isKeyFrame){
+                                wrongFramesCount += 5;
+                            }else{
+                                wrongFramesCount++;
+                            }
+                        }
                         byte[] frameData = frame.getFrame();
                         if (frameData != null && frameData.length > 0) {
                             processBitRateChange();
@@ -242,7 +248,11 @@ public class Udp {
                                 decoder.videoInputBuffer.offer(new MediaCodecBuffer(frameData));
                             }
                         } else {
-                            wrongFramesCount++;
+                            if (isKeyFrame){
+                                wrongFramesCount += 5;
+                            }else{
+                                wrongFramesCount++;
+                            }
                         }
                         if (receivedFrames.size() == 1) {
                             receivedFrames.remove(frameNum);
@@ -261,7 +271,11 @@ public class Udp {
                         }
                     }
                 } else {
-                    wrongFramesCount++;
+                    if (isKeyFrame){
+                        wrongFramesCount += 5;
+                    }else{
+                        wrongFramesCount++;
+                    }
                 }
                 break;
             }
@@ -274,14 +288,19 @@ public class Udp {
                 byte[] buf = new byte[dataSize];
                 int read = buffer.read(buf, 0, dataSize);
                 if (read == dataSize) {
-                    if (videoInitialFrameReceived && decoder.isVideoDecoderStarted()) break;
-                    videoInitialFrameReceived = true;
-                    activity.showGlFragment(true);
-                    lastFrameReceivedTs = System.currentTimeMillis();
-                    decoder.videoInputBuffer.clear();
-                    decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_CODEC_CONFIG, buf));
-                    Thread t1 = new Thread(() -> decoder.initializeVideo(isHevc, width, height, isFrontCamera));
-                    t1.start();
+                    if (videoInitialFrameReceived && decoder.isVideoDecoderStarted() || decoder.videoDecoderInitializationRunning) break;
+                    try {
+                        decoder.videoDecoderInitializationRunning = true;
+                        videoInitialFrameReceived = true;
+                        activity.showGlFragment(true);
+                        lastFrameReceivedTs = System.currentTimeMillis() + 500;
+                        decoder.videoInputBuffer.clear();
+                        decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_CODEC_CONFIG, buf));
+                        Thread t1 = new Thread(() -> decoder.initializeVideo(isHevc, width, height, isFrontCamera));
+                        t1.start();
+                    }catch (Exception e){
+                        decoder.videoDecoderInitializationRunning = false;
+                    }
                 }
                 break;
             }

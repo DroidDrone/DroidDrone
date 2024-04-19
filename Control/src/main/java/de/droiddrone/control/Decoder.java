@@ -43,6 +43,7 @@ public class Decoder {
     ArrayBlockingQueue<MediaCodecBuffer> videoInputBuffer = new ArrayBlockingQueue<>(30);
     ArrayBlockingQueue<MediaCodecBuffer> audioInputBuffer = new ArrayBlockingQueue<>(30);
     private boolean videoDecoderStarted = false;
+    public boolean videoDecoderInitializationRunning = false;
     private boolean audioDecoderStarted = false;
     private int videoThreadId, audioThreadId;
     private final GlRenderer renderer;
@@ -157,7 +158,10 @@ public class Decoder {
 
         renderer.setVideoFrameSize(width, height, isFrontCamera);
         Surface surface = renderer.getSurface();
-        if (surface == null) return;
+        if (surface == null) {
+            videoDecoderInitializationRunning = false;
+            return;
+        }
         if (videoDecoder != null){
             try {
                 videoDecoder.stop();
@@ -175,6 +179,7 @@ public class Decoder {
         String decoderName = MediaCommon.getCodecName(type, false);
         if (decoderName == null){
             log("No video decoder found.");
+            videoDecoderInitializationRunning = false;
             return;
         }
         log("videoDecoder name: " + decoderName);
@@ -185,6 +190,7 @@ public class Decoder {
         catch (Exception e)
         {
             log("create videoDecoder error: " + e);
+            videoDecoderInitializationRunning = false;
             return;
         }
         MediaFormat mediaFormat = MediaFormat.createVideoFormat(type, width, height);
@@ -200,9 +206,11 @@ public class Decoder {
             videoDecoder.start();
         }catch (Exception e){
             log("videoDecoder configure error: " + e);
+            videoDecoderInitializationRunning = false;
             return;
         }
         videoDecoderStarted = true;
+        videoDecoderInitializationRunning = false;
         Thread videoDecoderThread = new Thread(videoDecoderRunnable);
         videoDecoderThread.setDaemon(false);
         videoDecoderThread.setName("videoDecoderThread");

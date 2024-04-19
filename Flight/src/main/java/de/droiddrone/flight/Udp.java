@@ -83,20 +83,25 @@ public class Udp {
     }
 
     public boolean initialize(){
-        try {
-            destIp = InetAddress.getByName(destIpStr);
-        } catch (UnknownHostException e) {
-            log("socketInit InetAddress error: " + e);
-            return false;
+        if (connectionMode == 0) {
+            try {
+                destIp = InetAddress.getByName(destIpStr);
+            } catch (UnknownHostException e) {
+                log("socketInit InetAddress error: " + e);
+                return false;
+            }
         }
         try {
             if (socket != null) socket.close();
             socket = new DatagramSocket(port);
             socket.setReceiveBufferSize(UdpCommon.packetLength * 2);
-            socket.setSendBufferSize(UdpCommon.packetLength * 15);
+            socket.setSendBufferSize(UdpCommon.packetLength * 30);
             socket.setTrafficClass(0x10);
             udpSender = new UdpSender(socket);
-            if (connectionMode == 0) udpSender.connect(destIp, port);
+            if (connectionMode == 0) {
+                socket.connect(destIp, port);
+                udpSender.connect(destIp, port);
+            }
             receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key, null);
             receiverPacket = new DatagramPacket(receiverBuf, receiverBuf.length);
             receiverThread = new Thread(receiverRun);
@@ -141,7 +146,6 @@ public class Udp {
         public void run() {
             final int id = udpThreadsId;
             receiverThread.setPriority(Thread.MAX_PRIORITY);
-            if (connectionMode == 0) socket.connect(destIp, port);
             log("Start receiver thread - OK");
             while (socket != null && !socket.isClosed() && id == udpThreadsId) {
                 try {
@@ -804,7 +808,7 @@ public class Udp {
 
     private void processFrameSendTime(long timeMs){
         int frameTimeMs = 1000 / camera.getFps();
-        if (timeMs > frameTimeMs + 5){
+        if (timeMs > frameTimeMs * 1.5f){
             streamEncoder.setLockIncreaseBitrate(true);
             streamEncoder.changeBitRate(false);
         }else if (timeMs >= frameTimeMs){
