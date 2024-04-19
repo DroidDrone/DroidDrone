@@ -47,7 +47,7 @@
 
     <EditText
         android:id="@+id/editText_ip"
-        android:layout_width="300dp"
+        android:layout_width="380dp"
         android:layout_height="48dp"
         android:ems="10"
         android:hint="@string/ip"
@@ -58,7 +58,7 @@
 
     <EditText
         android:id="@+id/editText_port"
-        android:layout_width="300dp"
+        android:layout_width="100dp"
         android:layout_height="48dp"
         android:ems="10"
         android:hint="@string/port"
@@ -69,7 +69,7 @@
 
     <EditText
         android:id="@+id/editText_key"
-        android:layout_width="300dp"
+        android:layout_width="100dp"
         android:layout_height="48dp"
         android:ems="10"
         android:hint="@string/server_key"
@@ -114,6 +114,8 @@
         android:layout_height="0dip"
         android:layout_weight="1"
         android:gravity="bottom|end"
+        android:paddingStart="0dp"
+        android:paddingEnd="10dp"
         android:orientation="vertical" >
 
         <TextView

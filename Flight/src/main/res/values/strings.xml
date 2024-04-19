@@ -23,7 +23,7 @@
     <string name="port">Port</string>
     <string name="server_key">Server key</string>
     <string-array name="connection_modes">
-        <item>Connect over server</item>
-        <item>Direct connection</item>
+        <item><b>Connect over server</b> - <i>Connect both phones to the server\'s public IP</i></item>
+        <item><b>Direct connection</b> - <i>Connect the control app to the IP of this phone (VPN or Wi-Fi)</i></item>
     </string-array>
 </resources>
