@@ -107,11 +107,13 @@ public class DDService extends Service {
         phoneTelemetry.initialize();
         if (udp != null) udp.close();
         udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, camera, msp, phoneTelemetry, MainActivity.config);
-        if (!udp.initialize()){
-            log("UDP initialize error.");
-            stopSelf();
-            return START_NOT_STICKY;
-        }
+        Thread t1 = new Thread(() -> {
+            if (!udp.initialize()){
+                log("UDP initialize error.");
+                stopSelf();
+            }
+        });
+        t1.start();
         isRunning = true;
         startMainTimer();
         return START_REDELIVER_INTENT;

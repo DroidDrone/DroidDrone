@@ -218,12 +218,15 @@ public class MainActivity extends AppCompatActivity {
             renderer.setOsd(osd);
             if (udp != null) udp.close();
             udp = new Udp(config, decoder, osd, rc, activity);
-            if (!udp.initialize()){
-                getWindow().getDecorView().setSystemUiVisibility(showNavigationFlags);
-                closeAll();
-            }
+            Thread t1 = new Thread(() -> {
+                if (udp.initialize()){
+                    startConnectionThread();
+                }else{
+                    closeAll();
+                }
+            });
+            t1.start();
             renderer.setUdp(udp);
-            startConnectionThread();
         }
     }
 
