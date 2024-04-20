@@ -61,6 +61,13 @@ The recorded video should be saved in the "Android/media/de.droiddrone.flight/Vi
 * INAV version 7.0.0, 7.1.0 (MSP API 2.5)
 * Betaflight 4.4.2, 4.4.3 (MSP API 1.45, 1.46)
 
+## Contributing & Development
+
+You can create a fork and contribute your pull requests to this project or create issues, discussions and documentation.
+
+You should use the latest Android Studio to compile the app sources and the Eclipse IDE for Server.
+To create a sprites map you can use the Adobe Air ShoeBox app and the BMFont for font textures.
+
 ## Todo
 * ArduPilot support
 * Google Maps tracking
