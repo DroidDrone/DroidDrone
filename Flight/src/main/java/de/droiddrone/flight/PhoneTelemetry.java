@@ -20,17 +20,7 @@ package de.droiddrone.flight;
 import static de.droiddrone.common.Logcat.log;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.location.GnssStatus;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.BatteryManager;
-import android.os.Handler;
-import android.os.HandlerThread;
-
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -60,18 +50,6 @@ public class PhoneTelemetry {
         } catch (Exception e) {
             log("BatteryManager error: " + e);
         }
-        try {
-            if (checkLocationPermission()) {
-                LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-                HandlerThread handlerThread = new HandlerThread("GnssStatusThread");
-                handlerThread.start();
-                final Handler handler = new Handler(handlerThread.getLooper());
-                locationManager.registerGnssStatusCallback(gnssStatusCallback, handler);
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 3, locationListener);
-            }
-        } catch (Exception e) {
-            log("LocationManager error: " + e);
-        }
         telemetryOutputBuffer.clear();
         threadsId++;
         Thread phoneTelemetryThread = new Thread(phoneTelemetryRun);
@@ -96,31 +74,6 @@ public class PhoneTelemetry {
                     log("Phone telemetry thread error: " + e);
                 }
             }
-        }
-    };
-
-    private final GnssStatus.Callback gnssStatusCallback = new GnssStatus.Callback(){
-        @Override
-        public void onSatelliteStatusChanged(@NonNull GnssStatus status) {
-            super.onSatelliteStatusChanged(status);
-            int totalCount = status.getSatelliteCount();
-            int usedCount = 0;
-            for (int i = 0; i < totalCount; i++) if (status.usedInFix(i)) usedCount++;
-            int satsCount = usedCount;
-        }
-    };
-
-    private final LocationListener locationListener = new LocationListener() {
-        @Override
-        public void onLocationChanged(final Location location) {
-            if (location == null) return;
-            double longitude = location.getLongitude();
-            double latitude = location.getLatitude();
-            float altitude = (float) location.getAltitude();
-            boolean hasAltitude = location.hasAltitude();
-            float speed = location.getSpeed();
-            boolean hasSpeed = location.hasSpeed();
-            //Not implemented - doesn't really work in the background...
         }
     };
 
@@ -158,10 +111,6 @@ public class PhoneTelemetry {
         writer.writeByte((byte) batteryLevel);
         writer.writeBoolean(isCharging);
         telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_PHONE_BATTERY_STATE, writer.getData()));
-    }
-
-    private boolean checkLocationPermission(){
-        return (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
     }
 
     public void close(){
