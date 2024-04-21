@@ -4,7 +4,8 @@ With the DroidDrone you can easily control your [INAV](https://github.com/iNavFl
 
 ## Install and configure
 
-You have to install the [Flight](https://github.com/IvanSchulz/DroidDrone/blob/master/Flight/release/Flight-release.apk?raw=true) and [Control](https://github.com/IvanSchulz/DroidDrone/blob/master/Control/release/Control-release.apk?raw=true) apps on the phones.
+You have to install the Flight and Control apps on the phones, download these on the [Releases](https://github.com/IvanSchulz/DroidDrone/releases) page.
+
 Flight app controls your drone via MSP commands, so you need to change your receiver type to MSP in your INAV or Betaflight configurator:
 
 ![Receiver](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_receiver.JPG?raw=true)
@@ -19,7 +20,7 @@ The mobile phones usually do not have a public IP address and you have two optio
    You should connect the control app to another phone's IP.
    > Note that the VPN connection has a little more delay due to encryption.
    
-2. **Connect over server** - you start a [Server app](https://github.com/IvanSchulz/DroidDrone/blob/master/Server/release/DD_Server.zip?raw=true) (Java) on your PC or virtual server and connect both phones to its public IP address.
+2. **Connect over server** - you start a Server app (Java) on your PC or virtual server and connect both phones to its public IP address.
    
    ![Server](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_server.JPG?raw=true)
 
