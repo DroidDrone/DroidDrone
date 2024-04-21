@@ -50,6 +50,8 @@ The channels mapping in your FC (AERT, TAER etc. in your receiver tab) is automa
 The Flight App can run as a service when your screen turned off.
 **The Control app must always be in the foreground. If it is not in the foreground or screen will be turned off then it causes a failsafe.**
 
+> It's probably a good idea to set the power saving settings for the Flight app to "No restrictions", but I don't have any problems with the default settings either.
+
 Not all OSD elements (but many important ones) are supported by DroidDrone.
 
 ![OSD](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_osd.jpg?raw=true)
