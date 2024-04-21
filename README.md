@@ -4,7 +4,7 @@ With the DroidDrone you can easily control your [INAV](https://github.com/iNavFl
 
 ## Install and configure
 
-You have to install the Flight and Control apps on the phones, download these on the [Releases](https://github.com/IvanSchulz/DroidDrone/releases) page.
+You have to install the Flight and Control apps on the phones. You can download them from the [Releases](https://github.com/IvanSchulz/DroidDrone/releases) page.
 
 Flight app controls your drone via MSP commands, so you need to change your receiver type to MSP in your INAV or Betaflight configurator:
 
