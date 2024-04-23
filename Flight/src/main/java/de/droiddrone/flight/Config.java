@@ -189,7 +189,6 @@ public class Config {
 
     public boolean updateConfig(){
         ip = activity.etIp.getText().toString();
-        if (ip.isBlank()) return false;
         try {
             port = Integer.parseInt(activity.etPort.getText().toString());
         }catch (NumberFormatException e){
