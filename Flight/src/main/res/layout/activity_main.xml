@@ -51,6 +51,12 @@
         android:layout_width="wrap_content"
         android:layout_height="48dp" />
 
+    <TextView
+        android:id="@+id/tvConnectionModeHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/connection_mode_server" />
+
     <EditText
         android:id="@+id/editText_ip"
         android:layout_width="380dp"

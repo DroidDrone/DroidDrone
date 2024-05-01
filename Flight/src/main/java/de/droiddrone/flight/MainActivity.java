@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
     private LinearLayout main;
     Spinner connectionMode;
     EditText etIp, etPort, etKey;
-    private TextView tvNetworkStatus, tvFcStatus;
+    private TextView tvNetworkStatus, tvFcStatus, tvConnectionModeHint;
     private Timer uiTimer;
     private boolean isPaused = false;
     public static Config config;
@@ -85,6 +85,7 @@ public class MainActivity extends Activity {
         etKey = findViewById(R.id.editText_key);
         tvNetworkStatus = findViewById(R.id.tvNetworkConnectionStatus);
         tvFcStatus = findViewById(R.id.tvFcConnectionStatus);
+        tvConnectionModeHint = findViewById(R.id.tvConnectionModeHint);
         connectionMode = findViewById(R.id.connectionMode);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.connection_modes, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -92,10 +93,15 @@ public class MainActivity extends Activity {
         connectionMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position == 0){
-                    etIp.setVisibility(View.VISIBLE);
-                }else{
-                    etIp.setVisibility(View.GONE);
+                switch (position){
+                    case 0:
+                        etIp.setVisibility(View.VISIBLE);
+                        tvConnectionModeHint.setText(R.string.connection_mode_server);
+                        break;
+                    case 1:
+                        etIp.setVisibility(View.GONE);
+                        tvConnectionModeHint.setText(R.string.connection_mode_vpn);
+                        break;
                 }
             }
 
@@ -120,10 +126,13 @@ public class MainActivity extends Activity {
                 tvNetworkStatus.setText(getResources().getString(R.string.status_connected));
                 tvNetworkStatus.setTextColor(Color.GREEN);
             }else{
-                if (config.getConnectionMode() == 0) {
-                    tvNetworkStatus.setText(getResources().getString(R.string.status_connecting));
-                }else{
-                    tvNetworkStatus.setText(getResources().getString(R.string.status_awaiting_connection));
+                switch (config.getConnectionMode()){
+                    case 0:
+                        tvNetworkStatus.setText(getResources().getString(R.string.status_connecting));
+                        break;
+                    case 1:
+                        tvNetworkStatus.setText(getResources().getString(R.string.status_awaiting_connection));
+                        break;
                 }
                 tvNetworkStatus.setTextColor(Color.BLACK);
             }
