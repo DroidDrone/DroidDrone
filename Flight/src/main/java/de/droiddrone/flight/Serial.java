@@ -38,7 +38,7 @@ import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.FcCommon;
 
 public class Serial {
-    public static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
+    public static final String ACTION_USB_PERMISSION = "de.droiddrone.flight.USB_PERMISSION";
     public static final int STATUS_NOT_INITIALIZED = 0;
     public static final int STATUS_DEVICE_NOT_CONNECTED = 1;
     public static final int STATUS_DEVICE_FOUND = 2;
@@ -148,8 +148,8 @@ public class Serial {
         }else{
             intent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_UPDATE_CURRENT);
         }
-        manager.requestPermission(driver.getDevice(), intent);
         status = STATUS_USB_PERMISSION_REQUESTED;
+        manager.requestPermission(driver.getDevice(), intent);
         return false;
     }
 
