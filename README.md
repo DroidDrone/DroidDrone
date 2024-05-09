@@ -1,6 +1,6 @@
 ## What is DroidDrone
 
-With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav) or [Betaflight](https://github.com/betaflight/betaflight) drone via the Internet. You only need two Android phones (requires version 7.0 or later) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
+With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav) or [Betaflight](https://github.com/betaflight/betaflight) drone via the Internet. You only need two Android phones (requires min version 7, Android 10+ is recommended) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
 
 ## Install and configure
 
