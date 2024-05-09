@@ -54,4 +54,5 @@ public class SpritesMapping {
     public static final int BUTTON_STOP_DOWN = 3004;
     public static final int HEADING_CENTER_ARROW = 3005;
     public static final int BATT_ALERT = 3006;
+    public static final int BATT_CHARGING = 3007;
 }

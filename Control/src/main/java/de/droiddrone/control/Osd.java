@@ -33,6 +33,7 @@ public class Osd {
     private final GlRenderer renderer;
     public static final int rawPhoneOsdHeight = 50;
     public static final int rawRecButtonOffset = 270;
+    private final int phoneBatteryIconSteps = 6;
     private final Config config;
     private FcInfo fcInfo = null;
     private OsdItem[] activeItems = null;
@@ -712,7 +713,15 @@ public class Osd {
         return format2Digit.format(voltage) + "V";
     }
 
+    private int getPhoneBatteryIcon(int batteryPercentage, boolean isCharging){
+        if (batteryPercentage <= 0 || batteryPercentage > 100) return SpritesMapping.BATT_ALERT;
+        if (isCharging) return SpritesMapping.BATT_CHARGING;
+        int step = phoneBatteryIconSteps - Math.round(batteryPercentage * phoneBatteryIconSteps / 100f);
+        return SpritesMapping.BATT_FULL + step;
+    }
+
     private class OsdItemMainBattCellVoltage extends OsdItem{
+
         final int batteryIconSteps = 6;
 
         public OsdItemMainBattCellVoltage(OsdItem item) {
@@ -721,7 +730,7 @@ public class Osd {
 
         int getBatteryIcon(int batteryPercentage){
             if (batteryState == FcCommon.BatteryState.BATTERY_CRITICAL || batteryState == FcCommon.BatteryState.BATTERY_WARNING
-                || batteryState == FcCommon.BatteryState.BATTERY_NOT_PRESENT || batteryPercentage <= 0 || batteryPercentage > 100) return SpritesMapping.BATT_ALERT;
+                    || batteryState == FcCommon.BatteryState.BATTERY_NOT_PRESENT || batteryPercentage <= 0 || batteryPercentage > 100) return SpritesMapping.BATT_ALERT;
             int step = batteryIconSteps - Math.round(batteryPercentage * batteryIconSteps / 100f);
             return SpritesMapping.BATT_FULL + step;
         }
@@ -842,11 +851,25 @@ public class Osd {
         String text;
 
         if (config.isShowPhoneBattery()) {
-            text = "BL: " + dronePhoneBatteryPercentage + "%/" + controlPhoneBatteryPercentage + "%";
-            if (dronePhoneBatteryPercentage <= 20 || controlPhoneBatteryPercentage <= 20) {
+            int icon = getPhoneBatteryIcon(dronePhoneBatteryPercentage, dronePhoneBatteryIsCharging);
+            glSprites.addSprite(icon, xOffset, y, spriteSize);
+            xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
+            if (dronePhoneBatteryPercentage <= 30){
                 glSprites.addSprite(SpritesMapping.ALERT, xOffset, y, spriteSize);
                 xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
             }
+            text = dronePhoneBatteryPercentage + "%";
+            glText.addText(text, xOffset, y, textSize);
+            xOffset += glText.getLengthInPixels(text, textSize) + textSpace / 3;
+
+            icon = getPhoneBatteryIcon(controlPhoneBatteryPercentage, controlPhoneBatteryIsCharging);
+            glSprites.addSprite(icon, xOffset, y, spriteSize);
+            xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
+            if (controlPhoneBatteryPercentage <= 30){
+                glSprites.addSprite(SpritesMapping.ALERT, xOffset, y, spriteSize);
+                xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
+            }
+            text = controlPhoneBatteryPercentage + "%";
             glText.addText(text, xOffset, y, textSize);
             xOffset += glText.getLengthInPixels(text, textSize) + textSpace;
         }
@@ -885,7 +908,7 @@ public class Osd {
         }
 
         if (config.isShowVideoBitrate()) {
-            text = "Bitrate: " + formatBitRate(videoBitRate);
+            text = formatBitRate(videoBitRate);
             if (videoBitRate < 1.5f) {
                 glSprites.addSprite(SpritesMapping.ALERT, xOffset, y, spriteSize);
                 xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
