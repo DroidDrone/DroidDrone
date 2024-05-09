@@ -24,7 +24,7 @@ public class FcInfo {
     public static final String INAV_ID = "INAV";
     public static final String BETAFLIGHT_ID = "BTFL";
     public static final String INAV_NAME = "INAV";
-    public static final String BETAFLIGHT_NAME = "BETAFLIGHT";
+    public static final String BETAFLIGHT_NAME = "Betaflight";
     private final int fcVariant;
     private final int fcVersionMajor;
     private final int fcVersionMinor;

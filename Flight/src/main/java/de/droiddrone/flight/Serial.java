@@ -120,7 +120,7 @@ public class Serial {
         int count = availableDrivers.size();
         for (int i = 0; i < count; i++) {
             String name = availableDrivers.get(i).getDevice().getManufacturerName();
-            if (count == 1 || FcInfo.INAV_ID.equals(name) || FcInfo.BETAFLIGHT_ID.equals(name) || "Betaflight".equals(name)) {
+            if (count == 1 || FcInfo.INAV_ID.equals(name) || FcInfo.BETAFLIGHT_ID.equals(name) || FcInfo.BETAFLIGHT_NAME.equals(name)) {
                 driver = availableDrivers.get(i);
                 status = STATUS_DEVICE_FOUND;
                 log("Serial device manufacturer name: " + name);
