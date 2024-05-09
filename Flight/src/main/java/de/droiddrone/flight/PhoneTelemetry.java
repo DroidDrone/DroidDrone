@@ -21,12 +21,13 @@ import static de.droiddrone.common.Logcat.log;
 
 import android.content.Context;
 import android.os.BatteryManager;
-
 import java.util.concurrent.ArrayBlockingQueue;
 
 import de.droiddrone.common.DataWriter;
 import de.droiddrone.common.FcCommon;
+import de.droiddrone.common.NetworkState;
 import de.droiddrone.common.TelemetryData;
+import de.droiddrone.common.TelephonyService;
 
 public class PhoneTelemetry {
     private final Context context;
@@ -35,7 +36,8 @@ public class PhoneTelemetry {
     private final Mp4Recorder mp4Recorder;
     public final ArrayBlockingQueue<TelemetryData> telemetryOutputBuffer = new ArrayBlockingQueue<>(10);
     private int threadsId;
-    private BatteryManager batteryManager = null;
+    private BatteryManager batteryManager;
+    private TelephonyService telephonyService;
 
     public PhoneTelemetry(Context context, StreamEncoder streamEncoder, Camera camera, Mp4Recorder mp4Recorder) {
         this.context = context;
@@ -50,11 +52,12 @@ public class PhoneTelemetry {
         } catch (Exception e) {
             log("BatteryManager error: " + e);
         }
+        telephonyService = new TelephonyService(context);
         telemetryOutputBuffer.clear();
         threadsId++;
         Thread phoneTelemetryThread = new Thread(phoneTelemetryRun);
         phoneTelemetryThread.setDaemon(false);
-        phoneTelemetryThread.setName("mspThread");
+        phoneTelemetryThread.setName("phoneTelemetryThread");
         phoneTelemetryThread.start();
     }
 
@@ -69,6 +72,7 @@ public class PhoneTelemetry {
                     sendVideoBitRate();
                     sendRecorderState();
                     sendBatteryState();
+                    sendNetworkState();
                     Thread.sleep(timerDelayMs);
                 } catch (Exception e) {
                     log("Phone telemetry thread error: " + e);
@@ -76,6 +80,15 @@ public class PhoneTelemetry {
             }
         }
     };
+
+    private void sendNetworkState() {
+        NetworkState networkState = telephonyService.getNetworkState();
+        if (networkState.getNetworkType() == NetworkState.NETWORK_TYPE_NA) return;
+        DataWriter writer = new DataWriter(false);
+        writer.writeByte((byte) networkState.getNetworkType());
+        writer.writeByte((byte) networkState.getRssi());
+        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_NETWORK_STATE, writer.getData()));
+    }
 
     private void sendRecorderState() {
         boolean isRecording = mp4Recorder.isRecording();

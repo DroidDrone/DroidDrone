@@ -663,6 +663,12 @@ public class Udp {
                     osd.setVideoRecorderState(isRecording, recordingTimeSec);
                     break;
                 }
+                case FcCommon.DD_NETWORK_STATE: {
+                    int networkType = buffer.readUnsignedByteAsInt();
+                    int rssi = buffer.readUnsignedByteAsInt();
+                    osd.setDroneNetworkState(networkType, rssi);
+                    break;
+                }
                 default:
                     return;
             }

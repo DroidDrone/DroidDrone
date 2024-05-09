@@ -6,6 +6,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry excluding="de/droiddrone/common/FcCommon.java|de/droiddrone/common/FcInfo.java|de/droiddrone/common/Logcat.java|de/droiddrone/common/MediaCodecBuffer.java|de/droiddrone/common/MediaCommon.java|de/droiddrone/common/OsdCommon.java" kind="src" path="java"/>
+	<classpathentry excluding="de/droiddrone/common/FcCommon.java|de/droiddrone/common/FcInfo.java|de/droiddrone/common/Logcat.java|de/droiddrone/common/MediaCodecBuffer.java|de/droiddrone/common/MediaCommon.java|de/droiddrone/common/NetworkState.java|de/droiddrone/common/OsdCommon.java|de/droiddrone/common/TelephonyService.java" kind="src" path="java"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

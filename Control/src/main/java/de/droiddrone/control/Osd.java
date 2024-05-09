@@ -26,6 +26,7 @@ import java.util.List;
 
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.FcInfo;
+import de.droiddrone.common.NetworkState;
 import de.droiddrone.common.OsdCommon;
 
 public class Osd {
@@ -120,6 +121,8 @@ public class Osd {
     private final DecimalFormat format2Digit = new DecimalFormat("0.00");
     private final DecimalFormat format6Digit = new DecimalFormat("0.000000");
     private final ArrayList<Integer> mahKmList = new ArrayList<>();
+    private NetworkState droneNetworkState = new NetworkState();
+    private NetworkState controlNetworkState = new NetworkState();
 
     public Osd(GlRenderer renderer, Config config) {
         this.renderer = renderer;
@@ -164,7 +167,8 @@ public class Osd {
 
     private boolean isDrawPhoneOsd(){
         return (config.isShowPhoneBattery() || config.isShowCameraFps() || config.isShowScreenFps() || config.isShowVideoBitrate()
-                || config.isShowPing() || config.isShowVideoRecordButton() || config.isShowVideoRecordIndication());
+                || config.isShowPing() || config.isShowVideoRecordButton() || config.isShowVideoRecordIndication()
+                || config.isShowNetworkState());
     }
 
     private void updateOsdFactor(){
@@ -847,6 +851,19 @@ public class Osd {
             xOffset += glText.getLengthInPixels(text, textSize) + textSpace;
         }
 
+        if (config.isShowNetworkState()) {
+            text = droneNetworkState.getNetworkName() + " " + droneNetworkState.getRssi() + "%/"
+                    + controlNetworkState.getNetworkName() + " " + controlNetworkState.getRssi() + "%";
+            if (droneNetworkState.getRssi() < 40 || controlNetworkState.getRssi() < 40
+                    || droneNetworkState.getNetworkType() < NetworkState.NETWORK_TYPE_LTE
+                    || controlNetworkState.getNetworkType() < NetworkState.NETWORK_TYPE_LTE) {
+                glSprites.addSprite(SpritesMapping.ALERT, xOffset, y, spriteSize);
+                xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
+            }
+            glText.addText(text, xOffset, y, textSize);
+            xOffset += glText.getLengthInPixels(text, textSize) + textSpace;
+        }
+
         if (config.isShowCameraFps()) {
             text = "Cam.FPS: " + cameraFps;
             if (cameraFps < 20) {
@@ -948,6 +965,14 @@ public class Osd {
     public void setControlPhoneBatteryState(byte controlPhoneBatteryPercentage, boolean controlPhoneBatteryIsCharging){
         this.controlPhoneBatteryPercentage = controlPhoneBatteryPercentage;
         this.controlPhoneBatteryIsCharging = controlPhoneBatteryIsCharging;
+    }
+
+    public void setDroneNetworkState(int networkType, int rssi){// DD_NETWORK_STATE
+        droneNetworkState = new NetworkState(networkType, rssi);
+    }
+
+    public void setControlNetworkState(NetworkState networkState){
+        controlNetworkState = networkState;
     }
 
     public void setCameraFps(short cameraFps){// DD_CAMERA_FPS

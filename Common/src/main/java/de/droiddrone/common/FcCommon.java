@@ -58,6 +58,7 @@ public class FcCommon {
     public static final short DD_VIDEO_BIT_RATE = 0x4003;
     public static final short DD_VIDEO_RECORDER_STATE = 0x4004;
     public static final short DD_VIDEO_RECORDER_START_STOP = 0x4005;
+    public static final short DD_NETWORK_STATE = 0x4006;
 
     public static final short MAX_RSSI = 1023;
     public static final byte BF_BOXMODES_PAGE_COUNT = 2;

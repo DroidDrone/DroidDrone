@@ -42,6 +42,7 @@
     <string name="recorded_audio_bitrate">Recorded audio bitrate</string>
     <string name="osd">OSD</string>
     <string name="show_phone_battery">Show phones battery percentage</string>
+    <string name="show_network_state">Show phones network state</string>
     <string name="show_camera_fps">Show camera FPS</string>
     <string name="show_screen_fps">Show screen FPS</string>
     <string name="show_video_bitrate">Show video bitrate</string>

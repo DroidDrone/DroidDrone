@@ -726,6 +726,11 @@ public class Udp {
                     startStopRecording();
                     break;
                 }
+                case FcCommon.DD_NETWORK_STATE: {
+                    packetData.daos.writeByte(buffer.readByte());//networkType
+                    packetData.daos.writeByte(buffer.readByte());//rssi
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

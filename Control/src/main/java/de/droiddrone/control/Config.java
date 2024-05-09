@@ -48,6 +48,7 @@ public class Config {
     private boolean recordAudio;
     private int recordedAudioBitrate;
     private boolean showPhoneBattery;
+    private boolean showNetworkState;
     private boolean showCameraFps;
     private boolean showScreenFps;
     private boolean showVideoBitrate;
@@ -98,8 +99,9 @@ public class Config {
         recordAudio = preferences.getBoolean("recordAudio", true);
         recordedAudioBitrate = parseInt(preferences.getString("recordedAudioBitrate", ""), 192000);
         showPhoneBattery = preferences.getBoolean("showPhoneBattery", true);
+        showNetworkState = preferences.getBoolean("showNetworkState", true);
         showCameraFps = preferences.getBoolean("showCameraFps", true);
-        showScreenFps = preferences.getBoolean("showScreenFps", true);
+        showScreenFps = preferences.getBoolean("showScreenFps", false);
         showVideoBitrate = preferences.getBoolean("showVideoBitrate", true);
         showPing = preferences.getBoolean("showPing", true);
         showVideoRecordButton = preferences.getBoolean("showVideoRecordButton", true);
@@ -205,6 +207,10 @@ public class Config {
 
     public boolean isShowPhoneBattery() {
         return showPhoneBattery;
+    }
+
+    public boolean isShowNetworkState() {
+        return showNetworkState;
     }
 
     public boolean isShowCameraFps() {

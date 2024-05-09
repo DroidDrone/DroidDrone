@@ -39,7 +39,11 @@ import java.util.TimerTask;
 import static de.droiddrone.common.Logcat.log;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentManager;
+
+import de.droiddrone.common.NetworkState;
+import de.droiddrone.common.TelephonyService;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -62,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
     private BatteryManager batteryManager;
     private Config config;
     private boolean connectionThreadRunning = false;
+    private TelephonyService telephonyService;
+    private boolean phoneStatePermissionRequested = false;
     private final int fullScreenFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -91,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        telephonyService = new TelephonyService(this);
         renderer = new GlRenderer(this, config);
         rc = new Rc(config);
         startFragment = new StartFragment(this, config);
@@ -325,6 +332,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void updateNetworkState(){
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_BASIC_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                if (!phoneStatePermissionRequested) {
+                    phoneStatePermissionRequested = true;
+                    ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_BASIC_PHONE_STATE}, 3);
+                }
+                return;
+            }
+        }
+        osd.setControlNetworkState(telephonyService.getNetworkState());
+    }
+
     private void startMainTimer() {
         if (mainTimer != null) return;
         mainTimer = new Timer();
@@ -335,6 +355,7 @@ public class MainActivity extends AppCompatActivity {
                 if (osd != null){
                     osd.setGlFps((short) renderer.getFps());
                     updateBatteryState();
+                    updateNetworkState();
                 }
                 runOnUiThread(() -> {
                     startFragment.updateUi();

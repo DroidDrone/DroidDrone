@@ -95,6 +95,12 @@
             app:defaultValue="true"
             app:title="@string/show_phone_battery"/>
         <SwitchPreferenceCompat
+            app:key="showNetworkState"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="true"
+            app:title="@string/show_network_state"/>
+        <SwitchPreferenceCompat
             app:key="showCameraFps"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
@@ -104,7 +110,7 @@
             app:key="showScreenFps"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
-            app:defaultValue="true"
+            app:defaultValue="false"
             app:title="@string/show_screen_fps"/>
         <SwitchPreferenceCompat
             app:key="showVideoBitrate"

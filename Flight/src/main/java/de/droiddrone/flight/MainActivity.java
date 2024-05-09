@@ -224,7 +224,8 @@ public class MainActivity extends Activity {
         boolean cameraPermission = isCameraPermissionGranted();
         boolean storagePermission = isStoragePermissionGranted();
         boolean audioPermission = isAudioPermissionGranted();
-        return cameraPermission && storagePermission && audioPermission;
+        boolean phoneStatePermission = isPhoneStatePermissionGranted();
+        return cameraPermission && storagePermission && audioPermission && phoneStatePermission;
     }
 
     private boolean isCameraPermissionGranted(){
@@ -249,6 +250,16 @@ public class MainActivity extends Activity {
         if (this.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED){
             activity.requestPermission(Manifest.permission.RECORD_AUDIO, 2);
             return false;
+        }
+        return true;
+    }
+
+    private boolean isPhoneStatePermissionGranted(){
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (this.checkSelfPermission(Manifest.permission.READ_BASIC_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                activity.requestPermission(Manifest.permission.READ_BASIC_PHONE_STATE, 3);
+                return false;
+            }
         }
         return true;
     }
@@ -306,11 +317,12 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            if (requestCode >= 0 && requestCode <= 4 && checkPermissions()) startStopService();
+            if (requestCode >= 0 && requestCode <= 3 && checkPermissions()) startStopService();
         } else {
             if (requestCode == 0) log("Camera permission denied!");
             if (requestCode == 1) log("Storage permission denied!");
             if (requestCode == 2) log("Audio permission denied!");
+            if (requestCode == 3) log("Phone state permission denied!");
         }
     }
 }
