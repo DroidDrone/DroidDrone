@@ -56,7 +56,7 @@ Not all OSD elements (but many important ones) are supported by DroidDrone.
 
 ![OSD](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_osd.jpg?raw=true)
 
-At the top of the screen you can see the specific OSD items such as the battery level for both phones, camera and OpenGL FPS, video bitrate and network latency. You can also start and stop video recording with the button on the right.
+At the top of the screen you can see the specific OSD items such as the battery level and cellular signal strength for both phones, camera and OpenGL FPS, video bitrate and network latency. You can also start and stop video recording with the button on the right.
 The recorded video should be saved in the "Android/media/de.droiddrone.flight/Video" folder.
 
 #### DroidDrone currently supports:
