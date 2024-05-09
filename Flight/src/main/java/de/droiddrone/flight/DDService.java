@@ -85,6 +85,7 @@ public class DDService extends Service {
                 .build();
         if (Build.VERSION.SDK_INT >= 30) {
             startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+                    | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
                     | ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
         }else{
             startForeground(1, notification);
