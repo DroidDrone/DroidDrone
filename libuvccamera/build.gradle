@@ -1,0 +1,61 @@
+plugins {
+	id 'com.android.library'
+}
+
+android {
+	namespace 'com.serenegiant.uvccamera'
+	ndkVersion '26.3.11579264'
+	compileSdk 34
+
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_1_8
+		targetCompatibility JavaVersion.VERSION_1_8
+	}
+
+    defaultConfig {
+   		minSdk 24
+		targetSdk 34
+		ndk {
+			abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+		}
+		externalNativeBuild {
+			cmake {
+				arguments "-DCMAKE_BUILD_TYPE=Release"
+				arguments "-DANDROID_STL=c++_shared"
+				arguments "-DANDROID_ARM_MODE=arm"
+				arguments "-DANDROID_TOOLCHAIN=clang"
+			}
+			ndkBuild{
+
+			}
+		}
+    }
+
+	externalNativeBuild {
+		// use cmake to compile the libjpeg-turbo,
+		// then copy the libturbojpeg.a, jconfig.h, jconfigint.h and jversion.h to the prebuilt/{abi} folder
+		/*cmake {
+			path "src/main/jni/libjpeg-turbo/CMakeLists.txt"
+		}*/
+		ndkBuild{
+			path "src/main/jni/Android.mk"
+		}
+	}
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+	sourceSets {
+		main {
+			jniLibs.srcDir 'src/main/libs'
+		}
+	}
+}
+
+dependencies {
+
+}

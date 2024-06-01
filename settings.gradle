@@ -17,3 +17,4 @@ rootProject.name = "DD"
 include ':Control'
 include ':Flight'
 include ':Common'
+include ':libuvccamera'

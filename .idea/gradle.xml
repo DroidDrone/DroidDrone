@@ -14,6 +14,7 @@
             <option value="$PROJECT_DIR$/Common" />
             <option value="$PROJECT_DIR$/Control" />
             <option value="$PROJECT_DIR$/Flight" />
+            <option value="$PROJECT_DIR$/libuvccamera" />
           </set>
         </option>
       </GradleProjectSettings>
