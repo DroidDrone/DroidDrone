@@ -1,6 +1,6 @@
 ## What is DroidDrone
 
-With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav) or [Betaflight](https://github.com/betaflight/betaflight) drone via the Internet. You only need two Android phones (requires version 7.0 or later) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
+With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav) or [Betaflight](https://github.com/betaflight/betaflight) drone via the Internet. You only need two Android phones (requires min version 7, Android 10+ is recommended) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
 
 ## Install and configure
 
@@ -56,7 +56,7 @@ Not all OSD elements (but many important ones) are supported by DroidDrone.
 
 ![OSD](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_osd.jpg?raw=true)
 
-At the top of the screen you can see the specific OSD items such as the battery level for both phones, camera and OpenGL FPS, video bitrate and network latency. You can also start and stop video recording with the button on the right.
+At the top of the screen you can see the specific OSD items such as the battery level and cellular signal strength for both phones, camera and OpenGL FPS, video bitrate and network latency. You can also start and stop video recording with the button on the right.
 The recorded video should be saved in the "Android/media/de.droiddrone.flight/Video" folder.
 
 #### DroidDrone currently supports:
