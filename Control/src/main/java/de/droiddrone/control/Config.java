@@ -34,6 +34,7 @@ public class Config {
     private String key;
     private boolean isViewer;
     private String cameraId;
+    private boolean useUsbCamera;
     private int cameraResolutionWidth;
     private int cameraResolutionHeight;
     private int cameraFpsMin;
@@ -71,6 +72,7 @@ public class Config {
     private void loadConfig(){
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
         cameraId = preferences.getString("cameraId", "");
+        useUsbCamera = preferences.getBoolean("useUsbCamera", false);
         try{
             String cameraResolution = preferences.getString("cameraResolution", "");
             String[] sizes = cameraResolution.split("x");
@@ -267,6 +269,10 @@ public class Config {
 
     public String getCameraId(){
         return cameraId;
+    }
+
+    public boolean isUseUsbCamera(){
+        return useUsbCamera;
     }
 
     public String getIp(){

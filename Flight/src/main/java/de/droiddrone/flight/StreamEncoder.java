@@ -58,8 +58,10 @@ public class StreamEncoder {
     private boolean sendFrames = false;
     private boolean writeToRecorder;
     private boolean isAudioSending;
+    private boolean isVideoEncoderInitialized;
     private int audioThreadId;
     private long lastBitrateReduceTs;
+    private Surface surface;
 
     public StreamEncoder(Camera camera, AudioSource audioSource, Config config){
         this.camera = camera;
@@ -67,6 +69,7 @@ public class StreamEncoder {
         this.config = config;
         writeToRecorder = false;
         isAudioSending = false;
+        isVideoEncoderInitialized = false;
         audioThreadId = 0;
     }
 
@@ -108,13 +111,13 @@ public class StreamEncoder {
             e.printStackTrace();
             return null;
         }
-        Surface surface;
         try {
             surface = videoEncoder.createInputSurface();
             videoEncoder.start();
         } catch (IllegalStateException e) {
             log("videoEncoder.start error: " + e);
             e.printStackTrace();
+            surface = null;
             return null;
         }
         bitRateCounter = 0;
@@ -126,8 +129,17 @@ public class StreamEncoder {
             }
         }
         encoderBitrateChange = true;
+        isVideoEncoderInitialized = true;
         log("videoEncoder started.");
         return surface;
+    }
+
+    public Surface getSurface(){
+        return surface;
+    }
+
+    public boolean isVideoEncoderInitialized(){
+        return isVideoEncoderInitialized;
     }
 
     public int getAudioBitRate(){
@@ -365,9 +377,9 @@ public class StreamEncoder {
     };
 
     private MediaFormat getEncoderFormat(){
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.cameraResolution.getWidth(), camera.cameraResolution.getHeight());
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.getWidth(), camera.getHeight());
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, baseBitRates[bitRateIndex]);
-        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.frameRate.getUpper());
+        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.getTargetFps());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         if (Build.VERSION.SDK_INT >= 25){
             mediaFormat.setFloat(MediaFormat.KEY_I_FRAME_INTERVAL, 0.5f);
@@ -383,8 +395,13 @@ public class StreamEncoder {
 
     public void close(){
         audioThreadId++;
+        isVideoEncoderInitialized = false;
+        surface = null;
         if (videoEncoder != null){
-            videoEncoder.stop();
+            try {
+                videoEncoder.stop();
+            }catch (IllegalStateException ignored){
+            }
             videoEncoder.release();
             videoEncoder = null;
         }

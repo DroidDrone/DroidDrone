@@ -57,6 +57,7 @@
     <string name="serial_baud_rate">Serial port baud rate</string>
     <string name="serial_port_index">Serial port index</string>
     <string name="version_mismatch">Control/Flight version mismatch!</string>
+    <string name="use_usb_camera">Use external USB camera</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3280x2464</item>

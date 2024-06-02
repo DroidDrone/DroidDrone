@@ -42,7 +42,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentManager;
 
-import de.droiddrone.common.NetworkState;
 import de.droiddrone.common.TelephonyService;
 
 

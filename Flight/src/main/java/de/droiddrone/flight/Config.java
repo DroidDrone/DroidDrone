@@ -33,6 +33,7 @@ public class Config {
     private String key;
     private int connectionMode;
     private String cameraId;
+    private boolean useUsbCamera;
     private int cameraResolutionWidth;
     private int cameraResolutionHeight;
     private int cameraFpsMin;
@@ -73,6 +74,10 @@ public class Config {
 
     public String getCameraId() {
         return cameraId;
+    }
+
+    public boolean isUseUsbCamera(){
+        return useUsbCamera;
     }
 
     public int getCameraResolutionWidth() {
@@ -155,6 +160,7 @@ public class Config {
             mspRcRefreshRate = buffer.readUnsignedByteAsInt();
             serialBaudRate = buffer.readInt();
             serialPortIndex = buffer.readByte();
+            useUsbCamera = buffer.readBoolean();
             if (!updateConfig()) return -2;
             return 0;
         }catch (Exception e){
@@ -170,6 +176,7 @@ public class Config {
         key = preferences.getString("key", "DD");
         connectionMode = preferences.getInt("connectionMode", 0);
         cameraId = preferences.getString("cameraId", "0");
+        useUsbCamera = preferences.getBoolean("useUsbCamera", false);
         cameraResolutionWidth = preferences.getInt("cameraResolutionWidth", 1920);
         cameraResolutionHeight = preferences.getInt("cameraResolutionHeight", 1080);
         cameraFpsMin = preferences.getInt("cameraFpsMin", 60);
@@ -208,6 +215,7 @@ public class Config {
         editor.putString("key", key);
         editor.putInt("connectionMode", connectionMode);
         editor.putString("cameraId", cameraId);
+        editor.putBoolean("useUsbCamera", useUsbCamera);
         editor.putInt("cameraResolutionWidth", cameraResolutionWidth);
         editor.putInt("cameraResolutionHeight", cameraResolutionHeight);
         editor.putInt("cameraFpsMin", cameraFpsMin);

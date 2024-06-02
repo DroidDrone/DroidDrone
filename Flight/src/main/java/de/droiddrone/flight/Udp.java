@@ -197,19 +197,20 @@ public class Udp {
         if (isVideoStarting) return;
         isVideoStarting = true;
         videoSenderThreadId++;
-        if (!camera.initialize()) {
+        if (!camera.initialize(streamEncoder, mp4Recorder)) {
             log("Camera initialize error.");
             isVideoStarting = false;
             return;
         }
+        streamEncoder.close();
         streamEncoder.setDefaultHevc(isHevc);
         mp4Recorder.close();
         videoInitialFrame = null;
         videoFrameNum = 0;
         if (camera.isOpened(config.getCameraId())) {
-            camera.captureSessionInit();
+            camera.startPreview();
         }else{
-            if (!camera.openCamera(streamEncoder, mp4Recorder)) {
+            if (!camera.openCamera()) {
                 log("Camera open error.");
                 isVideoStarting = false;
                 return;
@@ -389,7 +390,7 @@ public class Udp {
                             sendVideoFrame(buf.data);
                             break;
                     }
-                    if (streamEncoder.videoStreamOutputBuffer.size() > Math.round(5 * camera.getFps() / 30f)){
+                    if (streamEncoder.videoStreamOutputBuffer.size() > Math.round(5 * camera.getCurrentFps() / 30f)){
                         streamEncoder.changeBitRate(false);
                     }
                 } catch (Exception e) {
@@ -764,10 +765,10 @@ public class Udp {
         }
         try {
             UdpPacketData packetData = new UdpPacketData(UdpCommon.VideoInitialFrame);
-            packetData.daos.writeShort(camera.cameraResolution.getWidth());
-            packetData.daos.writeShort(camera.cameraResolution.getHeight());
+            packetData.daos.writeShort(camera.getWidth());
+            packetData.daos.writeShort(camera.getHeight());
             packetData.daos.writeBoolean(streamEncoder.getCurrentCodecType().equals(MediaCommon.hevcCodecMime));
-            packetData.daos.writeBoolean(camera.frontFacing);
+            packetData.daos.writeBoolean(camera.isFrontFacing());
             packetData.daos.write(buf, 0, buf.length);
             udpSender.sendPacket(packetData.getData());
         } catch (Exception e) {
@@ -812,7 +813,7 @@ public class Udp {
     }
 
     private void processFrameSendTime(long timeMs){
-        int frameTimeMs = 1000 / camera.getFps();
+        int frameTimeMs = 1000 / camera.getCurrentFps();
         if (timeMs > frameTimeMs * 1.5f){
             streamEncoder.setLockIncreaseBitrate(true);
             streamEncoder.changeBitRate(false);

@@ -51,7 +51,6 @@ public class Mp4Recorder {
     private Surface surface;
     private MediaMuxer muxer;
     private int videoBitRate;
-    private int audioBitRate;
     private int videoTrackIndex = -1, audioTrackIndex = -1;
     private boolean isRecording = false;
     private long startRecordingTimestamp;
@@ -119,7 +118,7 @@ public class Mp4Recorder {
     }
 
     private void startAudioEncoder(){
-        audioBitRate = config.getRecordedAudioBitrate();
+        int audioBitRate = config.getRecordedAudioBitrate();
 
         String encoderName = MediaCommon.getCodecName(MediaCommon.audioCodecMime, true);
         log("startAudioEncoder: "+encoderName);
@@ -224,7 +223,7 @@ public class Mp4Recorder {
         if (!isInitialized || !isStoragePermissionGranted()) return;
         this.streamEncoder = streamEncoder;
         if (streamEncoder == null){
-            camera.addRecorderSurface();
+            camera.startCapture();
         }else{
             streamEncoder.setWriteToRecorder(true);
             Thread streamEncoderThread = new Thread(streamEncoderThreadRun);
@@ -286,7 +285,7 @@ public class Mp4Recorder {
         if (!isRecording) return;
         log("stopRecording");
         if (streamEncoder == null){
-            camera.removeRecorderSurface();
+            camera.stopCapture();
         }else{
             streamEncoder.setWriteToRecorder(false);
         }
@@ -389,9 +388,9 @@ public class Mp4Recorder {
     };
 
     private MediaFormat getEncoderFormat(){
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.cameraResolution.getWidth(), camera.cameraResolution.getHeight());
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.getWidth(), camera.getHeight());
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitRate);
-        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.frameRate.getUpper());
+        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.getTargetFps());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 3);
         return mediaFormat;
@@ -410,7 +409,10 @@ public class Mp4Recorder {
             }
         }
         if (videoEncoder != null){
-            videoEncoder.stop();
+            try {
+                videoEncoder.stop();
+            }catch (IllegalStateException ignored){
+            }
             videoEncoder.release();
             videoEncoder = null;
         }

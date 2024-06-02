@@ -111,7 +111,7 @@ public class PhoneTelemetry {
 
     private void sendCameraFps() {
         DataWriter writer = new DataWriter(false);
-        writer.writeShort((short) camera.getFps());
+        writer.writeShort((short) camera.getCurrentFps());
         telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_CAMERA_FPS, writer.getData()));
     }
 

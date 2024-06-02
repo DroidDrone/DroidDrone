@@ -47,7 +47,8 @@ public class DDService extends Service {
     private static int mspApiCompatibilityLevel = FcCommon.MSP_API_COMPATIBILITY_UNKNOWN;
     private Timer mainTimer;
     private Udp udp;
-    private Camera camera;
+    private InternalCamera internalCamera;
+    private UsbCamera usbCamera;
     private StreamEncoder streamEncoder;
     private Mp4Recorder mp4Recorder;
     private AudioSource audioSource;
@@ -91,22 +92,31 @@ public class DDService extends Service {
             startForeground(1, notification);
         }
 
-        if (camera == null) camera = new Camera(this, MainActivity.config);
+        boolean useUsbCamera = MainActivity.config.isUseUsbCamera();
+        if (useUsbCamera){
+            if (usbCamera == null) {
+                usbCamera = new UsbCamera(this, MainActivity.config);
+            }
+        }else {
+            if (internalCamera == null) {
+                internalCamera = new InternalCamera(this, MainActivity.config);
+            }
+        }
         if (audioSource == null) audioSource = new AudioSource(this);
         if (MainActivity.config.isRecordAudio()) audioSource.initialize(MediaCommon.mp4AudioConsumerId);
         if (MainActivity.config.isSendAudioStream()) audioSource.initialize(MediaCommon.streamAudioConsumerId);
-        if (streamEncoder == null) streamEncoder = new StreamEncoder(camera, audioSource, MainActivity.config);
-        if (mp4Recorder == null) mp4Recorder = new Mp4Recorder(camera, this, audioSource, MainActivity.config);
+        if (streamEncoder == null) streamEncoder = new StreamEncoder(useUsbCamera ? usbCamera : internalCamera, audioSource, MainActivity.config);
+        if (mp4Recorder == null) mp4Recorder = new Mp4Recorder(useUsbCamera ? usbCamera : internalCamera, this, audioSource, MainActivity.config);
         this.getExternalMediaDirs();
         if (serial != null) serial.close();
         serial = new Serial(this, MainActivity.config);
         msp = new Msp(serial, MainActivity.config);
         serial.setMsp(msp);
         serial.initialize();
-        phoneTelemetry = new PhoneTelemetry(this, streamEncoder, camera, mp4Recorder);
+        phoneTelemetry = new PhoneTelemetry(this, streamEncoder, useUsbCamera ? usbCamera : internalCamera, mp4Recorder);
         phoneTelemetry.initialize();
         if (udp != null) udp.close();
-        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, camera, msp, phoneTelemetry, MainActivity.config);
+        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, useUsbCamera ? usbCamera : internalCamera, msp, phoneTelemetry, MainActivity.config);
         Thread t1 = new Thread(() -> {
             if (!udp.initialize()){
                 log("UDP initialize error.");
@@ -193,7 +203,8 @@ public class DDService extends Service {
         if (streamEncoder != null) streamEncoder.close();
         if (mp4Recorder != null) mp4Recorder.close();
         if (audioSource != null) audioSource.close();
-        if (camera != null) camera.close();
+        if (internalCamera != null) internalCamera.close();
+        if (usbCamera != null) usbCamera.close();
         isConnected = false;
         fcInfo = null;
         System.gc();

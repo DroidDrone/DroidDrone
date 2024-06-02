@@ -9,6 +9,12 @@
             app:key="cameraId"
             app:defaultValue="0"
             app:title="@string/camera_id" />
+        <SwitchPreferenceCompat
+            app:key="useUsbCamera"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="false"
+            app:title="@string/use_usb_camera"/>
         <ListPreference
             app:key="cameraResolution"
             app:title="@string/camera_resolution"

@@ -26,8 +26,11 @@ import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.rarepebble.colorpicker.ColorPreference;
+
+import de.droiddrone.common.Logcat;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final int fragmentId = 3;
@@ -41,9 +44,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
         EditTextPreference cameraId = findPreference("cameraId");
+        SwitchPreferenceCompat useUsbCamera = findPreference("useUsbCamera");
         if (cameraId != null) {
             cameraId.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
             cameraId.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+            cameraId.setEnabled(useUsbCamera == null || !useUsbCamera.isChecked());
         }
         EditTextPreference serialPortIndex = findPreference("serialPortIndex");
         if (serialPortIndex != null) {
@@ -63,6 +68,12 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (channelsMapping != null) {
             channelsMapping.setOnPreferenceClickListener(preference -> {
                 activity.showChannelsMappingFragment();
+                return true;
+            });
+        }
+        if (useUsbCamera != null) {
+            useUsbCamera.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (cameraId != null) cameraId.setEnabled(Boolean.FALSE.equals(newValue));
                 return true;
             });
         }
