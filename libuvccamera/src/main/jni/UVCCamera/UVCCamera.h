@@ -361,6 +361,12 @@ public:
 	void setHorizontalMirror(int horizontalMirror);
 	void setVerticalMirror(int verticalMirror);
 	void setCameraAngle(int cameraAngle);
+
+	int getCurrentFps();
+	int getDefaultCameraFps();
+	int getFrameWidth();
+	int getFrameHeight();
+	bool isRunning();
 };
 
 #endif /* UVCCAMERA_H_ */

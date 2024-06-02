@@ -962,10 +962,10 @@ public final class LibUVCCameraUSBMonitor {
 		 * @param monitor
 		 * @param device
 		 */
-		private UsbControlBlock(final LibUVCCameraUSBMonitor monitor, final UsbDevice device) {
+		public UsbControlBlock(final LibUVCCameraUSBMonitor monitor, final UsbDevice device) {
 			if (DEBUG) Log.i(TAG, "UsbControlBlock:constructor");
-			mWeakMonitor = new WeakReference<LibUVCCameraUSBMonitor>(monitor);
-			mWeakDevice = new WeakReference<UsbDevice>(device);
+			mWeakMonitor = new WeakReference<>(monitor);
+			mWeakDevice = new WeakReference<>(device);
 			mConnection = monitor.mUsbManager.openDevice(device);
 			mInfo = updateDeviceInfo(monitor.mUsbManager, device, null);
 			final String name = device.getDeviceName();

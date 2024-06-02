@@ -2342,3 +2342,28 @@ void UVCCamera::setCameraAngle(int cameraAngle){
 		mPreview->setCameraAngle(cameraAngle);
 	}
 }
+
+int UVCCamera::getCurrentFps() {
+    if (mPreview) return mPreview->getCurrentFps();
+    return 0;
+}
+
+int UVCCamera::getDefaultCameraFps() {
+	if (mPreview) return mPreview->getDefaultCameraFps();
+	return 0;
+}
+
+int UVCCamera::getFrameWidth() {
+	if (mPreview) return mPreview->getFrameWidth();
+	return 0;
+}
+
+int UVCCamera::getFrameHeight() {
+	if (mPreview) return mPreview->getFrameHeight();
+	return 0;
+}
+
+bool UVCCamera::isRunning() {
+	if (mPreview) return mPreview->isRunning();
+	return false;
+}

@@ -1062,6 +1062,31 @@ public class UVCCamera {
 		}
 	}
 
+	public int getCurrentFps() {
+		if (!isLoaded) return 0;
+		return nativeGetCurrentFps(mNativePtr);
+	}
+
+	public int getDefaultCameraFps() {
+		if (!isLoaded) return 0;
+		return nativeGetDefaultCameraFps(mNativePtr);
+	}
+
+	public int getFrameWidth() {
+		if (!isLoaded) return 0;
+		return nativeGetFrameWidth(mNativePtr);
+	}
+
+	public int getFrameHeight() {
+		if (!isLoaded) return 0;
+		return nativeGetFrameHeight(mNativePtr);
+	}
+
+	public boolean isRunning() {
+		if (!isLoaded) return false;
+		return nativeIsRunning(mNativePtr);
+	}
+
 	private static final String[] SUPPORTS_CTRL = {
 			"D0:  Scanning Mode",
 			"D1:  Auto-Exposure Mode",
@@ -1349,4 +1374,9 @@ public class UVCCamera {
 	private static native void nativeHorizontalMirror(final long id_camera, final int horizontalMirror);
 	private static native void nativeVerticalMirror(final long id_camera, final int verticalMirror);
 	private static native void nativeCameraAngle(final long id_camera, final int cameraAngle);
+	private static native int nativeGetCurrentFps(final long id_camera);
+	private static native int nativeGetDefaultCameraFps(final long id_camera);
+	private static native int nativeGetFrameWidth(final long id_camera);
+	private static native int nativeGetFrameHeight(final long id_camera);
+	private static native boolean nativeIsRunning(final long id_camera);
 }

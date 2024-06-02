@@ -30,7 +30,6 @@
 #include <android/native_window.h>
 #include "objectarray.h"
 #include "RotateImage.h"
-#include <media/NdkMediaCodec.h>
 
 #pragma interface
 
@@ -79,6 +78,9 @@ private:
 	ObjectArray<uvc_frame_t *> previewFrames;
 	// Preview format
 	int32_t previewFormat;
+	// fps
+	struct timespec tStart, tEnd;
+	int framesCounter, currentFps, defaultCameraFps;
 //
 	volatile bool mIsCapturing;
 	ANativeWindow *mCaptureWindow;
@@ -129,7 +131,7 @@ public:
 	UVCPreview(uvc_device_handle_t *devh);
 	~UVCPreview();
 
-	inline const bool isRunning() const;
+	inline const bool isRunning() const {return mIsRunning; };
 	int setPreviewSize(int width, int height, int cameraAngle, int min_fps, int max_fps, int mode);
 	int setPreviewDisplay(ANativeWindow *preview_window);
 	int setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pixel_format);
@@ -141,6 +143,11 @@ public:
 	void setHorizontalMirror(int horizontalMirror);
 	void setVerticalMirror(int verticalMirror);
 	void setCameraAngle(int cameraAngle);
+
+    int getCurrentFps();
+    int getDefaultCameraFps();
+	int getFrameWidth();
+	int getFrameHeight();
 };
 
 #endif /* UVCPREVIEW_H_ */

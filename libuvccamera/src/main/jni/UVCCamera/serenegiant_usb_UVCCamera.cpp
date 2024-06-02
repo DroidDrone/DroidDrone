@@ -2024,6 +2024,66 @@ static jint nativeGetPrivacy(JNIEnv *env, jobject thiz,
 	RETURN(result, jint);
 }
 
+static jint nativeGetCurrentFps(JNIEnv *env, jobject thiz,
+							 ID_TYPE id_camera) {
+
+	jint result = JNI_ERR;
+	ENTER();
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		result = camera->getCurrentFps();
+	}
+	RETURN(result, jint);
+}
+
+static jint nativeGetDefaultCameraFps(JNIEnv *env, jobject thiz,
+								ID_TYPE id_camera) {
+
+	jint result = JNI_ERR;
+	ENTER();
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		result = camera->getDefaultCameraFps();
+	}
+	RETURN(result, jint);
+}
+
+static jint nativeGetFrameWidth(JNIEnv *env, jobject thiz,
+								ID_TYPE id_camera) {
+
+	jint result = JNI_ERR;
+	ENTER();
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		result = camera->getFrameWidth();
+	}
+	RETURN(result, jint);
+}
+
+static jint nativeGetFrameHeight(JNIEnv *env, jobject thiz,
+								ID_TYPE id_camera) {
+
+	jint result = JNI_ERR;
+	ENTER();
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		result = camera->getFrameHeight();
+	}
+	RETURN(result, jint);
+}
+
+static jboolean nativeIsRunning(JNIEnv *env, jobject thiz,
+								 ID_TYPE id_camera) {
+
+	jboolean result = JNI_FALSE;
+	ENTER();
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		result = camera->isRunning();
+	}
+	RETURN(result, jboolean);
+}
+
 //**********************************************************************
 //
 //**********************************************************************
@@ -2222,6 +2282,11 @@ static JNINativeMethod methods[] = {
 	{ "nativeUpdatePrivacyLimit",		"(J)I", (void *) nativeUpdatePrivacyLimit },
 	{ "nativeSetPrivacy",				"(JZ)I", (void *) nativeSetPrivacy },
 	{ "nativeGetPrivacy",				"(J)I", (void *) nativeGetPrivacy },
+	{ "nativeGetCurrentFps",				"(J)I", (void *) nativeGetCurrentFps },
+	{ "nativeGetDefaultCameraFps",				"(J)I", (void *) nativeGetDefaultCameraFps },
+	{ "nativeGetFrameWidth",				"(J)I", (void *) nativeGetFrameWidth },
+	{ "nativeGetFrameHeight",				"(J)I", (void *) nativeGetFrameHeight },
+	{ "nativeIsRunning",				"(J)Z", (void *) nativeIsRunning },
 };
 
 int register_uvccamera(JNIEnv *env) {
