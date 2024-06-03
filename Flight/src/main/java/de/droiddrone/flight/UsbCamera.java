@@ -71,7 +71,6 @@ public class UsbCamera implements Camera {
     private final LibUVCCameraUSBMonitor.OnDeviceConnectListener onDeviceConnectListener = new LibUVCCameraUSBMonitor.OnDeviceConnectListener() {
         @Override
         public void onAttach(final UsbDevice device) {
-            log("onAttach");
             if (!isOpened && device != null) {
                 if (device.getDeviceClass() == 239 && device.getDeviceSubclass() == 2) {
                     openCamera();
@@ -84,7 +83,6 @@ public class UsbCamera implements Camera {
             synchronized (mSync) {
                 if (uvcCamera != null && device != null) {
                     if (device.equals(uvcCamera.getDevice())) {
-                        log("onDetach");
                         isOpened = false;
                         uvcCamera.destroy();
                         uvcCamera = null;
@@ -98,7 +96,6 @@ public class UsbCamera implements Camera {
             synchronized (mSync) {
                 if (uvcCamera != null && device != null) {
                     if (device.equals(uvcCamera.getDevice())){
-                        log("onDisconnect");
                         isOpened = false;
                         uvcCamera.close();
                     }
@@ -108,15 +105,12 @@ public class UsbCamera implements Camera {
 
         @Override
         public void onConnect(UsbDevice device, LibUVCCameraUSBMonitor.UsbControlBlock ctrlBlock, boolean createNew) {
-            synchronized (mSync) {
-                log("onConnect");
-                //openCamera();
-            }
+
         }
 
         @Override
         public void onCancel(final UsbDevice device) {
-            log("onCancel");
+
         }
     };
 
@@ -140,7 +134,6 @@ public class UsbCamera implements Camera {
     @Override
     public boolean openCamera(){
         synchronized (mSync) {
-            log("openCamera");
             if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return false;
             }
