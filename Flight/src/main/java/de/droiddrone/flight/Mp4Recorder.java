@@ -42,7 +42,7 @@ import de.droiddrone.common.MediaCodecBuffer;
 import de.droiddrone.common.MediaCommon;
 
 public class Mp4Recorder {
-    private final Camera camera;
+    private final CameraManager cameraManager;
     private final Context context;
     private final AudioSource audioSource;
     private final Config config;
@@ -62,8 +62,8 @@ public class Mp4Recorder {
     private long audioStartTimestamp = -1;
     private StreamEncoder streamEncoder;
 
-    public Mp4Recorder(Camera camera, Context context, AudioSource audioSource, Config config) {
-        this.camera = camera;
+    public Mp4Recorder(CameraManager cameraManager, Context context, AudioSource audioSource, Config config) {
+        this.cameraManager = cameraManager;
         this.context = context;
         this.audioSource = audioSource;
         this.config = config;
@@ -223,7 +223,7 @@ public class Mp4Recorder {
         if (!isInitialized || !isStoragePermissionGranted()) return;
         this.streamEncoder = streamEncoder;
         if (streamEncoder == null){
-            camera.startCapture();
+            cameraManager.getCamera().startCapture();
         }else{
             streamEncoder.setWriteToRecorder(true);
             Thread streamEncoderThread = new Thread(streamEncoderThreadRun);
@@ -285,7 +285,7 @@ public class Mp4Recorder {
         if (!isRecording) return;
         log("stopRecording");
         if (streamEncoder == null){
-            camera.stopCapture();
+            cameraManager.getCamera().stopCapture();
         }else{
             streamEncoder.setWriteToRecorder(false);
         }
@@ -388,9 +388,9 @@ public class Mp4Recorder {
     };
 
     private MediaFormat getEncoderFormat(){
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.getWidth(), camera.getHeight());
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, cameraManager.getCamera().getWidth(), cameraManager.getCamera().getHeight());
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitRate);
-        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.getTargetFps());
+        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, cameraManager.getCamera().getTargetFps());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 3);
         return mediaFormat;

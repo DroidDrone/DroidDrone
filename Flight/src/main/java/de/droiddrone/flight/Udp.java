@@ -47,7 +47,7 @@ public class Udp {
     private final byte[] receiverBuf = new byte[UdpCommon.packetLength];
     private final StreamEncoder streamEncoder;
     private final Mp4Recorder mp4Recorder;
-    private final Camera camera;
+    private final CameraManager cameraManager;
     private final Msp msp;
     private final PhoneTelemetry phoneTelemetry;
     private final Config config;
@@ -64,14 +64,14 @@ public class Udp {
     private boolean isVideoStarting, isAudioStarting;
 
     public Udp(String destIpStr, int port, String key, int connectionMode, StreamEncoder streamEncoder,
-               Mp4Recorder mp4Recorder, Camera camera, Msp msp, PhoneTelemetry phoneTelemetry, Config config){
+               Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, PhoneTelemetry phoneTelemetry, Config config){
         this.destIpStr = destIpStr;
         this.port = port;
         this.key = key;
         this.connectionMode = connectionMode;
         this.streamEncoder = streamEncoder;
         this.mp4Recorder = mp4Recorder;
-        this.camera = camera;
+        this.cameraManager = cameraManager;
         this.msp = msp;
         this.phoneTelemetry = phoneTelemetry;
         this.config = config;
@@ -197,7 +197,7 @@ public class Udp {
         if (isVideoStarting) return;
         isVideoStarting = true;
         videoSenderThreadId++;
-        if (!camera.initialize(streamEncoder, mp4Recorder)) {
+        if (!cameraManager.getCamera().initialize(streamEncoder, mp4Recorder)) {
             log("Camera initialize error.");
             isVideoStarting = false;
             return;
@@ -207,10 +207,10 @@ public class Udp {
         mp4Recorder.close();
         videoInitialFrame = null;
         videoFrameNum = 0;
-        if (camera.isOpened(config.getCameraId())) {
-            camera.startPreview();
+        if (cameraManager.getCamera().isOpened(config.getCameraId())) {
+            cameraManager.getCamera().startPreview();
         }else{
-            if (!camera.openCamera()) {
+            if (!cameraManager.getCamera().openCamera()) {
                 log("Camera open error.");
                 isVideoStarting = false;
                 return;
@@ -390,7 +390,7 @@ public class Udp {
                             sendVideoFrame(buf.data);
                             break;
                     }
-                    if (streamEncoder.videoStreamOutputBuffer.size() > Math.round(5 * camera.getCurrentFps() / 30f)){
+                    if (streamEncoder.videoStreamOutputBuffer.size() > Math.round(5 * cameraManager.getCamera().getCurrentFps() / 30f)){
                         streamEncoder.changeBitRate(false);
                     }
                 } catch (Exception e) {
@@ -765,10 +765,10 @@ public class Udp {
         }
         try {
             UdpPacketData packetData = new UdpPacketData(UdpCommon.VideoInitialFrame);
-            packetData.daos.writeShort(camera.getWidth());
-            packetData.daos.writeShort(camera.getHeight());
+            packetData.daos.writeShort(cameraManager.getCamera().getWidth());
+            packetData.daos.writeShort(cameraManager.getCamera().getHeight());
             packetData.daos.writeBoolean(streamEncoder.getCurrentCodecType().equals(MediaCommon.hevcCodecMime));
-            packetData.daos.writeBoolean(camera.isFrontFacing());
+            packetData.daos.writeBoolean(cameraManager.getCamera().isFrontFacing());
             packetData.daos.write(buf, 0, buf.length);
             udpSender.sendPacket(packetData.getData());
         } catch (Exception e) {
@@ -813,7 +813,7 @@ public class Udp {
     }
 
     private void processFrameSendTime(long timeMs){
-        int frameTimeMs = 1000 / camera.getCurrentFps();
+        int frameTimeMs = 1000 / cameraManager.getCamera().getCurrentFps();
         if (timeMs > frameTimeMs * 1.5f){
             streamEncoder.setLockIncreaseBitrate(true);
             streamEncoder.changeBitRate(false);

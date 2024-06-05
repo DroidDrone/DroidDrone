@@ -37,7 +37,7 @@ import static de.droiddrone.common.Logcat.log;
 public class StreamEncoder {
     private static final int[] baseBitRates = {250000, 500000, 1000000, 2000000, 4000000, 6000000,
             8000000, 10000000, 15000000, 20000000};
-    private final Camera camera;
+    private final CameraManager cameraManager;
     private final AudioSource audioSource;
     private final Config config;
     private String codecType = MediaCommon.hevcCodecMime;
@@ -63,8 +63,8 @@ public class StreamEncoder {
     private long lastBitrateReduceTs;
     private Surface surface;
 
-    public StreamEncoder(Camera camera, AudioSource audioSource, Config config){
-        this.camera = camera;
+    public StreamEncoder(CameraManager cameraManager, AudioSource audioSource, Config config){
+        this.cameraManager = cameraManager;
         this.audioSource = audioSource;
         this.config = config;
         writeToRecorder = false;
@@ -377,9 +377,9 @@ public class StreamEncoder {
     };
 
     private MediaFormat getEncoderFormat(){
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, camera.getWidth(), camera.getHeight());
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, cameraManager.getCamera().getWidth(), cameraManager.getCamera().getHeight());
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, baseBitRates[bitRateIndex]);
-        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, camera.getTargetFps());
+        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, cameraManager.getCamera().getTargetFps());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         if (Build.VERSION.SDK_INT >= 25){
             mediaFormat.setFloat(MediaFormat.KEY_I_FRAME_INTERVAL, 0.5f);

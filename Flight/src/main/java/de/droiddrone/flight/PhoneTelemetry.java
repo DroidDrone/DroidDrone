@@ -32,17 +32,17 @@ import de.droiddrone.common.TelephonyService;
 public class PhoneTelemetry {
     private final Context context;
     private final StreamEncoder streamEncoder;
-    private final Camera camera;
+    private final CameraManager cameraManager;
     private final Mp4Recorder mp4Recorder;
     public final ArrayBlockingQueue<TelemetryData> telemetryOutputBuffer = new ArrayBlockingQueue<>(10);
     private int threadsId;
     private BatteryManager batteryManager;
     private TelephonyService telephonyService;
 
-    public PhoneTelemetry(Context context, StreamEncoder streamEncoder, Camera camera, Mp4Recorder mp4Recorder) {
+    public PhoneTelemetry(Context context, StreamEncoder streamEncoder, CameraManager cameraManager, Mp4Recorder mp4Recorder) {
         this.context = context;
         this.streamEncoder = streamEncoder;
-        this.camera = camera;
+        this.cameraManager = cameraManager;
         this.mp4Recorder = mp4Recorder;
     }
 
@@ -111,7 +111,7 @@ public class PhoneTelemetry {
 
     private void sendCameraFps() {
         DataWriter writer = new DataWriter(false);
-        writer.writeShort((short) camera.getCurrentFps());
+        writer.writeShort((short) cameraManager.getCamera().getCurrentFps());
         telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_CAMERA_FPS, writer.getData()));
     }
 
