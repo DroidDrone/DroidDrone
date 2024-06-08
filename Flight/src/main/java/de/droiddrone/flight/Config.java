@@ -34,6 +34,8 @@ public class Config {
     private int connectionMode;
     private String cameraId;
     private boolean useUsbCamera;
+    private int usbCameraFrameFormat;
+    private boolean usbCameraReset;
     private int cameraResolutionWidth;
     private int cameraResolutionHeight;
     private int cameraFpsMin;
@@ -78,6 +80,14 @@ public class Config {
 
     public boolean isUseUsbCamera(){
         return useUsbCamera;
+    }
+
+    public int getUsbCameraFrameFormat(){
+        return usbCameraFrameFormat;
+    }
+
+    public boolean isUsbCameraReset(){
+        return usbCameraReset;
     }
 
     public int getCameraResolutionWidth() {
@@ -161,6 +171,8 @@ public class Config {
             serialBaudRate = buffer.readInt();
             serialPortIndex = buffer.readByte();
             useUsbCamera = buffer.readBoolean();
+            usbCameraFrameFormat = buffer.readByte();
+            usbCameraReset = buffer.readBoolean();
             if (!updateConfig()) return -2;
             return 0;
         }catch (Exception e){
@@ -177,6 +189,8 @@ public class Config {
         connectionMode = preferences.getInt("connectionMode", 0);
         cameraId = preferences.getString("cameraId", "0");
         useUsbCamera = preferences.getBoolean("useUsbCamera", false);
+        usbCameraFrameFormat = preferences.getInt("usbCameraFrameFormat", 1);
+        usbCameraReset = preferences.getBoolean("usbCameraReset", true);
         cameraResolutionWidth = preferences.getInt("cameraResolutionWidth", 1920);
         cameraResolutionHeight = preferences.getInt("cameraResolutionHeight", 1080);
         cameraFpsMin = preferences.getInt("cameraFpsMin", 60);
@@ -216,6 +230,8 @@ public class Config {
         editor.putInt("connectionMode", connectionMode);
         editor.putString("cameraId", cameraId);
         editor.putBoolean("useUsbCamera", useUsbCamera);
+        editor.putInt("usbCameraFrameFormat", usbCameraFrameFormat);
+        editor.putBoolean("usbCameraReset", usbCameraReset);
         editor.putInt("cameraResolutionWidth", cameraResolutionWidth);
         editor.putInt("cameraResolutionHeight", cameraResolutionHeight);
         editor.putInt("cameraFpsMin", cameraFpsMin);

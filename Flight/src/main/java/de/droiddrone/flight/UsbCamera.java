@@ -159,6 +159,8 @@ public class UsbCamera implements Camera {
             }
             log("openCamera. SupportedSizes:" + uvcCamera.getSupportedSize());
 
+            int frameFormat = config.getUsbCameraFrameFormat();
+
             try {
                 uvcCamera.setPreviewSize(
                         targetResolution.getWidth(),
@@ -166,10 +168,12 @@ public class UsbCamera implements Camera {
                         UVCCamera.DEFAULT_CAMERA_ANGLE,
                         targetFrameRange.getLower(),
                         targetFrameRange.getUpper(),
-                        UVCCamera.FRAME_FORMAT_MJPEG);
+                        frameFormat);
             } catch (final IllegalArgumentException e) {
                 try {
-                    uvcCamera.setPreviewSize(targetResolution.getWidth(), targetResolution.getHeight(), UVCCamera.FRAME_FORMAT_YUYV);
+                    e.printStackTrace();
+                    log("UsbCamera: unsupported format. Set to defaults.");
+                    uvcCamera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.FRAME_FORMAT_YUYV);
                 } catch (final IllegalArgumentException e1) {
                     uvcCamera.destroy();
                     return false;
@@ -192,17 +196,19 @@ public class UsbCamera implements Camera {
             isOpened = true;
             uvcCamera.startPreview();
             uvcCamera.updateCameraParams();
-            uvcCamera.resetBrightness();
-            uvcCamera.resetContrast();
-            uvcCamera.resetHue();
-            uvcCamera.resetWhiteBlance();
-            uvcCamera.resetSaturation();
-            uvcCamera.resetGamma();
-            uvcCamera.resetGain();
-            uvcCamera.resetSharpness();
-            uvcCamera.resetZoom();
-            uvcCamera.resetFocus();
-            uvcCamera.setAutoWhiteBlance(true);
+            if (config.isUsbCameraReset()) {
+                uvcCamera.resetBrightness();
+                uvcCamera.resetContrast();
+                uvcCamera.resetHue();
+                uvcCamera.resetWhiteBlance();
+                uvcCamera.resetSaturation();
+                uvcCamera.resetGamma();
+                uvcCamera.resetGain();
+                uvcCamera.resetSharpness();
+                uvcCamera.resetZoom();
+                uvcCamera.resetFocus();
+                uvcCamera.setAutoWhiteBlance(true);
+            }
             return true;
         }
     }

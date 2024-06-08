@@ -55,6 +55,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             serialPortIndex.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
             serialPortIndex.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
         }
+        setListPreferenceSummary(findPreference("usbCameraFrameFormat"));
         setListPreferenceSummary(findPreference("cameraResolution"));
         setListPreferenceSummary(findPreference("cameraFps"));
         setListPreferenceSummary(findPreference("bitrateLimit"));

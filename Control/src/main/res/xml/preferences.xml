@@ -16,6 +16,20 @@
             app:defaultValue="false"
             app:title="@string/use_usb_camera"/>
         <ListPreference
+            app:key="usbCameraFrameFormat"
+            app:title="@string/usb_camera_frame_format"
+            app:entries="@array/usbCameraFrameFormatEntries"
+            app:entryValues="@array/usbCameraFrameFormatValues"
+            app:defaultValue="1"
+            app:dependency="useUsbCamera"/>
+        <SwitchPreferenceCompat
+            app:key="usbCameraReset"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="true"
+            app:title="@string/usb_camera_reset_to_defaults"
+            app:dependency="useUsbCamera"/>
+        <ListPreference
             app:key="cameraResolution"
             app:title="@string/camera_resolution"
             app:entries="@array/cameraResolutionsEntries"

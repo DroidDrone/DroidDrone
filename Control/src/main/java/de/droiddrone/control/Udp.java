@@ -869,6 +869,8 @@ public class Udp {
             packetData.daos.writeInt(config.getSerialBaudRate());
             packetData.daos.writeByte(config.getSerialPortIndex());
             packetData.daos.writeBoolean(config.isUseUsbCamera());
+            packetData.daos.writeByte(config.getUsbCameraFrameFormat());
+            packetData.daos.writeBoolean(config.isUsbCameraReset());
             udpSender.sendPacket(packetData.getData());
         } catch (Exception e) {
             e.printStackTrace();

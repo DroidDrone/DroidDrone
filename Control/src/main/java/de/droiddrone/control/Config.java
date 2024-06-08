@@ -35,6 +35,8 @@ public class Config {
     private boolean isViewer;
     private String cameraId;
     private boolean useUsbCamera;
+    private int usbCameraFrameFormat;
+    private boolean usbCameraReset;
     private int cameraResolutionWidth;
     private int cameraResolutionHeight;
     private int cameraFpsMin;
@@ -73,6 +75,8 @@ public class Config {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
         cameraId = preferences.getString("cameraId", "");
         useUsbCamera = preferences.getBoolean("useUsbCamera", false);
+        usbCameraFrameFormat = parseInt(preferences.getString("usbCameraFrameFormat", ""), 1);
+        usbCameraReset = preferences.getBoolean("usbCameraReset", true);
         try{
             String cameraResolution = preferences.getString("cameraResolution", "");
             String[] sizes = cameraResolution.split("x");
@@ -273,6 +277,14 @@ public class Config {
 
     public boolean isUseUsbCamera(){
         return useUsbCamera;
+    }
+
+    public int getUsbCameraFrameFormat(){
+        return usbCameraFrameFormat;
+    }
+
+    public boolean isUsbCameraReset(){
+        return usbCameraReset;
     }
 
     public String getIp(){
