@@ -61,8 +61,8 @@ The recorded video should be saved in the "Android/media/de.droiddrone.flight/Vi
 
 #### DroidDrone currently supports:
 
-* INAV version 7.0.0, 7.1.0 (MSP API 2.5)
-* Betaflight 4.4.2, 4.4.3 (MSP API 1.45, 1.46)
+* INAV version 7+ ([MSP API](https://github.com/iNavFlight/inav/blob/master/src/main/msp/msp_protocol.h) 2.5)
+* Betaflight 4.4.2+ ([MSP API](https://github.com/betaflight/betaflight/blob/master/src/main/msp/msp_protocol.h) 1.45, 1.46)
 
 ## Contributing & Development
 
