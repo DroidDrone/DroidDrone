@@ -394,6 +394,7 @@ public class StreamEncoder {
     }
 
     public void close(){
+        sendFrames = false;
         audioThreadId++;
         isVideoEncoderInitialized = false;
         surface = null;

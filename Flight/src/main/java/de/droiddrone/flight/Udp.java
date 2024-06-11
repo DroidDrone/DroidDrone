@@ -224,6 +224,14 @@ public class Udp {
         isVideoStarting = false;
     }
 
+    private void stopAudioVideo(){
+        videoSenderThreadId++;
+        audioSenderThreadId++;
+        streamEncoder.close();
+        mp4Recorder.close();
+        cameraManager.getCamera().close();
+    }
+
     private void startAudioStream(){
         if (isAudioStarting) return;
         isAudioStarting = true;
@@ -353,6 +361,12 @@ public class Udp {
                     rcChannels[i] = buffer.readShort();
                 }
                 msp.setRawRc(rcChannels);
+                break;
+            }
+            case UdpCommon.Disconnect:
+            {
+                // stop stream when controller disconnected
+                stopAudioVideo();
                 break;
             }
         }

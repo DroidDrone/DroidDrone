@@ -140,8 +140,11 @@ public class Udp {
                     	}
                     }
                     if (packetName == UdpCommon.Disconnect && clientId != -1){
-                    	disconnectClient(clientId);
-                		continue;
+                        if (clientId == 1){// 1 - controller - resend packet to drone
+                            if (senders[0] != null) senders[0].sendPacket(data);
+                        }
+                        disconnectClient(clientId);
+                        continue;
                     }
                     if (clientId != -1 && receiverBuffers[clientId] != null) {
                     	receiverBuffers[clientId].addPacket(receiverPacket);
