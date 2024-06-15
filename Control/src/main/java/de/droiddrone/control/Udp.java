@@ -94,7 +94,6 @@ public class Udp {
             socket.setReceiveBufferSize(UdpCommon.packetLength * 300);
             socket.setSendBufferSize(UdpCommon.packetLength);
             socket.setTrafficClass(0x10);
-            socket.connect(destIp, port);
             udpSender = new UdpSender(socket);
             udpSender.connect(destIp, port);
             receiverBuffer = new ReceiverBuffer(udpSender, false, key, key);
@@ -147,6 +146,9 @@ public class Udp {
             while (socket != null && !socket.isClosed() && id == threadsId) {
                 try {
                     socket.receive(receiverPacket);
+                    // check IP & port
+                    if (!receiverPacket.getAddress().equals(destIp)
+                            || receiverPacket.getPort() != port) continue;
                     receiverBuffer.addPacket(receiverPacket);
                 } catch (Exception e) {
                     log("Receiver error: " + e);

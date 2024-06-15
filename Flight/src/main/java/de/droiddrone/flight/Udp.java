@@ -99,7 +99,6 @@ public class Udp {
             socket.setTrafficClass(0x10);
             udpSender = new UdpSender(socket);
             if (connectionMode == 0) {
-                socket.connect(destIp, port);
                 udpSender.connect(destIp, port);
             }
             receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key, null);
@@ -150,6 +149,14 @@ public class Udp {
             while (socket != null && !socket.isClosed() && id == udpThreadsId) {
                 try {
                     socket.receive(receiverPacket);
+                    // check IP & port
+                    if (connectionMode == 0){// connect over server
+                        if (!receiverPacket.getAddress().equals(destIp)
+                                || receiverPacket.getPort() != port) continue;
+                    }else if (receiverBuffer.isConnected()){
+                        if (!receiverPacket.getAddress().equals(udpSender.getIp())
+                                || receiverPacket.getPort() != udpSender.getPort()) continue;
+                    }
                     receiverBuffer.addPacket(receiverPacket);
                 } catch (Exception e) {
                     log("Receiver error: " + e);
