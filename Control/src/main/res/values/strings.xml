@@ -222,10 +222,12 @@
     <string-array name="usbCameraFrameFormatEntries">
         <item>YUV2(YUYV)</item>
         <item>MJPEG</item>
+        <item>H264</item>
     </string-array>
 
     <string-array name="usbCameraFrameFormatValues">
         <item>0</item>
         <item>1</item>
+        <item>2</item>
     </string-array>
 </resources>
