@@ -62,6 +62,7 @@
     <string name="usb_camera_reset_to_defaults">USB camera - reset to defaults on connecting</string>
 
     <string-array name="cameraResolutionsEntries">
+        <item>3840x2160</item>
         <item>3280x2464</item>
         <item>2592x1944</item>
         <item>2400x1080</item>
@@ -81,6 +82,7 @@
     </string-array>
 
     <string-array name="cameraResolutionsValues">
+        <item>3840x2160</item>
         <item>3280x2464</item>
         <item>2592x1944</item>
         <item>2400x1080</item>
@@ -103,14 +105,14 @@
         <item>90 – 120 FPS</item>
         <item>60 – 90 FPS</item>
         <item>30 – 60 FPS</item>
-        <item>30 – 30 FPS</item>
+        <item>15 – 30 FPS</item>
     </string-array>
 
     <string-array name="cameraFpsValues">
         <item>90-120</item>
         <item>60-90</item>
         <item>30-60</item>
-        <item>30-30</item>
+        <item>15-30</item>
     </string-array>
 
     <string-array name="bitrateLimitEntries">
