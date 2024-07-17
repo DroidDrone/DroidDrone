@@ -26,8 +26,8 @@ import java.util.Calendar;
 import java.util.Scanner;
 
 public class Main {
-	final static int versionCode = 1;
-	final static String versionName = "1.0.1";
+	final static int versionCode = 2;
+	final static String versionName = "1.2.0";
 	private static Udp udp;
 	private static Config config;
 	
