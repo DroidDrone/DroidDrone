@@ -31,9 +31,11 @@ If you use the server app, you can also connect other phones as viewers. You nee
 
 ### Settings & Usage
 
-In the Control app you can configure various settings, such as Camera ID. If your phone has a wide-angle camera, it's best to use it. A wide-angle camera usually has ID 2 or 3, but on some phones, it can be different (my old Redmi has ID 21...).
+In the Control app you can configure various settings, such as Camera ID (for internal phone cameras). If your phone has a wide-angle camera, it's best to use it. A wide-angle camera usually has ID 2 or 3, but on some phones, it can be different (my old Redmi has ID 21...).
 
-> Cameras with high frame rates have lower internal latency, but wide-angle cameras on most Android phones work only with 30 FPS. You may be able to use the main camera with an external wide-angle lens.
+You can also connect an external USB camera (UVC) using the USB OTG splitter.
+
+> Cameras with high frame rates have lower internal latency.
 
 Before the first flight you also need to check in the settings of control app that the channels mapping is correct for your remote controller:
 
@@ -74,4 +76,3 @@ To create a sprites map you can use the Adobe Air ShoeBox app and the BMFont for
 ## Todo
 * ArduPilot support
 * Google Maps tracking
-* External USB cameras support
