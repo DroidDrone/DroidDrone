@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- CDC driver -->
-    <usb-device vendor-id="1155" product-id="22336" /><!-- 0x0483 / 0x5740: ST CDC -->
+    <!-- FC -->
+    <usb-device vendor-id="1155" product-id="22336" />
+    <usb-device vendor-id="4617" product-id="22337" />
     <!-- USB UVC Camera -->
-    <usb-device class="239" subclass="2" />	<!-- all device of UVC -->
+    <usb-device class="239" subclass="2" />
 </resources>
