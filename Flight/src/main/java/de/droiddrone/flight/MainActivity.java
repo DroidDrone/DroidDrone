@@ -172,15 +172,15 @@ public class MainActivity extends Activity {
                     }else{
                         tvFcStatus.setTextColor(Color.GREEN);
                         status += " " + fcInfo.getFcName() + " Ver. " + fcInfo.getFcVersionStr() + getResources().getString(R.string.detected);
-                        int mspApiCompatibilityLevel = DDService.getMspApiCompatibilityLevel();
-                        switch (mspApiCompatibilityLevel){
-                            case FcCommon.MSP_API_COMPATIBILITY_UNKNOWN:
-                            case FcCommon.MSP_API_COMPATIBILITY_ERROR:
-                                status += getResources().getString(R.string.msp_api_compatibility_error);
+                        int fcApiCompatibilityLevel = DDService.getFcApiCompatibilityLevel();
+                        switch (fcApiCompatibilityLevel){
+                            case FcCommon.FC_API_COMPATIBILITY_UNKNOWN:
+                            case FcCommon.FC_API_COMPATIBILITY_ERROR:
+                                status += getResources().getString(R.string.fc_api_compatibility_error);
                                 tvFcStatus.setTextColor(Color.RED);
                                 break;
-                            case FcCommon.MSP_API_COMPATIBILITY_WARNING:
-                                status += getResources().getString(R.string.msp_api_compatibility_warning);
+                            case FcCommon.FC_API_COMPATIBILITY_WARNING:
+                                status += getResources().getString(R.string.fc_api_compatibility_warning);
                                 tvFcStatus.setTextColor(Color.YELLOW);
                                 break;
                         }

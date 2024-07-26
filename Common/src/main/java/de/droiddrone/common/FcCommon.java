@@ -24,11 +24,12 @@ import java.util.List;
 public class FcCommon {
     public static final byte MAX_SUPPORTED_RC_CHANNEL_COUNT = 18;
 
-    public static final byte MSP_API_COMPATIBILITY_UNKNOWN = 0;
-    public static final byte MSP_API_COMPATIBILITY_ERROR = 1;
-    public static final byte MSP_API_COMPATIBILITY_WARNING = 2;
-    public static final byte MSP_API_COMPATIBILITY_OK = 3;
+    public static final byte FC_API_COMPATIBILITY_UNKNOWN = 0;
+    public static final byte FC_API_COMPATIBILITY_ERROR = 1;
+    public static final byte FC_API_COMPATIBILITY_WARNING = 2;
+    public static final byte FC_API_COMPATIBILITY_OK = 3;
 
+    // MSP commands
     public static final short MSP_API_VERSION = 1;
     public static final short MSP_FC_VARIANT = 2;
     public static final short MSP_FC_VERSION = 3;
@@ -84,16 +85,17 @@ public class FcCommon {
         BATTERY_INIT
     }
 
-    // all supported MSP API versions here
-    public static final MspApiSupportedVersion[] mspApiSupportedVersionInav = {new MspApiSupportedVersion(0, 2, 5)};
-    public static final MspApiSupportedVersion[] mspApiSupportedVersionBetaflight = {new MspApiSupportedVersion(0, 1, 45), new MspApiSupportedVersion(0, 1, 46)};
+    // all supported API versions here
+    public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_INAV = {new ApiSupportedVersion(0, 2, 5)};
+    public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_BETAFLIGHT = {new ApiSupportedVersion(0, 1, 45), new ApiSupportedVersion(0, 1, 46)};
+    public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_ARDUPILOT = {new ApiSupportedVersion(0, 2, 3)};
 
-    public static class MspApiSupportedVersion{
+    public static class ApiSupportedVersion {
         public final int protocolVersion;
         public final int versionMajor;
         public final int versionMinor;
 
-        public MspApiSupportedVersion(int protocolVersion, int versionMajor, int versionMinor) {
+        public ApiSupportedVersion(int protocolVersion, int versionMajor, int versionMinor) {
             this.protocolVersion = protocolVersion;
             this.versionMajor = versionMajor;
             this.versionMinor = versionMinor;
@@ -341,5 +343,40 @@ public class FcCommon {
             }
         }
         return activeBoxes.toArray(new FcCommon.BoxMode[0]);
+    }
+
+    public static int getFcApiCompatibilityLevel(FcInfo fcInfo) {
+        int compatibilityLevel = FcCommon.FC_API_COMPATIBILITY_UNKNOWN;
+        if (fcInfo == null) return compatibilityLevel;
+        FcCommon.ApiSupportedVersion[] supportedVersions;
+        switch (fcInfo.getFcVariant()) {
+            case FcInfo.FC_VARIANT_INAV:
+                supportedVersions = FcCommon.API_SUPPORTED_VERSION_INAV;
+                break;
+            case FcInfo.FC_VARIANT_BETAFLIGHT:
+                supportedVersions = FcCommon.API_SUPPORTED_VERSION_BETAFLIGHT;
+                break;
+            case FcInfo.FC_VARIANT_ARDUPILOT:
+                supportedVersions = FcCommon.API_SUPPORTED_VERSION_ARDUPILOT;
+                break;
+            default:
+                return compatibilityLevel;
+        }
+        for (FcCommon.ApiSupportedVersion supportedVersion : supportedVersions) {
+            if (fcInfo.getApiProtocolVersion() == supportedVersion.protocolVersion) {
+                if (fcInfo.getApiVersionMajor() == supportedVersion.versionMajor) {
+                    if (fcInfo.getApiVersionMinor() == supportedVersion.versionMinor) {
+                        return FcCommon.FC_API_COMPATIBILITY_OK;
+                    }else{
+                        compatibilityLevel = FcCommon.FC_API_COMPATIBILITY_WARNING;
+                    }
+                }else{
+                    if (compatibilityLevel < FcCommon.FC_API_COMPATIBILITY_ERROR) compatibilityLevel = FcCommon.FC_API_COMPATIBILITY_ERROR;
+                }
+            }else{
+                if (compatibilityLevel < FcCommon.FC_API_COMPATIBILITY_ERROR) compatibilityLevel = FcCommon.FC_API_COMPATIBILITY_ERROR;
+            }
+        }
+        return compatibilityLevel;
     }
 }

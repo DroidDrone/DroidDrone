@@ -70,6 +70,17 @@ public class DataReader {
         return value & 0xFFFF;
     }
 
+    public int readUnsignedInt24AsInt(){
+        short value;
+        if (isBigEndian){
+            value = (short) (((data[offset] & 0xFF) << 16) | ((data[offset+1] & 0xFF) << 8) | (data[offset+2] & 0xFF));
+        }else{
+            value = (short) (((data[offset + 2] & 0xFF) << 16) | ((data[offset + 1] & 0xFF) << 8) | (data[offset] & 0xFF));
+        }
+        offset += 3;
+        return value & 0xFFFFFF;
+    }
+
     public int readInt(){
         int value;
         if (isBigEndian){

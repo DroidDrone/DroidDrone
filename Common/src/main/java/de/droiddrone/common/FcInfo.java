@@ -21,34 +21,37 @@ public class FcInfo {
     public static final byte FC_VARIANT_UNKNOWN = 0;
     public static final byte FC_VARIANT_INAV = 1;
     public static final byte FC_VARIANT_BETAFLIGHT = 2;
+    public static final byte FC_VARIANT_ARDUPILOT = 3;
     public static final String INAV_ID = "INAV";
     public static final String BETAFLIGHT_ID = "BTFL";
+    public static final String ARDUPILOT_ID = "ARDU";
     public static final String INAV_NAME = "INAV";
     public static final String BETAFLIGHT_NAME = "Betaflight";
+    public static final String ARDUPILOT_NAME = "ArduPilot";
     private final int fcVariant;
     private final int fcVersionMajor;
     private final int fcVersionMinor;
     private final int fcVersionPatchLevel;
-    private final int mspProtocolVersion;
-    private final int mspApiVersionMajor;
-    private final int mspApiVersionMinor;
+    private final int apiProtocolVersion;
+    private final int apiVersionMajor;
+    private final int apiVersionMinor;
 
-    public FcInfo(int fcVariant, int fcVersionMajor, int fcVersionMinor, int fcVersionPatchLevel, int mspProtocolVersion, int mspApiVersionMajor, int mspApiVersionMinor) {
+    public FcInfo(int fcVariant, int fcVersionMajor, int fcVersionMinor, int fcVersionPatchLevel, int apiProtocolVersion, int apiVersionMajor, int apiVersionMinor) {
         this.fcVariant = fcVariant;
         this.fcVersionMajor = fcVersionMajor;
         this.fcVersionMinor = fcVersionMinor;
         this.fcVersionPatchLevel = fcVersionPatchLevel;
-        this.mspProtocolVersion = mspProtocolVersion;
-        this.mspApiVersionMajor = mspApiVersionMajor;
-        this.mspApiVersionMinor = mspApiVersionMinor;
+        this.apiProtocolVersion = apiProtocolVersion;
+        this.apiVersionMajor = apiVersionMajor;
+        this.apiVersionMinor = apiVersionMinor;
     }
 
     public String getFcVersionStr(){
         return fcVersionMajor + "." + fcVersionMinor + "." + fcVersionPatchLevel;
     }
 
-    public String getMspVersionStr(){
-        return mspProtocolVersion + "." + mspApiVersionMajor + "." + mspApiVersionMinor;
+    public String getFcApiVersionStr(){
+        return apiProtocolVersion + "." + apiVersionMajor + "." + apiVersionMinor;
     }
 
     public String getFcName(){
@@ -59,6 +62,9 @@ public class FcInfo {
                 break;
             case FC_VARIANT_BETAFLIGHT:
                 name = BETAFLIGHT_NAME;
+                break;
+            case FC_VARIANT_ARDUPILOT:
+                name = ARDUPILOT_NAME;
                 break;
         }
         return name;
@@ -80,15 +86,15 @@ public class FcInfo {
         return fcVersionPatchLevel;
     }
 
-    public int getMspProtocolVersion() {
-        return mspProtocolVersion;
+    public int getApiProtocolVersion() {
+        return apiProtocolVersion;
     }
 
-    public int getMspApiVersionMajor() {
-        return mspApiVersionMajor;
+    public int getApiVersionMajor() {
+        return apiVersionMajor;
     }
 
-    public int getMspApiVersionMinor() {
-        return mspApiVersionMinor;
+    public int getApiVersionMinor() {
+        return apiVersionMinor;
     }
 }

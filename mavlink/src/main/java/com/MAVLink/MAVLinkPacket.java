@@ -244,6 +244,7 @@ public class MAVLinkPacket implements Serializable {
             buffer[i++] = payload.payload.get(j);
         }*/
         System.arraycopy(payload.payload.array(), 0, buffer, i, payloadSize);
+        i += payloadSize;
 
         generateCRC(payloadSize);
         buffer[i++] = (byte) (crc.getLSB());

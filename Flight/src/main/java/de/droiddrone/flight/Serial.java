@@ -56,23 +56,29 @@ public class Serial {
     private final Config config;
     private final UsbManager manager;
     private Msp msp;
+    private Mavlink mavlink;
     private UsbSerialPort port;
     private UsbDeviceConnection connection;
     private UsbSerialDriver driver;
     private int threadsId;
     private Thread initThread, readerThread;
     private int status;
+    private boolean isArduPilot;
 
     public Serial(Context context, Config config){
         this.context = context;
         this.config = config;
         threadsId = 0;
         msp = null;
+        mavlink = null;
         manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         status = STATUS_NOT_INITIALIZED;
     }
 
-    public void initialize() {
+    public void initialize(Msp msp, Mavlink mavlink) {
+        this.msp = msp;
+        this.mavlink = mavlink;
+        isArduPilot = false;
         serialBaudRate = config.getSerialBaudRate();
         serialPortIndex = config.getSerialPortIndex();
         threadsId++;
@@ -120,9 +126,11 @@ public class Serial {
         int count = availableDrivers.size();
         for (int i = 0; i < count; i++) {
             String name = availableDrivers.get(i).getDevice().getManufacturerName();
-            if (count == 1 || FcInfo.INAV_ID.equals(name) || FcInfo.BETAFLIGHT_ID.equals(name) || FcInfo.BETAFLIGHT_NAME.equals(name)) {
+            if (count == 1 || FcInfo.INAV_ID.equals(name) || FcInfo.BETAFLIGHT_ID.equals(name) || FcInfo.BETAFLIGHT_NAME.equals(name)
+                    || FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name)) {
                 driver = availableDrivers.get(i);
                 status = STATUS_DEVICE_FOUND;
+                isArduPilot = FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name);
                 log("Serial device manufacturer name: " + name);
                 log("Serial device driver version: " + driver.getDevice().getVersion());
                 log("Serial device driver vendorId: " + driver.getDevice().getVendorId());
@@ -151,10 +159,6 @@ public class Serial {
         status = STATUS_USB_PERMISSION_REQUESTED;
         manager.requestPermission(driver.getDevice(), intent);
         return false;
-    }
-
-    public void setMsp(Msp msp){
-        this.msp = msp;
     }
 
     private boolean openPort(){
@@ -188,7 +192,11 @@ public class Serial {
         readerThread.setName("readerThread");
         readerThread.setPriority(Thread.MAX_PRIORITY);
         readerThread.start();
-        if (!msp.isInitialized()) msp.initialize();
+        if (isArduPilot){
+            if (!mavlink.isInitialized()) mavlink.initialize();
+        } else {
+            if (!msp.isInitialized()) msp.initialize();
+        }
         return true;
     }
 
@@ -204,7 +212,11 @@ public class Serial {
                     int size = port.read(buf, serialPortReadWriteTimeoutMs);
                     if (size > 0){
                         status = STATUS_SERIAL_PORT_OPENED;
-                        msp.processData(buf, size);
+                        if (isArduPilot){
+                            mavlink.processData(buf, size);
+                        } else {
+                            msp.processData(buf, size);
+                        }
                     }
                 } catch (Exception e) {
                     status = STATUS_SERIAL_PORT_ERROR;
@@ -219,20 +231,34 @@ public class Serial {
         }
     };
 
-    public void writeData(byte[] data, boolean checkMspCompatibility){
+    public void writeDataMsp(byte[] data, boolean checkMspCompatibility){
         if (data == null || port == null || !port.isOpen()) return;
-        if (checkMspCompatibility && msp.getMspApiCompatibilityLevel() != FcCommon.MSP_API_COMPATIBILITY_OK
-                && msp.getMspApiCompatibilityLevel() != FcCommon.MSP_API_COMPATIBILITY_WARNING) return;
+        if (checkMspCompatibility && FcCommon.getFcApiCompatibilityLevel(msp.getFcInfo()) != FcCommon.FC_API_COMPATIBILITY_OK
+                && FcCommon.getFcApiCompatibilityLevel(msp.getFcInfo()) != FcCommon.FC_API_COMPATIBILITY_WARNING) return;
         try {
             port.write(data, serialPortReadWriteTimeoutMs);
         } catch (IOException e) {
-            log("Serial writeData error: " + e);
+            log("Serial writeDataMsp error: " + e);
         }
+    }
+
+    public void writeDataMavlink(byte[] data){
+        if (data == null || port == null || !port.isOpen()) return;
+        try {
+            port.write(data, serialPortReadWriteTimeoutMs);
+        } catch (IOException e) {
+            log("Serial writeDataMavlink error: " + e);
+        }
+    }
+
+    public boolean isArduPilot(){
+        return isArduPilot;
     }
 
     public void close(){
         threadsId++;
         if (msp != null) msp.close();
+        if (mavlink != null) mavlink.close();
         try {
             if (port != null) port.close();
         } catch (IOException e) {

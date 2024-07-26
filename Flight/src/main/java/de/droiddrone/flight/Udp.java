@@ -49,6 +49,7 @@ public class Udp {
     private final Mp4Recorder mp4Recorder;
     private final CameraManager cameraManager;
     private final Msp msp;
+    private final Mavlink mavlink;
     private final PhoneTelemetry phoneTelemetry;
     private final Config config;
     private DatagramSocket socket;
@@ -64,7 +65,7 @@ public class Udp {
     private boolean isVideoStarting, isAudioStarting;
 
     public Udp(String destIpStr, int port, String key, int connectionMode, StreamEncoder streamEncoder,
-               Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, PhoneTelemetry phoneTelemetry, Config config){
+               Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry, Config config){
         this.destIpStr = destIpStr;
         this.port = port;
         this.key = key;
@@ -73,6 +74,7 @@ public class Udp {
         this.mp4Recorder = mp4Recorder;
         this.cameraManager = cameraManager;
         this.msp = msp;
+        this.mavlink = mavlink;
         this.phoneTelemetry = phoneTelemetry;
         this.config = config;
         videoSenderThreadId = 0;
@@ -304,8 +306,11 @@ public class Udp {
             }
             case UdpCommon.FcInfo:
             {
-                if (!msp.isInitialized()) break;
-                sendFcInfo(msp.getFcInfo());
+                if (msp.isInitialized()){
+                    sendFcInfo(msp.getFcInfo());
+                }else if (mavlink.isInitialized()){
+                    sendFcInfo(mavlink.getFcInfo());
+                }
                 break;
             }
             case UdpCommon.OsdConfig:
@@ -661,7 +666,7 @@ public class Udp {
                             packetData.daos.writeInt(buffer.readInt());//armingFlags
                             packetData.daos.writeByte(buffer.readByte());//configStateFlags
                             short coreTemperatureCelsius = 0;
-                            if (fcInfo.getMspApiVersionMajor() > 1 || fcInfo.getMspApiVersionMajor() == 1 && fcInfo.getMspApiVersionMinor() > 45) {
+                            if (fcInfo.getApiVersionMajor() > 1 || fcInfo.getApiVersionMajor() == 1 && fcInfo.getApiVersionMinor() > 45) {
                                 coreTemperatureCelsius = buffer.readShort();
                             }
                             packetData.daos.writeShort(coreTemperatureCelsius);
@@ -767,9 +772,9 @@ public class Udp {
             packetData.daos.writeByte(fcInfo.getFcVersionMajor());
             packetData.daos.writeByte(fcInfo.getFcVersionMinor());
             packetData.daos.writeByte(fcInfo.getFcVersionPatchLevel());
-            packetData.daos.writeByte(fcInfo.getMspProtocolVersion());
-            packetData.daos.writeByte(fcInfo.getMspApiVersionMajor());
-            packetData.daos.writeByte(fcInfo.getMspApiVersionMinor());
+            packetData.daos.writeByte(fcInfo.getApiProtocolVersion());
+            packetData.daos.writeByte(fcInfo.getApiVersionMajor());
+            packetData.daos.writeByte(fcInfo.getApiVersionMinor());
             udpSender.sendPacket(packetData.getData());
         } catch (Exception e) {
             e.printStackTrace();

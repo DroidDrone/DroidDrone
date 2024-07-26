@@ -42,7 +42,7 @@ public class Msp {
     private final Config config;
     public final ArrayBlockingQueue<TelemetryData> telemetryOutputBuffer = new ArrayBlockingQueue<>(30);
     private int fcVariant;
-    private int mspProtocolVersion;
+    private int apiProtocolVersion;
     private int apiVersionMajor;
     private int apiVersionMinor;
     private int fcVersionMajor;
@@ -76,7 +76,7 @@ public class Msp {
         this.serial = serial;
         this.config = config;
         fcVariant = FcInfo.FC_VARIANT_UNKNOWN;
-        mspProtocolVersion = -1;
+        apiProtocolVersion = -1;
         apiVersionMajor = -1;
         apiVersionMinor = -1;
         fcVersionMajor = -1;
@@ -85,20 +85,20 @@ public class Msp {
     }
 
     public boolean isInitialized(){
-        isInitialized = (fcVariant != FcInfo.FC_VARIANT_UNKNOWN && mspProtocolVersion != -1 && apiVersionMajor != -1 && apiVersionMinor != -1
+        isInitialized = (fcVariant != FcInfo.FC_VARIANT_UNKNOWN && apiProtocolVersion != -1 && apiVersionMajor != -1 && apiVersionMinor != -1
                 && fcVersionMajor != -1 && fcVersionMinor != -1 && fcVersionPatchLevel != -1);
         if (isInitialized && fcInfo == null) setFcInfo();
         return isInitialized;
     }
 
     private void setFcInfo(){
-        fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, mspProtocolVersion, apiVersionMajor, apiVersionMinor);
+        fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor);
         onTimestamp = System.currentTimeMillis();
         flyTimestamp = 0;
         runFcInit = false;
         runGetRxMap = true;
         log(fcInfo.getFcName() + " Ver. " + fcInfo.getFcVersionStr() + " detected.");
-        log("MSP API Ver.: " + fcInfo.getMspVersionStr());
+        log("MSP API Ver.: " + fcInfo.getFcApiVersionStr());
     }
 
     public void setRawRcMinPeriod(){
@@ -107,38 +107,6 @@ public class Msp {
 
     public FcInfo getFcInfo(){
         return fcInfo;
-    }
-
-    public int getMspApiCompatibilityLevel() {
-        int compatibilityLevel = FcCommon.MSP_API_COMPATIBILITY_UNKNOWN;
-        if (fcInfo == null) return compatibilityLevel;
-        FcCommon.MspApiSupportedVersion[] supportedVersions;
-        switch (fcInfo.getFcVariant()) {
-            case FcInfo.FC_VARIANT_INAV:
-                supportedVersions = FcCommon.mspApiSupportedVersionInav;
-                break;
-            case FcInfo.FC_VARIANT_BETAFLIGHT:
-                supportedVersions = FcCommon.mspApiSupportedVersionBetaflight;
-                break;
-            default:
-                return compatibilityLevel;
-        }
-        for (FcCommon.MspApiSupportedVersion supportedVersion : supportedVersions) {
-            if (fcInfo.getMspProtocolVersion() == supportedVersion.protocolVersion) {
-                if (fcInfo.getMspApiVersionMajor() == supportedVersion.versionMajor) {
-                    if (fcInfo.getMspApiVersionMinor() == supportedVersion.versionMinor) {
-                        return FcCommon.MSP_API_COMPATIBILITY_OK;
-                    }else{
-                        compatibilityLevel = FcCommon.MSP_API_COMPATIBILITY_WARNING;
-                    }
-                }else{
-                    if (compatibilityLevel < FcCommon.MSP_API_COMPATIBILITY_ERROR) compatibilityLevel = FcCommon.MSP_API_COMPATIBILITY_ERROR;
-                }
-            }else{
-                if (compatibilityLevel < FcCommon.MSP_API_COMPATIBILITY_ERROR) compatibilityLevel = FcCommon.MSP_API_COMPATIBILITY_ERROR;
-            }
-        }
-        return compatibilityLevel;
     }
 
     public void initialize() {
@@ -296,7 +264,7 @@ public class Msp {
             DataReader buffer = new DataReader(payload, false);
             switch (code) {
                 case FcCommon.MSP_API_VERSION:
-                    mspProtocolVersion = buffer.readUnsignedByteAsInt();
+                    apiProtocolVersion = buffer.readUnsignedByteAsInt();
                     apiVersionMajor = buffer.readUnsignedByteAsInt();
                     apiVersionMinor = buffer.readUnsignedByteAsInt();
                     break;
@@ -561,7 +529,7 @@ public class Msp {
         for (short rcChannel : mappedChannels) {
             writer.writeShort(rcChannel);
         }
-        serial.writeData(getMspRequestWithPayload(FcCommon.MSP_SET_RAW_RC, writer.getData()), true);
+        serial.writeDataMsp(getMspRequestWithPayload(FcCommon.MSP_SET_RAW_RC, writer.getData()), true);
     }
     
     private short[] processRxMap(short[] rcChannels){
@@ -575,89 +543,89 @@ public class Msp {
     }
 
     public void getBatteryState(){
-        serial.writeData(getMspRequest(FcCommon.MSP_BATTERY_STATE), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_BATTERY_STATE), true);
     }
 
     public void getRxMap(){
-        serial.writeData(getMspRequest(FcCommon.MSP_RX_MAP), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_RX_MAP), true);
     }
 
     public void getInavStatus(){
-        serial.writeData(getMspRequest(FcCommon.MSP2_INAV_STATUS), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP2_INAV_STATUS), true);
     }
 
     public void getInavAnalog(){
-        serial.writeData(getMspRequest(FcCommon.MSP2_INAV_ANALOG), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP2_INAV_ANALOG), true);
     }
 
     public void getAttitude(){
-        serial.writeData(getMspRequest(FcCommon.MSP_ATTITUDE), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_ATTITUDE), true);
     }
 
     public void getAltitude(){
-        serial.writeData(getMspRequest(FcCommon.MSP_ALTITUDE), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_ALTITUDE), true);
     }
 
     public void getAnalog(){
-        serial.writeData(getMspRequest(FcCommon.MSP_ANALOG), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_ANALOG), true);
     }
 
     public void getOsdConfig(){
-        serial.writeData(getMspRequest(FcCommon.MSP_OSD_CONFIG), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_OSD_CONFIG), true);
     }
 
     public void getBatteryConfig(){
-        serial.writeData(getMspRequest(FcCommon.MSP_BATTERY_CONFIG), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_BATTERY_CONFIG), true);
     }
 
     public void getVtxConfig(){
-        serial.writeData(getMspRequest(FcCommon.MSP_VTX_CONFIG), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_VTX_CONFIG), true);
     }
 
     public void getBoxNames(){
-        serial.writeData(getMspRequest(FcCommon.MSP_BOXNAMES), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_BOXNAMES), true);
     }
 
     public void getBoxNames(byte page){
         byte[] data = getMspRequestWithPayload(FcCommon.MSP_BOXNAMES, new byte[] { page });
-        serial.writeData(data, true);
+        serial.writeDataMsp(data, true);
     }
 
     public void getBoxIds(){
-        serial.writeData(getMspRequest(FcCommon.MSP_BOXIDS), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_BOXIDS), true);
     }
 
     public void getBoxIds(byte page){
         byte[] data = getMspRequestWithPayload(FcCommon.MSP_BOXIDS, new byte[] { page });
-        serial.writeData(data, true);
+        serial.writeDataMsp(data, true);
     }
 
     public void getStatus(){
-        serial.writeData(getMspRequest(FcCommon.MSP_STATUS), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_STATUS), true);
     }
 
     public void getRawGps(){
-        serial.writeData(getMspRequest(FcCommon.MSP_RAW_GPS), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_RAW_GPS), true);
     }
 
     public void getCompGps(){
-        serial.writeData(getMspRequest(FcCommon.MSP_COMP_GPS), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_COMP_GPS), true);
     }
 
     public void getOsdCanvas(){
-        serial.writeData(getMspRequest(FcCommon.MSP_OSD_CANVAS), true);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_OSD_CANVAS), true);
     }
 
     public void getFcVersion(){
-        serial.writeData(getMspRequest(FcCommon.MSP_FC_VERSION), false);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_FC_VERSION), false);
     }
 
     public void getFcVariant(){
-        serial.writeData(getMspRequest(FcCommon.MSP_FC_VARIANT), false);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_FC_VARIANT), false);
     }
 
     public void getMspApiVersion(){
-        serial.writeData(getMspRequest(FcCommon.MSP_API_VERSION), false);
+        serial.writeDataMsp(getMspRequest(FcCommon.MSP_API_VERSION), false);
     }
 
     private byte[] getMspRequest(short cmd){

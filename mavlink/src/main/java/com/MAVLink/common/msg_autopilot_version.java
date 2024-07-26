@@ -12,6 +12,8 @@ import com.MAVLink.Messages.MAVLinkPayload;
 import com.MAVLink.Messages.Units;
 import com.MAVLink.Messages.Description;
 
+import java.util.Arrays;
+
 /**
  * Version and capability of autopilot software. This should be emitted in response to a request with MAV_CMD_REQUEST_MESSAGE.
  */
@@ -268,7 +270,7 @@ public class msg_autopilot_version extends MAVLinkMessage {
      */
     @Override
     public String toString() {
-        return "MAVLINK_MSG_ID_AUTOPILOT_VERSION - sysid:"+sysid+" compid:"+compid+" capabilities:"+capabilities+" uid:"+uid+" flight_sw_version:"+flight_sw_version+" middleware_sw_version:"+middleware_sw_version+" os_sw_version:"+os_sw_version+" board_version:"+board_version+" vendor_id:"+vendor_id+" product_id:"+product_id+" flight_custom_version:"+flight_custom_version+" middleware_custom_version:"+middleware_custom_version+" os_custom_version:"+os_custom_version+" uid2:"+uid2+"";
+        return "MAVLINK_MSG_ID_AUTOPILOT_VERSION - sysid:"+sysid+" compid:"+compid+" capabilities:"+capabilities+" uid:"+uid+" flight_sw_version:"+flight_sw_version+" middleware_sw_version:"+middleware_sw_version+" os_sw_version:"+os_sw_version+" board_version:"+board_version+" vendor_id:"+vendor_id+" product_id:"+product_id+" flight_custom_version:"+ Arrays.toString(flight_custom_version) +" middleware_custom_version:"+ Arrays.toString(middleware_custom_version) +" os_custom_version:"+ Arrays.toString(os_custom_version) +" uid2:"+ Arrays.toString(uid2) +"";
     }
 
     /**

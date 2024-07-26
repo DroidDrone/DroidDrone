@@ -44,7 +44,7 @@ public class DDService extends Service {
     public static boolean isConnected = false;
     private static int serialPortStatus = Serial.STATUS_NOT_INITIALIZED;
     private static FcInfo fcInfo = null;
-    private static int mspApiCompatibilityLevel = FcCommon.MSP_API_COMPATIBILITY_UNKNOWN;
+    private static int fcApiCompatibilityLevel = FcCommon.FC_API_COMPATIBILITY_UNKNOWN;
     private Timer mainTimer;
     private Udp udp;
     private CameraManager cameraManager;
@@ -53,6 +53,7 @@ public class DDService extends Service {
     private AudioSource audioSource;
     private Serial serial;
     private Msp msp;
+    private Mavlink mavlink;
     private PhoneTelemetry phoneTelemetry;
     private int connectionMode;
 
@@ -101,12 +102,12 @@ public class DDService extends Service {
         if (serial != null) serial.close();
         serial = new Serial(this, MainActivity.config);
         msp = new Msp(serial, MainActivity.config);
-        serial.setMsp(msp);
-        serial.initialize();
+        mavlink = new Mavlink(serial, MainActivity.config);
+        serial.initialize(msp, mavlink);
         phoneTelemetry = new PhoneTelemetry(this, streamEncoder, cameraManager, mp4Recorder);
         phoneTelemetry.initialize();
         if (udp != null) udp.close();
-        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, cameraManager, msp, phoneTelemetry, MainActivity.config);
+        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, cameraManager, msp, mavlink, phoneTelemetry, MainActivity.config);
         Thread t1 = new Thread(() -> {
             if (!udp.initialize()){
                 log("UDP initialize error.");
@@ -140,8 +141,8 @@ public class DDService extends Service {
         return fcInfo;
     }
 
-    public static int getMspApiCompatibilityLevel(){
-        return mspApiCompatibilityLevel;
+    public static int getFcApiCompatibilityLevel(){
+        return fcApiCompatibilityLevel;
     }
 
     private void startMainTimer() {
@@ -161,14 +162,17 @@ public class DDService extends Service {
                 if (!isConnected && connectionMode == 0) udp.sendConnect();
                 serialPortStatus = serial.getStatus();
                 if (serialPortStatus == Serial.STATUS_SERIAL_PORT_ERROR){
-                    if (serial != null && msp != null) {
-                        serial.setMsp(msp);
-                        serial.initialize();
+                    if (serial != null && (msp != null || mavlink != null)) {
+                        serial.initialize(msp, mavlink);
                     }
                 }
-                if (fcInfo == null && msp != null) {
-                    fcInfo = msp.getFcInfo();
-                    mspApiCompatibilityLevel = msp.getMspApiCompatibilityLevel();
+                if (serial != null && fcInfo == null) {
+                    if (serial.isArduPilot()){
+                        if (mavlink != null) fcInfo = mavlink.getFcInfo();
+                    } else {
+                        if (msp != null) fcInfo = msp.getFcInfo();
+                    }
+                    fcApiCompatibilityLevel = FcCommon.getFcApiCompatibilityLevel(fcInfo);
                 }
             }
         };
