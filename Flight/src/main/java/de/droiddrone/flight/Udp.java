@@ -603,6 +603,12 @@ public class Udp {
                             buffer.readByte();//overlayRadioMode
                             packetData.daos.writeByte(buffer.readByte());//cameraFrameWidth
                             packetData.daos.writeByte(buffer.readByte());//cameraFrameHeight
+                            if (buffer.getRemaining() >= 2) { // 1.46
+                                buffer.readShort();//linkQualityAlarm
+                            }
+                            if (buffer.getRemaining() >= 2) { // 1.47
+                                buffer.readShort();//rssiDbmAlarm
+                            }
                             break;
                         }
                     }
@@ -666,7 +672,7 @@ public class Udp {
                             packetData.daos.writeInt(buffer.readInt());//armingFlags
                             packetData.daos.writeByte(buffer.readByte());//configStateFlags
                             short coreTemperatureCelsius = 0;
-                            if (fcInfo.getApiVersionMajor() > 1 || fcInfo.getApiVersionMajor() == 1 && fcInfo.getApiVersionMinor() > 45) {
+                            if (buffer.getRemaining() >= 2) { // 1.46
                                 coreTemperatureCelsius = buffer.readShort();
                             }
                             packetData.daos.writeShort(coreTemperatureCelsius);
