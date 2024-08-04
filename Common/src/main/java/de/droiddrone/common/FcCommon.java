@@ -60,11 +60,24 @@ public class FcCommon {
     public static final short DD_VIDEO_RECORDER_STATE = 0x4004;
     public static final short DD_VIDEO_RECORDER_START_STOP = 0x4005;
     public static final short DD_NETWORK_STATE = 0x4006;
+    public static final short DD_AP_OSD_CONFIG = 0x4007;
 
     public static final short MAX_RSSI = 1023;
     public static final byte BF_BOXMODES_PAGE_COUNT = 2;
 
     public static final int VTXDEV_UNKNOWN = 0xFF;
+
+    // ArduPilot parameters
+    public static final String AP_PARAM_OSD_W_RSSI = "OSD_W_RSSI";
+    public static final String AP_PARAM_OSD_W_NSAT = "OSD_W_NSAT";
+    public static final String AP_PARAM_OSD_W_BATVOLT = "OSD_W_BATVOLT";
+    public static final String AP_PARAM_OSD_W_AVGCELLV = "OSD_W_AVGCELLV";
+    public static final String AP_PARAM_OSD_UNITS = "OSD_UNITS";
+    public static final String AP_PARAM_OSD_MSG_TIME = "OSD_MSG_TIME";
+    public static final String AP_PARAM_OSD1_ENABLE = "OSD1_ENABLE";
+    public static final String AP_PARAM_OSD1_TXT_RES = "OSD1_TXT_RES";// 0 - 30x16, 1 - 50x18, 2 - 60x22
+    public static final String AP_PARAM_OSD_CELL_COUNT = "OSD_CELL_COUNT";
+
     public enum VtxLowerPowerDisarm{
         VTX_LOW_POWER_DISARM_OFF,
         VTX_LOW_POWER_DISARM_ALWAYS,

@@ -334,10 +334,10 @@ public class Udp {
                 byte fcVersionMajor = buffer.readByte();
                 byte fcVersionMinor = buffer.readByte();
                 byte fcVersionPatchLevel = buffer.readByte();
-                byte mspProtocolVersion = buffer.readByte();
+                byte apiProtocolVersion = buffer.readByte();
                 byte apiVersionMajor = buffer.readByte();
                 byte apiVersionMinor = buffer.readByte();
-                fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, mspProtocolVersion, apiVersionMajor, apiVersionMinor);
+                fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor);
                 osd.initialize(fcInfo);
                 break;
             }
@@ -669,6 +669,10 @@ public class Udp {
                     int networkType = buffer.readUnsignedByteAsInt();
                     int rssi = buffer.readUnsignedByteAsInt();
                     osd.setDroneNetworkState(networkType, rssi);
+                    break;
+                }
+                case FcCommon.DD_AP_OSD_CONFIG: {
+                    osd.setOsdConfigArduPilot(buffer);
                     break;
                 }
                 default:

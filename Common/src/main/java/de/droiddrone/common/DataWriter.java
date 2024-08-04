@@ -17,6 +17,7 @@
 
 package de.droiddrone.common;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +58,13 @@ public class DataWriter {
         for (int i = offset; i < offset+length; i++) {
             data.add(values[i]);
         }
+    }
+
+    public void writeUTF(String str){
+        if (str == null) return;
+        int length = str.length();
+        writeShort((short)length);
+        writeArray(str.getBytes(StandardCharsets.UTF_8), 0, length);
     }
 
     public int getSize(){

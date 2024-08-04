@@ -432,6 +432,17 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         if (glText != null) glText.addText(text, x, y);
     }
 
+    public void addText(String text, float x, float y, boolean addWarning){
+        float xOffset = 0;
+        if (glSprites != null) {
+            if (addWarning){
+                glSprites.addSprite(SpritesMapping.ALERT, x, y);
+                xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT) + 5 * screenFactor;
+            }
+        }
+        if (glText != null) glText.addText(text, x + xOffset, y);
+    }
+
     private void drawOsdFrame(){
         if (glSprites != null) {
             GLES31.glUseProgram(spritesShader);

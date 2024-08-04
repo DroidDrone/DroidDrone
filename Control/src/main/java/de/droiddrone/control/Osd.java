@@ -24,6 +24,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.droiddrone.common.DataReader;
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.NetworkState;
@@ -124,6 +125,7 @@ public class Osd {
     private final ArrayList<Integer> mahKmList = new ArrayList<>();
     private NetworkState droneNetworkState = new NetworkState();
     private NetworkState controlNetworkState = new NetworkState();
+    private boolean apOsd1Enabled = true;
 
     public Osd(GlRenderer renderer, Config config) {
         this.renderer = renderer;
@@ -306,6 +308,26 @@ public class Osd {
             }else{
                 glSprites.addSprite(SpritesMapping.HOME, getOsdItemScreenX(posX), getOsdItemScreenY(posY), 1.8f);
             }
+        }
+    }
+
+    private class OsdItemHomeDirDist extends OsdItem{
+
+        public OsdItemHomeDirDist(OsdItem item) {
+            super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
+        }
+
+        @Override
+        public void draw(){
+            GlSprites glSprites = renderer.getGlSpritesObject();
+            if (glSprites == null) return;
+            if (distanceToHome > 1) {
+                glSprites.addSpriteAngle(SpritesMapping.DIR_TO_HOME, getOsdItemScreenX(posX), getOsdItemScreenY(posY), directionToHome - yaw);
+            }else{
+                glSprites.addSprite(SpritesMapping.HOME, getOsdItemScreenX(posX), getOsdItemScreenY(posY), 1.8f);
+            }
+            boolean warning = (osdConfig != null && osdConfig.distAlarm > 0 && distanceToHome >= osdConfig.distAlarm);
+            renderer.addText(formatDistance(distanceToHome), getOsdItemScreenX(posX) + 1 * osdWidthFactor, getOsdItemScreenY(posY), warning);
         }
     }
 
@@ -523,7 +545,8 @@ public class Osd {
 
         @Override
         public void draw(){
-            renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), SpritesMapping.GPS_SAT, String.valueOf(numSat), true, false);
+            boolean warning = numSat < osdConfig.warnNumSat;
+            renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), SpritesMapping.GPS_SAT, String.valueOf(numSat), true, warning);
         }
     }
 
@@ -588,6 +611,18 @@ public class Osd {
             float horizonHeightD2 = glSprites.getSpriteHeight(SpritesMapping.ARTIFICIAL_HORIZON, sizeFactor) / 2f;
             float offsetY = pitch * screenFactor * 3f;
             glSprites.addSpriteAngle(SpritesMapping.ARTIFICIAL_HORIZON, centerX - horizonWidthD2, centerY + horizonHeightD2 + offsetY, -roll, sizeFactor);
+        }
+    }
+
+    private final class OsdItemHeadingGrad extends OsdItem{
+
+        public OsdItemHeadingGrad(OsdItem item) {
+            super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
+        }
+
+        @Override
+        public void draw(){
+            renderer.addText(Math.round(yaw) + "°", getOsdItemScreenX(posX), getOsdItemScreenY(posY));
         }
     }
 
@@ -752,6 +787,7 @@ public class Osd {
             int percentage = batteryPercentage >= 0 ? batteryPercentage : getBatteryPercentageFromCellVoltage(cellVoltage);
             int icon = getBatteryIcon(percentage);
             boolean warning = (icon == SpritesMapping.BATT_ALERT);
+            warning = warning || cellVoltage < osdConfig.warnAvgCellVolt;
             renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), icon, formatVoltage(cellVoltage), true, warning);
         }
     }
@@ -767,6 +803,7 @@ public class Osd {
             int percentage = batteryPercentage >= 0 ? batteryPercentage : getBatteryPercentageFromCellVoltage(getCellVoltage());
             int icon = getBatteryIcon(percentage);
             boolean warning = (icon == SpritesMapping.BATT_ALERT);
+            warning = warning || voltage < osdConfig.warnBatVolt;
             renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), icon, formatVoltage(voltage), true, warning);
         }
     }
@@ -799,6 +836,15 @@ public class Osd {
             this.posX = posX;
             this.posY = posY;
             this.variant = variant;
+        }
+
+        public OsdItem(int id, boolean isVisible, byte posX, byte posY) {
+            this.id = id;
+            this.isVisible = isVisible;
+            this.isBlink = false;
+            this.posX = posX;
+            this.posY = posY;
+            this.variant = 0;
         }
 
         public OsdItem(int id, short item, int fcVariant, byte osdSelectedProfile) {
@@ -944,6 +990,12 @@ public class Osd {
         if (activeItems == null) {
             drawTelemetryDataWarning(0, "Awaiting OSD initialization...");
             return;
+        }
+        if (fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_ARDUPILOT){
+            if (!apOsd1Enabled){
+                drawTelemetryDataWarning(0, "OSD Screen1 is disabled.");
+                return;
+            }
         }
         boolean drawStatistic = wasArmed && !isArmed;
         if (drawStatistic && lastArmTime > 5){
@@ -1277,6 +1329,104 @@ public class Osd {
         osdStats.setHomeDistance(this.distanceToHome);
     }
 
+    private void initOsdItemsArduPilot(OsdConfig osdConfig) {
+        OsdItem[] allItems = osdConfig.osdItems;
+        int activeCount = 0;
+        int c = 0;
+        for (OsdItem item : allItems) {
+            if (item != null && item.isVisible) activeCount++;
+        }
+        updateLastDataTimestamp();
+        activeItems = new OsdItem[activeCount];
+        for (OsdItem item : allItems) {
+            if (item == null || !item.isVisible) continue;
+            if (item.id < 0 || item.id >= OsdCommon.AP_OSD_ITEMS.length){
+                activeItems[c] = item;// wrong id, use default class
+                continue;
+            }
+            String osdItemName = OsdCommon.AP_OSD_ITEMS[item.id];
+            switch (osdItemName) {
+                case OsdCommon.AP_OSD_ALTITUDE:
+                    activeItems[c] = new OsdItemAltitude(item);
+                    break;
+                case OsdCommon.AP_OSD_BAT_VOLT:
+                    activeItems[c] = new OsdItemMainBattVoltage(item);
+                    break;
+                case OsdCommon.AP_OSD_RSSI:
+                    activeItems[c] = new OsdItemRssi(item);
+                    break;
+                case OsdCommon.AP_OSD_CURRENT:
+                    activeItems[c] = new OsdItemCurrentDraw(item);
+                    break;
+                case OsdCommon.AP_OSD_BATUSED:
+                    activeItems[c] = new OsdItemMahDraw(item);
+                    break;
+                case OsdCommon.AP_OSD_SATS:
+                    activeItems[c] = new OsdItemGpsSats(item);
+                    break;
+                case OsdCommon.AP_OSD_FLTMODE:
+                    activeItems[c] = new OsdItemFlyMode(item);
+                    break;
+                case OsdCommon.AP_OSD_MESSAGE:
+                    activeItems[c] = new OsdItemMessages(item);
+                    break;
+                case OsdCommon.AP_OSD_GSPEED:
+                    activeItems[c] = new OsdItemGpsSpeed(item);
+                    break;
+                case OsdCommon.AP_OSD_HORIZON:
+                    activeItems[c] = new OsdItemArtificialHorizon(item);
+                    break;
+                case OsdCommon.AP_OSD_HOME:
+                    activeItems[c] = new OsdItemHomeDirDist(item);
+                    break;
+                case OsdCommon.AP_OSD_HEADING:
+                    activeItems[c] = new OsdItemHeadingGrad(item);
+                    break;
+                case OsdCommon.AP_OSD_COMPASS:
+                    activeItems[c] = new OsdItemCompassBar(item);
+                    break;
+                case OsdCommon.AP_OSD_GPSLAT:
+                    activeItems[c] = new OsdItemGpsLat(item);
+                    break;
+                case OsdCommon.AP_OSD_GPSLONG:
+                    activeItems[c] = new OsdItemGpsLon(item);
+                    break;
+                case OsdCommon.AP_OSD_TEMP:
+                    activeItems[c] = new OsdItemCoreTemperature(item);
+                    break;
+                case OsdCommon.AP_OSD_DIST:
+                    activeItems[c] = new OsdItemTripDistance(item);
+                    break;
+                case OsdCommon.AP_OSD_FLTIME:
+                    activeItems[c] = new OsdItemFlyTime(item);
+                    break;
+                case OsdCommon.AP_OSD_EFF:
+                    activeItems[c] = new OsdItemEfficiencyMahPerKm(item);
+                    break;
+                case OsdCommon.AP_OSD_SIDEBARS:
+                    activeItems[c] = new OsdItemHorizonSidebars(item);
+                    break;
+                case OsdCommon.AP_OSD_CRSSHAIR:
+                    activeItems[c] = new OsdItemCrosshairs(item);
+                    break;
+                case OsdCommon.AP_OSD_HOMEDIST:
+                    activeItems[c] = new OsdItemHomeDist(item);
+                    break;
+                case OsdCommon.AP_OSD_HOMEDIR:
+                    activeItems[c] = new OsdItemHomeDir(item);
+                    break;
+                case OsdCommon.AP_OSD_CELLVOLT:
+                    activeItems[c] = new OsdItemMainBattCellVoltage(item);
+                    break;
+                case OsdCommon.AP_OSD_VTX_PWR:
+                    activeItems[c] = new OsdItemVtxPower(item);
+                    break;
+            }
+            if (activeItems[c] == null) activeItems[c] = item;// OSD item not implemented. Use parent class
+            c++;
+        }
+    }
+
     private void initOsdItems(OsdConfig osdConfig) {
         if (fcInfo == null) return;
         OsdItem[] allItems = osdConfig.osdItems;
@@ -1466,6 +1616,28 @@ public class Osd {
         initOsdItems(osdConfig);
     }
 
+    public void setOsdConfigArduPilot(DataReader buffer){
+        apOsd1Enabled = buffer.readBoolean();
+        byte videoSystem = buffer.readByte();//osd1TxtRes
+        byte units = buffer.readByte();
+        byte msgTime = buffer.readByte();
+        byte rssiAlarm = buffer.readByte();
+        byte warnNumSat = buffer.readByte();
+        byte warnBatVolt = buffer.readByte();
+        byte warnAvgCellVolt = buffer.readByte();
+        byte osdItemsCount = buffer.readByte();
+        OsdItem[] osdItems = new OsdItem[osdItemsCount];
+        for (int i = 0; i < osdItemsCount; i++) {
+            boolean isEnabled = buffer.readBoolean();
+            byte x = buffer.readByte();
+            byte y = buffer.readByte();
+            osdItems[i] = new OsdItem(i, isEnabled, x, y);
+        }
+        osdConfig = new OsdConfig(videoSystem, units, msgTime, rssiAlarm, warnNumSat, warnBatVolt, warnAvgCellVolt, osdItems);
+        initCanvasArduPilot(videoSystem);
+        initOsdItemsArduPilot(osdConfig);
+    }
+
     private void initCanvasInav(byte videoSystem){
         switch (videoSystem){
             case OsdCommon.InavVideoSystem.VIDEO_SYSTEM_AUTO:
@@ -1500,6 +1672,20 @@ public class Osd {
                 break;
             case OsdCommon.BtflVideoSystem.VIDEO_SYSTEM_HD:
                 setCanvasSize(OsdCommon.canvasSizes.HD_AVATAR_COLS, OsdCommon.canvasSizes.HD_AVATAR_ROWS);
+                break;
+        }
+    }
+
+    private void initCanvasArduPilot(byte videoSystem){
+        switch (videoSystem){
+            case 0:
+                setCanvasSize(OsdCommon.canvasSizes.PAL_COLS, OsdCommon.canvasSizes.PAL_ROWS);
+                break;
+            case 1:
+                setCanvasSize(OsdCommon.canvasSizes.HDZERO_COLS, OsdCommon.canvasSizes.HDZERO_ROWS);
+                break;
+            case 2:
+                setCanvasSize(OsdCommon.canvasSizes.DJI_COLS, OsdCommon.canvasSizes.DJI_ROWS);
                 break;
         }
     }
@@ -1759,7 +1945,7 @@ public class Osd {
         }
     }
 
-    public class OsdConfig{// MSP_OSD_CONFIG
+    public class OsdConfig{
         public final byte videoSystem;
         public final byte units;
         public final byte osdSelectedProfile;
@@ -1769,7 +1955,6 @@ public class Osd {
         public final short altAlarm;
         public final short distAlarm;
         public final short negAltAlarm;
-        public final short[] rawOsdItems;
         public final OsdItem[] osdItems;
         public final int osdItemsCount;
         public final OsdStat[] osdStats;
@@ -1783,6 +1968,10 @@ public class Osd {
         public final int rawEnabledWarnings;
         public final int cameraFrameWidth;
         public final int cameraFrameHeight;
+        public byte msgTime;
+        public byte warnNumSat;
+        public byte warnBatVolt;
+        public byte warnAvgCellVolt;
 
         public OsdConfig(byte videoSystem, byte units, byte rssiAlarm, short capacityWarning, short timeAlarm, short altAlarm, short distAlarm, short negAltAlarm, short[] osdItems) {
             this.videoSystem = videoSystem;
@@ -1794,13 +1983,41 @@ public class Osd {
             this.altAlarm = altAlarm;
             this.distAlarm = distAlarm;
             this.negAltAlarm = negAltAlarm;
-            rawOsdItems = osdItems;
             int count = osdItems.length;
             this.osdItems = new OsdItem[count];
             for (int i = 0; i < count; i++) {
                 this.osdItems[i] = new OsdItem(i, osdItems[i], FcInfo.FC_VARIANT_INAV, osdSelectedProfile);
             }
             osdItemsCount = count;
+            osdStats = null;
+            rawOsdStatItems = null;
+            osdStatsCount = 0;
+            osdTimers = null;
+            rawOsdTimerItems = null;
+            osdTimersCount = 0;
+            osdWarnings = null;
+            osdWarningsCount = 0;
+            rawEnabledWarnings = 0;
+            cameraFrameWidth = 0;
+            cameraFrameHeight = 0;
+        }
+
+        public OsdConfig(byte videoSystem, byte units, byte msgTime, byte rssiAlarm, byte warnNumSat, byte warnBatVolt, byte warnAvgCellVolt, OsdItem[] osdItems){
+            this.videoSystem = videoSystem;
+            this.units = units;
+            this.msgTime = msgTime;
+            this.rssiAlarm = rssiAlarm;
+            this.warnNumSat = warnNumSat;
+            this.warnBatVolt = warnBatVolt;
+            this.warnAvgCellVolt = warnAvgCellVolt;
+            capacityWarning = 0;
+            timeAlarmSec = 0;
+            altAlarm = 0;
+            distAlarm = 0;
+            negAltAlarm = 0;
+            osdSelectedProfile = 1;
+            osdItemsCount = osdItems.length;
+            this.osdItems = osdItems;
             osdStats = null;
             rawOsdStatItems = null;
             osdStatsCount = 0;
@@ -1825,7 +2042,6 @@ public class Osd {
             this.altAlarm = altAlarm;
             this.distAlarm = 0;
             this.negAltAlarm = 0;
-            rawOsdItems = osdItems;
             int count = osdItems.length;
             this.osdItems = new OsdItem[count];
             for (int i = 0; i < count; i++) {

@@ -19,6 +19,39 @@ package de.droiddrone.common;
 
 public class OsdCommon {
 
+    // ArduPilot OSD items
+    public static final String AP_OSD_ALTITUDE = "ALTITUDE";
+    public static final String AP_OSD_BAT_VOLT = "BAT_VOLT";
+    public static final String AP_OSD_RSSI = "RSSI";
+    public static final String AP_OSD_CURRENT = "CURRENT";
+    public static final String AP_OSD_BATUSED = "BATUSED";
+    public static final String AP_OSD_SATS = "SATS";
+    public static final String AP_OSD_FLTMODE = "FLTMODE";
+    public static final String AP_OSD_MESSAGE = "MESSAGE";
+    public static final String AP_OSD_GSPEED = "GSPEED";
+    public static final String AP_OSD_HORIZON = "HORIZON";
+    public static final String AP_OSD_HOME = "HOME";
+    public static final String AP_OSD_HEADING = "HEADING";
+    public static final String AP_OSD_COMPASS = "COMPASS";
+    public static final String AP_OSD_GPSLAT = "GPSLAT";
+    public static final String AP_OSD_GPSLONG = "GPSLONG";
+    public static final String AP_OSD_TEMP = "TEMP";
+    public static final String AP_OSD_DIST = "DIST";
+    public static final String AP_OSD_FLTIME = "FLTIME";
+    public static final String AP_OSD_EFF = "EFF";
+    public static final String AP_OSD_SIDEBARS = "SIDEBARS";
+    public static final String AP_OSD_CRSSHAIR = "CRSSHAIR";
+    public static final String AP_OSD_HOMEDIST = "HOMEDIST";
+    public static final String AP_OSD_HOMEDIR = "HOMEDIR";
+    public static final String AP_OSD_CELLVOLT = "CELLVOLT";
+    public static final String AP_OSD_VTX_PWR = "VTX_PWR";
+    public static final String[] AP_OSD_ITEMS = {AP_OSD_ALTITUDE, AP_OSD_BAT_VOLT, AP_OSD_RSSI,
+            AP_OSD_CURRENT, AP_OSD_BATUSED, AP_OSD_SATS, AP_OSD_FLTMODE, AP_OSD_MESSAGE,
+            AP_OSD_GSPEED, AP_OSD_HORIZON, AP_OSD_HOME, AP_OSD_HEADING, AP_OSD_COMPASS,
+            AP_OSD_GPSLAT, AP_OSD_GPSLONG, AP_OSD_TEMP, AP_OSD_DIST, AP_OSD_FLTIME, AP_OSD_EFF,
+            AP_OSD_SIDEBARS, AP_OSD_CRSSHAIR, AP_OSD_HOMEDIST, AP_OSD_HOMEDIR, AP_OSD_CELLVOLT,
+            AP_OSD_VTX_PWR};
+
     public enum InavOsdItems{
         OSD_RSSI_VALUE,
         OSD_MAIN_BATT_VOLTAGE,

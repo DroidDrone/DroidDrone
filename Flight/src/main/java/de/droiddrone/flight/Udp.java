@@ -315,8 +315,11 @@ public class Udp {
             }
             case UdpCommon.OsdConfig:
             {
-                if (!msp.isInitialized()) break;
-                msp.runGetOsdConfig();
+                if (msp.isInitialized()) {
+                    msp.runGetOsdConfig();
+                }else if (mavlink.isInitialized()){
+                    mavlink.runGetOsdConfig();
+                }
                 break;
             }
             case UdpCommon.BatteryConfig:
@@ -452,11 +455,16 @@ public class Udp {
 
     private void sendTelemetryData(){
         try {
-            TelemetryData buf;
+            TelemetryData buf = null;
             boolean sendData = false;
             UdpPacketData packetData = new UdpPacketData(UdpCommon.TelemetryData);
             do{
-                buf = msp.telemetryOutputBuffer.poll();
+                if (msp.isInitialized()) buf = msp.telemetryOutputBuffer.poll();
+                if (buf != null){
+                    sendData = true;
+                    fillTelemetryPacketData(buf, packetData);
+                }
+                if (mavlink.isInitialized()) buf = mavlink.telemetryOutputBuffer.poll();
                 if (buf != null){
                     sendData = true;
                     fillTelemetryPacketData(buf, packetData);
@@ -762,6 +770,24 @@ public class Udp {
                 case FcCommon.DD_NETWORK_STATE: {
                     packetData.daos.writeByte(buffer.readByte());//networkType
                     packetData.daos.writeByte(buffer.readByte());//rssi
+                    break;
+                }
+                case FcCommon.DD_AP_OSD_CONFIG: {
+                    packetData.daos.writeBoolean(buffer.readBoolean());//osd1Enabled
+                    packetData.daos.writeByte(buffer.readByte());//osd1TxtRes
+                    packetData.daos.writeByte(buffer.readByte());//osdUnits
+                    packetData.daos.writeByte(buffer.readByte());//osdMsgTime
+                    packetData.daos.writeByte(buffer.readByte());//osdWarnRssi
+                    packetData.daos.writeByte(buffer.readByte());//osdWarnNumSat
+                    packetData.daos.writeByte(buffer.readByte());//osdWarnBatVolt
+                    packetData.daos.writeByte(buffer.readByte());//osdWarnAvgCellVolt
+                    byte osdItemsCount = buffer.readByte();
+                    packetData.daos.writeByte(osdItemsCount);
+                    for (int i = 0; i < osdItemsCount; i++) {
+                        packetData.daos.writeBoolean(buffer.readBoolean());//isEnabled
+                        packetData.daos.writeByte(buffer.readByte());//x
+                        packetData.daos.writeByte(buffer.readByte());//y
+                    }
                     break;
                 }
             }
