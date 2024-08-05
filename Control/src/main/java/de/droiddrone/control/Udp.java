@@ -411,6 +411,7 @@ public class Udp {
             short code = buffer.readShort();
             if (fcInfo == null && code < FcCommon.DD_TIMERS) return;
             switch (code){
+                case FcCommon.DD_AP_ATTITUDE:
                 case FcCommon.MSP_ATTITUDE: {
                     short roll = buffer.readShort();
                     short pitch = buffer.readShort();

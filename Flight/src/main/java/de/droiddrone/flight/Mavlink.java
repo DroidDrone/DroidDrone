@@ -21,6 +21,7 @@ import static de.droiddrone.common.Logcat.log;
 
 import com.MAVLink.MAVLinkPacket;
 import com.MAVLink.Messages.MAVLinkPayload;
+import com.MAVLink.common.msg_attitude;
 import com.MAVLink.common.msg_autopilot_version;
 import com.MAVLink.common.msg_command_ack;
 import com.MAVLink.common.msg_command_long;
@@ -64,6 +65,8 @@ public class Mavlink {
     private int sequence = 0;
     private boolean runGetOsdConfig;
     private FcParams fcParams;
+    private int telemetryIntervalUs;
+    private long lastAttitudeTs;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -103,6 +106,7 @@ public class Mavlink {
     public void initialize() {
         fcParams = new FcParams(this);
         telemetryOutputBuffer.clear();
+        telemetryIntervalUs = 1000000 / config.getMspTelemetryRefreshRate();
         threadsId++;
         Thread mavlinkThread = new Thread(mavlinkRun);
         mavlinkThread.setDaemon(false);
@@ -130,6 +134,7 @@ public class Mavlink {
                             fcParams.initializeOsdConfig();
                         }
                     }
+                    getAttitude();
                     Thread.sleep(timerDelayMs);
                 } catch (Exception e) {
                     log("Mavlink thread error: " + e);
@@ -154,6 +159,14 @@ public class Mavlink {
         serial.writeDataMavlink(packet.encodePacket());
     }
 
+    private void getAttitude(){
+        if (telemetryIntervalUs > 0 && System.currentTimeMillis() - lastAttitudeTs < 1500) return;
+        MAVLinkPacket packet = new msg_command_long(msg_attitude.MAVLINK_MSG_ID_ATTITUDE, telemetryIntervalUs, 0, 0, 0, 0, 0,
+                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
+        packet.seq = getSequence();
+        serial.writeDataMavlink(packet.encodePacket());
+    }
+
     public void processData(byte[] buf, int dataLength){
         if (dataLength < MAVLinkPacket.MAVLINK1_HEADER_LEN) return;
         byte[] data = new byte[dataLength];
@@ -161,7 +174,6 @@ public class Mavlink {
         List<MAVLinkPacket> packets = parsePackets(data);
         if (packets == null || packets.isEmpty()) return;
         for (MAVLinkPacket packet : packets) {
-            log("msgid: " + packet.msgid);
             switch (packet.msgid) {
                 case msg_heartbeat.MAVLINK_MSG_ID_HEARTBEAT: {
                     if (isHeartBeatReceived) break;
@@ -196,6 +208,16 @@ public class Mavlink {
                     log(message.toString());
                     if (fcParams == null) break;
                     fcParams.setParam(message.getParam_Id(), message.param_value);
+                    break;
+                }
+                case msg_attitude.MAVLINK_MSG_ID_ATTITUDE: {
+                    msg_attitude message = new msg_attitude(packet);
+                    lastAttitudeTs = System.currentTimeMillis();
+                    DataWriter buffer = new DataWriter(true);
+                    buffer.writeShort((short) (Math.toDegrees(message.roll) * 10));
+                    buffer.writeShort((short) (Math.toDegrees(message.pitch) * 10));
+                    buffer.writeShort((short) Math.toDegrees(message.yaw));
+                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_ATTITUDE, buffer.getData()));
                     break;
                 }
             }
@@ -362,7 +384,7 @@ public class Mavlink {
         }
 
         public void sendOsdConfig(){
-            DataWriter buffer = new DataWriter(false);
+            DataWriter buffer = new DataWriter(true);
             buffer.writeBoolean(osd1Enabled);
             buffer.writeByte(osd1TxtRes);
             buffer.writeByte(osdUnits);
@@ -482,7 +504,13 @@ public class Mavlink {
         return seq;
     }
 
+    private void disableIntervalMessages(){
+        telemetryIntervalUs = -1;
+        getAttitude();
+    }
+
     public void close(){
+        disableIntervalMessages();
         threadsId++;
         apiVersionMajor = -1;
         apiVersionMinor = -1;

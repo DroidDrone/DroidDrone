@@ -772,22 +772,10 @@ public class Udp {
                     packetData.daos.writeByte(buffer.readByte());//rssi
                     break;
                 }
-                case FcCommon.DD_AP_OSD_CONFIG: {
-                    packetData.daos.writeBoolean(buffer.readBoolean());//osd1Enabled
-                    packetData.daos.writeByte(buffer.readByte());//osd1TxtRes
-                    packetData.daos.writeByte(buffer.readByte());//osdUnits
-                    packetData.daos.writeByte(buffer.readByte());//osdMsgTime
-                    packetData.daos.writeByte(buffer.readByte());//osdWarnRssi
-                    packetData.daos.writeByte(buffer.readByte());//osdWarnNumSat
-                    packetData.daos.writeByte(buffer.readByte());//osdWarnBatVolt
-                    packetData.daos.writeByte(buffer.readByte());//osdWarnAvgCellVolt
-                    byte osdItemsCount = buffer.readByte();
-                    packetData.daos.writeByte(osdItemsCount);
-                    for (int i = 0; i < osdItemsCount; i++) {
-                        packetData.daos.writeBoolean(buffer.readBoolean());//isEnabled
-                        packetData.daos.writeByte(buffer.readByte());//x
-                        packetData.daos.writeByte(buffer.readByte());//y
-                    }
+                // already Big Endian encoded, can be written as a whole array
+                case FcCommon.DD_AP_OSD_CONFIG:
+                case FcCommon.DD_AP_ATTITUDE: {
+                    packetData.daos.write(buffer.getData());
                     break;
                 }
             }
