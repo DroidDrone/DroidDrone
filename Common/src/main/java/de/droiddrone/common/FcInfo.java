@@ -35,8 +35,9 @@ public class FcInfo {
     private final int apiProtocolVersion;
     private final int apiVersionMajor;
     private final int apiVersionMinor;
+    private final int platformType;
 
-    public FcInfo(int fcVariant, int fcVersionMajor, int fcVersionMinor, int fcVersionPatchLevel, int apiProtocolVersion, int apiVersionMajor, int apiVersionMinor) {
+    public FcInfo(int fcVariant, int fcVersionMajor, int fcVersionMinor, int fcVersionPatchLevel, int apiProtocolVersion, int apiVersionMajor, int apiVersionMinor, int platformType) {
         this.fcVariant = fcVariant;
         this.fcVersionMajor = fcVersionMajor;
         this.fcVersionMinor = fcVersionMinor;
@@ -44,6 +45,7 @@ public class FcInfo {
         this.apiProtocolVersion = apiProtocolVersion;
         this.apiVersionMajor = apiVersionMajor;
         this.apiVersionMinor = apiVersionMinor;
+        this.platformType = platformType;
     }
 
     public String getFcVersionStr(){
@@ -96,5 +98,21 @@ public class FcInfo {
 
     public int getApiVersionMinor() {
         return apiVersionMinor;
+    }
+
+    public int getPlatformType() {
+        return platformType;
+    }
+
+    public String getPlatformTypeName(){
+        switch (fcVariant){
+            case FC_VARIANT_INAV:
+                return FcCommon.PlatformTypesInav.getPlatforTypeName(platformType);
+            case FC_VARIANT_BETAFLIGHT:
+                return FcCommon.PlatformTypesBtfl.getPlatforTypeName(platformType);
+            case FC_VARIANT_ARDUPILOT:
+                return FcCommon.PlatformTypesArduPilot.getPlatforTypeName(platformType);
+        }
+        return null;
     }
 }

@@ -337,7 +337,8 @@ public class Udp {
                 byte apiProtocolVersion = buffer.readByte();
                 byte apiVersionMajor = buffer.readByte();
                 byte apiVersionMinor = buffer.readByte();
-                fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor);
+                byte platformType = buffer.readByte();
+                fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor, platformType);
                 osd.initialize(fcInfo);
                 break;
             }

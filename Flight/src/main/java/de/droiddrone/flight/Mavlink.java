@@ -67,6 +67,7 @@ public class Mavlink {
     private FcParams fcParams;
     private int telemetryIntervalUs;
     private long lastAttitudeTs;
+    private int  platformType;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -79,18 +80,20 @@ public class Mavlink {
         fcVersionMajor = -1;
         fcVersionMinor = -1;
         fcVersionPatchLevel = -1;
+        platformType = -1;
         isHeartBeatReceived = false;
     }
 
     public boolean isInitialized(){
         boolean isInitialized = (apiVersionMajor != -1 && apiVersionMinor != -1
-                && fcVersionMajor != -1 && fcVersionMinor != -1 && fcVersionPatchLevel != -1);
+                && fcVersionMajor != -1 && fcVersionMinor != -1 && fcVersionPatchLevel != -1
+                && platformType != -1);
         if (isInitialized && fcInfo == null) setFcInfo();
         return isInitialized;
     }
 
     private void setFcInfo(){
-        fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor);
+        fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor, platformType);
         log(fcInfo.getFcName() + " Ver. " + fcInfo.getFcVersionStr() + " detected.");
         log("Mavlink API Ver.: " + fcInfo.getFcApiVersionStr());
     }
@@ -181,6 +184,7 @@ public class Mavlink {
                     isMavlink2 = message.isMavlink2;
                     apiVersionMajor = message.isMavlink2 ? 2 : 1;
                     apiVersionMinor = message.mavlink_version;
+                    platformType = message.type;
                     isHeartBeatReceived = true;
                     break;
                 }
@@ -517,6 +521,7 @@ public class Mavlink {
         fcVersionMajor = -1;
         fcVersionMinor = -1;
         fcVersionPatchLevel = -1;
+        platformType = -1;
         isHeartBeatReceived = false;
         fcParams = null;
         telemetryOutputBuffer.clear();

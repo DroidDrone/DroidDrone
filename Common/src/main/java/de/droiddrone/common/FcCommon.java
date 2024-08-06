@@ -34,6 +34,7 @@ public class FcCommon {
     public static final short MSP_FC_VARIANT = 2;
     public static final short MSP_FC_VERSION = 3;
     public static final short MSP_BATTERY_CONFIG = 32;
+    public static final short MSP_MIXER_CONFIG = 42;
     public static final short MSP_RX_MAP = 64;
     public static final short MSP_OSD_CONFIG = 84;
     public static final short MSP_VTX_CONFIG = 88;
@@ -51,6 +52,7 @@ public class FcCommon {
     public static final short MSP_SET_RAW_RC = 200;
     public static final short MSP2_INAV_STATUS = 0x2000;
     public static final short MSP2_INAV_ANALOG = 0x2002;
+    public static final short MSP2_INAV_MIXER = 0x2010;
 
     // DD specific telemetry codes
     public static final short DD_TIMERS = 0x4000;
@@ -310,6 +312,228 @@ public class FcCommon {
             new BoxMode(BoxModeIds.BOXREADY,                "READY",                    53, 0),
             new BoxMode(BoxModeIds.BOXLAPTIMERRESET,        "LAP TIMER RESET",          54, 0),
     };
+
+    public static class PlatformTypesInav{
+        public static final int PLATFORM_MULTIROTOR = 0;
+        public static final int PLATFORM_AIRPLANE = 1;
+        public static final int PLATFORM_HELICOPTER = 2;
+        public static final int PLATFORM_TRICOPTER = 3;
+        public static final int PLATFORM_ROVER = 4;
+        public static final int PLATFORM_BOAT = 5;
+
+        public static String getPlatforTypeName(int platformType){
+            switch (platformType){
+                case PLATFORM_MULTIROTOR:
+                    return "Multirotor";
+                case PLATFORM_AIRPLANE:
+                    return "Airplane";
+                case PLATFORM_HELICOPTER:
+                    return "Helicopter";
+                case PLATFORM_TRICOPTER:
+                    return "Tricopter";
+                case PLATFORM_ROVER:
+                    return "Rover";
+                case PLATFORM_BOAT:
+                    return "Boat";
+                default:
+                    return "N/A";
+            }
+        }
+    }
+
+    public static class PlatformTypesBtfl{
+        public static final int MIXER_TRI = 1;
+        public static final int MIXER_QUADP = 2;
+        public static final int MIXER_QUADX = 3;
+        public static final int MIXER_BICOPTER = 4;
+        public static final int MIXER_GIMBAL = 5;
+        public static final int MIXER_Y6 = 6;
+        public static final int MIXER_HEX6 = 7;
+        public static final int MIXER_FLYING_WING = 8;
+        public static final int MIXER_Y4 = 9;
+        public static final int MIXER_HEX6X = 10;
+        public static final int MIXER_OCTOX8 = 11;
+        public static final int MIXER_OCTOFLATP = 12;
+        public static final int MIXER_OCTOFLATX = 13;
+        public static final int MIXER_AIRPLANE = 14;
+        public static final int MIXER_HELI_120_CCPM = 15;
+        public static final int MIXER_HELI_90_DEG = 16;
+        public static final int MIXER_VTAIL4 = 17;
+        public static final int MIXER_HEX6H = 18;
+        public static final int MIXER_PPM_TO_SERVO = 19;
+        public static final int MIXER_DUALCOPTER = 20;
+        public static final int MIXER_SINGLECOPTER = 21;
+        public static final int MIXER_ATAIL4 = 22;
+        public static final int MIXER_CUSTOM = 23;
+        public static final int MIXER_CUSTOM_AIRPLANE = 24;
+        public static final int MIXER_CUSTOM_TRI = 25;
+        public static final int MIXER_QUADX_1234 = 26;
+        public static final int MIXER_OCTOX8P = 27;
+
+        public static String getPlatforTypeName(int platformType){
+            switch (platformType){
+                case MIXER_TRI:
+                    return "Tricopter";
+                case MIXER_QUADP:
+                    return "QuadP";
+                case MIXER_QUADX:
+                    return "QuadX";
+                case MIXER_BICOPTER:
+                    return "Bicopter";
+                case MIXER_Y6:
+                    return "Y6";
+                case MIXER_HEX6:
+                    return "Hex6";
+                case MIXER_FLYING_WING:
+                    return "Flying Wing";
+                case MIXER_Y4:
+                    return "Y4";
+                case MIXER_HEX6X:
+                    return "Hex6X";
+                case MIXER_OCTOX8:
+                    return "OctoX8";
+                case MIXER_OCTOFLATP:
+                    return "OctoFlatP";
+                case MIXER_OCTOFLATX:
+                    return "OctoFlatX";
+                case MIXER_AIRPLANE:
+                    return "Airplane";
+                case MIXER_HELI_120_CCPM:
+                    return "Heli120CCPM";
+                case MIXER_HELI_90_DEG:
+                    return "Heli90Deg";
+                case MIXER_VTAIL4:
+                    return "VTail4";
+                case MIXER_HEX6H:
+                    return "Hex6H";
+                case MIXER_DUALCOPTER:
+                    return "Dualcopter";
+                case MIXER_SINGLECOPTER:
+                    return "Singlecopter";
+                case MIXER_ATAIL4:
+                    return "ATail4";
+                case MIXER_CUSTOM:
+                    return "Custom";
+                case MIXER_CUSTOM_AIRPLANE:
+                    return "Custom Airplane";
+                case MIXER_CUSTOM_TRI:
+                    return "Custom Tricopter";
+                case MIXER_QUADX_1234:
+                    return "QuadX1234";
+                case MIXER_OCTOX8P:
+                    return "OctoX8P";
+                default:
+                    return "N/A";
+            }
+        }
+    }
+
+    public static class PlatformTypesArduPilot{
+        public static final int MAV_TYPE_GENERIC = 0;
+        public static final int MAV_TYPE_FIXED_WING = 1;
+        public static final int MAV_TYPE_QUADROTOR = 2;
+        public static final int MAV_TYPE_COAXIAL = 3;
+        public static final int MAV_TYPE_HELICOPTER = 4;
+        public static final int MAV_TYPE_ANTENNA_TRACKER = 5;
+        public static final int MAV_TYPE_GCS = 6;
+        public static final int MAV_TYPE_AIRSHIP = 7;
+        public static final int MAV_TYPE_FREE_BALLOON = 8;
+        public static final int MAV_TYPE_ROCKET = 9;
+        public static final int MAV_TYPE_GROUND_ROVER = 10;
+        public static final int MAV_TYPE_SURFACE_BOAT = 11;
+        public static final int MAV_TYPE_SUBMARINE = 12;
+        public static final int MAV_TYPE_HEXAROTOR = 13;
+        public static final int MAV_TYPE_OCTOROTOR = 14;
+        public static final int MAV_TYPE_TRICOPTER = 15;
+        public static final int MAV_TYPE_FLAPPING_WING = 16;
+        public static final int MAV_TYPE_KITE = 17;
+        public static final int MAV_TYPE_ONBOARD_CONTROLLER = 18;
+        public static final int MAV_TYPE_VTOL_TAILSITTER_DUOROTOR = 19;
+        public static final int MAV_TYPE_VTOL_TAILSITTER_QUADROTOR = 20;
+        public static final int MAV_TYPE_VTOL_TILTROTOR = 21;
+        public static final int MAV_TYPE_VTOL_FIXEDROTOR = 22;
+        public static final int MAV_TYPE_VTOL_TAILSITTER = 23;
+        public static final int MAV_TYPE_VTOL_TILTWING = 24;
+        public static final int MAV_TYPE_VTOL_RESERVED5 = 25;
+        public static final int MAV_TYPE_GIMBAL = 26;
+        public static final int MAV_TYPE_ADSB = 27;
+        public static final int MAV_TYPE_PARAFOIL = 28;
+        public static final int MAV_TYPE_DODECAROTOR = 29;
+        public static final int MAV_TYPE_CAMERA = 30;
+        public static final int MAV_TYPE_CHARGING_STATION = 31;
+        public static final int MAV_TYPE_FLARM = 32;
+        public static final int MAV_TYPE_SERVO = 33;
+        public static final int MAV_TYPE_ODID = 34;
+        public static final int MAV_TYPE_DECAROTOR = 35;
+        public static final int MAV_TYPE_BATTERY = 36;
+        public static final int MAV_TYPE_PARACHUTE = 37;
+        public static final int MAV_TYPE_LOG = 38;
+        public static final int MAV_TYPE_OSD = 39;
+        public static final int MAV_TYPE_IMU = 40;
+        public static final int MAV_TYPE_GPS = 41;
+        public static final int MAV_TYPE_WINCH = 42;
+        public static final int MAV_TYPE_GENERIC_MULTIROTOR = 43;
+        public static final int MAV_TYPE_ILLUMINATOR = 44;
+
+        public static String getPlatforTypeName(int platformType){
+            switch (platformType){
+                case MAV_TYPE_GENERIC:
+                    return "Generic";
+                case MAV_TYPE_FIXED_WING:
+                    return "Fixed Wing";
+                case MAV_TYPE_QUADROTOR:
+                    return "Quadrotor";
+                case MAV_TYPE_COAXIAL:
+                    return "Coaxial";
+                case MAV_TYPE_HELICOPTER:
+                    return "Helicopter";
+                case MAV_TYPE_AIRSHIP:
+                    return "Airship";
+                case MAV_TYPE_FREE_BALLOON:
+                    return "Free Balloon";
+                case MAV_TYPE_ROCKET:
+                    return "Rocket";
+                case MAV_TYPE_GROUND_ROVER:
+                    return "Ground Rover";
+                case MAV_TYPE_SURFACE_BOAT:
+                    return "Surface Boat";
+                case MAV_TYPE_SUBMARINE:
+                    return "Submarine";
+                case MAV_TYPE_HEXAROTOR:
+                    return "Hexarotor";
+                case MAV_TYPE_OCTOROTOR:
+                    return "Octorotor";
+                case MAV_TYPE_TRICOPTER:
+                    return "Tricopter";
+                case MAV_TYPE_FLAPPING_WING:
+                    return "Flapping Wing";
+                case MAV_TYPE_KITE:
+                    return "Kite";
+                case MAV_TYPE_VTOL_TAILSITTER_DUOROTOR:
+                case MAV_TYPE_VTOL_TAILSITTER_QUADROTOR:
+                case MAV_TYPE_VTOL_TILTROTOR:
+                case MAV_TYPE_VTOL_FIXEDROTOR:
+                case MAV_TYPE_VTOL_TAILSITTER:
+                case MAV_TYPE_VTOL_TILTWING:
+                case MAV_TYPE_VTOL_RESERVED5:
+                    return "Vtol";
+                case MAV_TYPE_PARAFOIL:
+                    return "Parafoil";
+                case MAV_TYPE_DODECAROTOR:
+                    return "Dodecarotor";
+                case MAV_TYPE_DECAROTOR:
+                    return "Decarotor";
+                case MAV_TYPE_PARACHUTE:
+                    return "Parachute";
+                case MAV_TYPE_WINCH:
+                    return "Winch";
+                case MAV_TYPE_GENERIC_MULTIROTOR:
+                    return "Generic Multirotor";
+                default:
+                    return "N/A";
+            }
+        }
+    }
 
     public static String[] getBoxNames(byte[] data){
         if (data == null || data.length == 0) return null;

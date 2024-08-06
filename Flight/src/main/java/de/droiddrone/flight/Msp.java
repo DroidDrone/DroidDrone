@@ -71,6 +71,7 @@ public class Msp {
     private boolean oldCamSwitchState;
     private int rawRcMinPeriod;
     private long rawRcLastFrame;
+    private int platformType;
 
     public Msp(Serial serial, Config config){
         this.serial = serial;
@@ -82,17 +83,18 @@ public class Msp {
         fcVersionMajor = -1;
         fcVersionMinor = -1;
         fcVersionPatchLevel = -1;
+        platformType = -1;
     }
 
     public boolean isInitialized(){
         isInitialized = (fcVariant != FcInfo.FC_VARIANT_UNKNOWN && apiProtocolVersion != -1 && apiVersionMajor != -1 && apiVersionMinor != -1
-                && fcVersionMajor != -1 && fcVersionMinor != -1 && fcVersionPatchLevel != -1);
+                && fcVersionMajor != -1 && fcVersionMinor != -1 && fcVersionPatchLevel != -1 && platformType != -1);
         if (isInitialized && fcInfo == null) setFcInfo();
         return isInitialized;
     }
 
     private void setFcInfo(){
-        fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor);
+        fcInfo = new FcInfo(fcVariant, fcVersionMajor, fcVersionMinor, fcVersionPatchLevel, apiProtocolVersion, apiVersionMajor, apiVersionMinor, platformType);
         onTimestamp = System.currentTimeMillis();
         flyTimestamp = 0;
         runFcInit = false;
@@ -161,9 +163,10 @@ public class Msp {
 
                     if (!isInitialized && isInitialized()) setFcInfo();
                     if (runFcInit) {
-                        getFcVariant();
-                        getMspApiVersion();
-                        getFcVersion();
+                        if (fcVariant == 0) getFcVariant();
+                        if (apiVersionMajor == -1) getMspApiVersion();
+                        if (fcVersionMajor == -1) getFcVersion();
+                        if (platformType == -1 && fcVariant != 0) getMixerConfig();
                         Thread.sleep(timerDelayMs);
                         continue;
                     }
@@ -278,6 +281,15 @@ public class Msp {
                     fcVersionMajor = buffer.readUnsignedByteAsInt();
                     fcVersionMinor = buffer.readUnsignedByteAsInt();
                     fcVersionPatchLevel = buffer.readUnsignedByteAsInt();
+                    break;
+                case FcCommon.MSP_MIXER_CONFIG:
+                    platformType = buffer.readUnsignedByteAsInt();
+                    break;
+                case FcCommon.MSP2_INAV_MIXER:
+                    buffer.readUnsignedByteAsInt();// motorDirectionInverted
+                    buffer.readUnsignedByteAsInt();// 0
+                    buffer.readUnsignedByteAsInt();// motorstopOnLow
+                    platformType = buffer.readUnsignedByteAsInt();
                     break;
                 case FcCommon.MSP_BOXNAMES: {
                     switch (fcVariant) {
@@ -626,6 +638,17 @@ public class Msp {
 
     public void getMspApiVersion(){
         serial.writeDataMsp(getMspRequest(FcCommon.MSP_API_VERSION), false);
+    }
+
+    public void getMixerConfig(){
+        switch (fcVariant){
+            case FcInfo.FC_VARIANT_INAV:
+                serial.writeDataMsp(getMspRequest(FcCommon.MSP2_INAV_MIXER), false);
+                break;
+            case FcInfo.FC_VARIANT_BETAFLIGHT:
+                serial.writeDataMsp(getMspRequest(FcCommon.MSP_MIXER_CONFIG), false);
+                break;
+        }
     }
 
     private byte[] getMspRequest(short cmd){

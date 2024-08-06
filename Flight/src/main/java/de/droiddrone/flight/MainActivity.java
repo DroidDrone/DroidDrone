@@ -171,7 +171,9 @@ public class MainActivity extends Activity {
                         status += getResources().getString(R.string.check_fc_version);
                     }else{
                         tvFcStatus.setTextColor(Color.GREEN);
-                        status += " " + fcInfo.getFcName() + " Ver. " + fcInfo.getFcVersionStr() + getResources().getString(R.string.detected);
+                        status += " " + fcInfo.getFcName() + " Ver. " + fcInfo.getFcVersionStr()
+                                + " (" + fcInfo.getPlatformTypeName() + ") "
+                                + getResources().getString(R.string.detected);
                         int fcApiCompatibilityLevel = DDService.getFcApiCompatibilityLevel();
                         switch (fcApiCompatibilityLevel){
                             case FcCommon.FC_API_COMPATIBILITY_UNKNOWN:

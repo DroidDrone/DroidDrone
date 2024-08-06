@@ -795,6 +795,7 @@ public class Udp {
             packetData.daos.writeByte(fcInfo.getApiProtocolVersion());
             packetData.daos.writeByte(fcInfo.getApiVersionMajor());
             packetData.daos.writeByte(fcInfo.getApiVersionMinor());
+            packetData.daos.writeByte(fcInfo.getPlatformType());
             udpSender.sendPacket(packetData.getData());
         } catch (Exception e) {
             e.printStackTrace();
