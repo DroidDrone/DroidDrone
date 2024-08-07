@@ -126,6 +126,7 @@ public class Osd {
     private NetworkState droneNetworkState = new NetworkState();
     private NetworkState controlNetworkState = new NetworkState();
     private boolean apOsd1Enabled = true;
+    private int apCustomMode = -1;
 
     public Osd(GlRenderer renderer, Config config) {
         this.renderer = renderer;
@@ -466,6 +467,37 @@ public class Osd {
             }
             if (maxPriorityId == -1) return;
             renderer.addText(activeBoxModes[maxPriorityId].boxName, getOsdItemScreenX(posX), getOsdItemScreenY(posY));
+        }
+    }
+
+    private final class OsdItemFlyModeArduPilot extends OsdItem{
+
+        public OsdItemFlyModeArduPilot(OsdItem item) {
+            super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
+        }
+
+        @Override
+        public void draw(){
+            if (fcInfo == null) return;
+            FcCommon.ArduPilotMode[] modes = null;
+            switch (FcCommon.PlatformTypesArduPilot.getArduPilotPlatformBaseType(fcInfo.getPlatformType())){
+                case FcCommon.PlatformTypesArduPilot.AP_BASE_TYPE_COPTER:
+                    modes = FcCommon.ArduPilotModesCopter;
+                    break;
+                case FcCommon.PlatformTypesArduPilot.AP_BASE_TYPE_PLANE:
+                    modes = FcCommon.ArduPilotModesPlane;
+                    break;
+                case FcCommon.PlatformTypesArduPilot.AP_BASE_TYPE_ROVER:
+                    modes = FcCommon.ArduPilotModesRover;
+                    break;
+            }
+            if (modes == null) return;
+            for (FcCommon.ArduPilotMode mode : modes){
+                if (mode.modeId == apCustomMode){
+                    renderer.addText(mode.modeName, getOsdItemScreenX(posX), getOsdItemScreenY(posY));
+                    return;
+                }
+            }
         }
     }
 
@@ -1329,6 +1361,10 @@ public class Osd {
         osdStats.setHomeDistance(this.distanceToHome);
     }
 
+    public void setArduPilotMode(byte customMode){
+        apCustomMode = customMode;
+    }
+
     private void initOsdItemsArduPilot(OsdConfig osdConfig) {
         OsdItem[] allItems = osdConfig.osdItems;
         int activeCount = 0;
@@ -1365,7 +1401,7 @@ public class Osd {
                     activeItems[c] = new OsdItemGpsSats(item);
                     break;
                 case OsdCommon.AP_OSD_FLTMODE:
-                    activeItems[c] = new OsdItemFlyMode(item);
+                    activeItems[c] = new OsdItemFlyModeArduPilot(item);
                     break;
                 case OsdCommon.AP_OSD_MESSAGE:
                     activeItems[c] = new OsdItemMessages(item);

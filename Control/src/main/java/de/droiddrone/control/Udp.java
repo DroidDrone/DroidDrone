@@ -677,6 +677,11 @@ public class Udp {
                     osd.setOsdConfigArduPilot(buffer);
                     break;
                 }
+                case FcCommon.DD_AP_MODE: {
+                    byte customMode = buffer.readByte();
+                    osd.setArduPilotMode(customMode);
+                    break;
+                }
                 default:
                     return;
             }

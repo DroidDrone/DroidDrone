@@ -64,6 +64,7 @@ public class FcCommon {
     public static final short DD_NETWORK_STATE = 0x4006;
     public static final short DD_AP_OSD_CONFIG = 0x4007;
     public static final short DD_AP_ATTITUDE = 0x4008;
+    public static final short DD_AP_MODE = 0x4009;
 
     public static final short MAX_RSSI = 1023;
     public static final byte BF_BOXMODES_PAGE_COUNT = 2;
@@ -475,6 +476,46 @@ public class FcCommon {
         public static final int MAV_TYPE_GENERIC_MULTIROTOR = 43;
         public static final int MAV_TYPE_ILLUMINATOR = 44;
 
+        // ArduPilot platform base types
+        public static final int AP_BASE_TYPE_COPTER = 0;
+        public static final int AP_BASE_TYPE_PLANE = 1;
+        public static final int AP_BASE_TYPE_ROVER = 2;
+
+        public static int getArduPilotPlatformBaseType(int platformType){
+            switch (platformType){
+                case MAV_TYPE_QUADROTOR:
+                case MAV_TYPE_COAXIAL:
+                case MAV_TYPE_HELICOPTER:
+                case MAV_TYPE_HEXAROTOR:
+                case MAV_TYPE_OCTOROTOR:
+                case MAV_TYPE_TRICOPTER:
+                case MAV_TYPE_DODECAROTOR:
+                case MAV_TYPE_DECAROTOR:
+                case MAV_TYPE_GENERIC_MULTIROTOR:
+                    return AP_BASE_TYPE_COPTER;
+                case MAV_TYPE_FIXED_WING:
+                case MAV_TYPE_AIRSHIP:
+                case MAV_TYPE_FREE_BALLOON:
+                case MAV_TYPE_ROCKET:
+                case MAV_TYPE_FLAPPING_WING:
+                case MAV_TYPE_VTOL_TAILSITTER_DUOROTOR:
+                case MAV_TYPE_VTOL_TAILSITTER_QUADROTOR:
+                case MAV_TYPE_VTOL_TILTROTOR:
+                case MAV_TYPE_VTOL_FIXEDROTOR:
+                case MAV_TYPE_VTOL_TAILSITTER:
+                case MAV_TYPE_VTOL_TILTWING:
+                case MAV_TYPE_VTOL_RESERVED5:
+                case MAV_TYPE_PARAFOIL:
+                case MAV_TYPE_PARACHUTE:
+                    return AP_BASE_TYPE_PLANE;
+                case MAV_TYPE_GROUND_ROVER:
+                case MAV_TYPE_SURFACE_BOAT:
+                    return AP_BASE_TYPE_ROVER;
+                default:
+                    return -1;
+            }
+        }
+
         public static String getPlatforTypeName(int platformType){
             switch (platformType){
                 case MAV_TYPE_GENERIC:
@@ -484,7 +525,7 @@ public class FcCommon {
                 case MAV_TYPE_QUADROTOR:
                     return "Quadrotor";
                 case MAV_TYPE_COAXIAL:
-                    return "Coaxial";
+                    return "Coaxial Helicopter";
                 case MAV_TYPE_HELICOPTER:
                     return "Helicopter";
                 case MAV_TYPE_AIRSHIP:
@@ -534,6 +575,90 @@ public class FcCommon {
             }
         }
     }
+
+    public static class ArduPilotMode{
+        public final int modeId;
+        public final String modeName;
+
+        public ArduPilotMode(int modeId, String modeName) {
+            this.modeId = modeId;
+            this.modeName = modeName;
+        }
+    }
+
+    public static final ArduPilotMode[] ArduPilotModesCopter = {
+            new ArduPilotMode(0, "STABILIZE"),
+            new ArduPilotMode(1, "ACRO"),
+            new ArduPilotMode(2, "ALT_HOLD"),
+            new ArduPilotMode(3, "AUTO"),
+            new ArduPilotMode(4, "GUIDED"),
+            new ArduPilotMode(5, "LOITER"),
+            new ArduPilotMode(6, "RTL"),
+            new ArduPilotMode(7, "CIRCLE"),
+            new ArduPilotMode(9, "LAND"),
+            new ArduPilotMode(11, "DRIFT"),
+            new ArduPilotMode(13, "SPORT"),
+            new ArduPilotMode(14, "FLIP"),
+            new ArduPilotMode(15, "AUTOTUNE"),
+            new ArduPilotMode(16, "POSHOLD"),
+            new ArduPilotMode(17, "BRAKE"),
+            new ArduPilotMode(18, "THROW"),
+            new ArduPilotMode(19, "AVOID_ADSB"),
+            new ArduPilotMode(20, "GUIDED_NOGPS"),
+            new ArduPilotMode(21, "SMART_RTL"),
+            new ArduPilotMode(22, "FLOWHOLD"),
+            new ArduPilotMode(23, "FOLLOW"),
+            new ArduPilotMode(24, "ZIGZAG"),
+            new ArduPilotMode(25, "SYSTEMID"),
+            new ArduPilotMode(26, "AUTOROTATE"),
+            new ArduPilotMode(27, "AUTO_RTL"),
+            new ArduPilotMode(28, "TURTLE"),
+    };
+
+    public static final ArduPilotMode[] ArduPilotModesPlane = {
+            new ArduPilotMode(0, "MANUAL"),
+            new ArduPilotMode(1, "CIRCLE"),
+            new ArduPilotMode(2, "STABILIZE"),
+            new ArduPilotMode(3, "TRAINING"),
+            new ArduPilotMode(4, "ACRO"),
+            new ArduPilotMode(5, "FLY_BY_WIRE_A"),
+            new ArduPilotMode(6, "FLY_BY_WIRE_B"),
+            new ArduPilotMode(7, "CRUISE"),
+            new ArduPilotMode(8, "AUTOTUNE"),
+            new ArduPilotMode(10, "AUTO"),
+            new ArduPilotMode(11, "RTL"),
+            new ArduPilotMode(12, "LOITER"),
+            new ArduPilotMode(13, "TAKEOFF"),
+            new ArduPilotMode(14, "AVOID_ADSB"),
+            new ArduPilotMode(15, "GUIDED"),
+            new ArduPilotMode(16, "INITIALISING"),
+            new ArduPilotMode(17, "QSTABILIZE"),
+            new ArduPilotMode(18, "QHOVER"),
+            new ArduPilotMode(19, "QLOITER"),
+            new ArduPilotMode(20, "QLAND"),
+            new ArduPilotMode(21, "QRTL"),
+            new ArduPilotMode(22, "QAUTOTUNE"),
+            new ArduPilotMode(23, "QACRO"),
+            new ArduPilotMode(24, "THERMAL"),
+            new ArduPilotMode(25, "LOITER_ALT_QLAND"),
+    };
+
+    public static final ArduPilotMode[] ArduPilotModesRover = {
+            new ArduPilotMode(0, "MANUAL"),
+            new ArduPilotMode(1, "ACRO"),
+            new ArduPilotMode(3, "STEERING"),
+            new ArduPilotMode(4, "HOLD"),
+            new ArduPilotMode(5, "LOITER"),
+            new ArduPilotMode(6, "FOLLOW"),
+            new ArduPilotMode(7, "SIMPLE"),
+            new ArduPilotMode(8, "DOCK"),
+            new ArduPilotMode(9, "CIRCLE"),
+            new ArduPilotMode(10, "AUTO"),
+            new ArduPilotMode(11, "RTL"),
+            new ArduPilotMode(12, "SMART_RTL"),
+            new ArduPilotMode(15, "GUIDED"),
+            new ArduPilotMode(16, "INITIALISING"),
+    };
 
     public static String[] getBoxNames(byte[] data){
         if (data == null || data.length == 0) return null;

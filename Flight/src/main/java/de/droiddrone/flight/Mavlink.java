@@ -179,8 +179,13 @@ public class Mavlink {
         for (MAVLinkPacket packet : packets) {
             switch (packet.msgid) {
                 case msg_heartbeat.MAVLINK_MSG_ID_HEARTBEAT: {
-                    if (isHeartBeatReceived) break;
                     msg_heartbeat message = new msg_heartbeat(packet);
+                    if (fcParams.isOsdConfigInitialized()){
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeByte((byte) message.custom_mode);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_MODE, buffer.getData()));
+                    }
+                    if (isHeartBeatReceived) break;
                     isMavlink2 = message.isMavlink2;
                     apiVersionMajor = message.isMavlink2 ? 2 : 1;
                     apiVersionMinor = message.mavlink_version;
