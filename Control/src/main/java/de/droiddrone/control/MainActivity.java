@@ -260,10 +260,10 @@ public class MainActivity extends AppCompatActivity {
                         udp.sendConfig();
                     }else if (!udp.isVideoInitialFrameReceived()){
                         udp.startVideoStream();
-                    }else if (!osd.isInitialized() || osd.getOsdConfig() == null || osd.getBoxIds() == null || !osd.isHasBatteryConfig()) {
+                    }else if (!osd.isInitialized() || osd.getOsdConfig() == null || !osd.isHasBoxIds() || !osd.isHasBatteryConfig()) {
                         if (!osd.isInitialized()) udp.sendGetFcInfo();
                         if (osd.getOsdConfig() == null) udp.sendGetOsdConfig();
-                        if (osd.getBoxIds() == null) udp.sendGetBoxIds();
+                        if (!osd.isHasBoxIds()) udp.sendGetBoxIds();
                         if (!osd.isHasBatteryConfig()) udp.sendGetBatteryConfig();
                     }else{
                         log("Connection thread finished.");

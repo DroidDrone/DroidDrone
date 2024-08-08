@@ -1734,8 +1734,8 @@ public class Osd {
         boxIds = FcCommon.getBoxIds(data);
     }
 
-    public int[] getBoxIds(){
-        return boxIds;
+    public boolean isHasBoxIds(){
+        return boxIds != null || (fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_ARDUPILOT);
     }
 
     public void setBoxNames(byte[] data){
@@ -1750,7 +1750,7 @@ public class Osd {
     }
 
     public boolean isHasBatteryConfig(){
-        return hasBatteryConfig || (fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_INAV);
+        return hasBatteryConfig || (fcInfo != null && fcInfo.getFcVariant() != FcInfo.FC_VARIANT_BETAFLIGHT);
     }
 
     private class OsdStats{
