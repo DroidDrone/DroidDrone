@@ -29,6 +29,7 @@ import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.NetworkState;
 import de.droiddrone.common.OsdCommon;
+import de.droiddrone.common.Utils;
 
 public class Osd {
     private final GlRenderer renderer;
@@ -127,6 +128,7 @@ public class Osd {
     private NetworkState controlNetworkState = new NetworkState();
     private boolean apOsd1Enabled = true;
     private int apCustomMode = -1;
+    private long apBatteryFaultBitmask;
 
     public Osd(GlRenderer renderer, Config config) {
         this.renderer = renderer;
@@ -752,11 +754,7 @@ public class Osd {
         public void draw(){
             boolean warning = (osdConfig != null && osdConfig.capacityWarning > 0 && mahDrawn >= osdConfig.capacityWarning);
             String text = mahDrawn + " mAh";
-            if (warning){
-                renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), SpritesMapping.ALERT, text, true, false);
-            }else {
-                renderer.addText(text, getOsdItemScreenX(posX), getOsdItemScreenY(posY));
-            }
+            renderer.addText(text, getOsdItemScreenX(posX), getOsdItemScreenY(posY), warning);
         }
     }
 
@@ -797,7 +795,8 @@ public class Osd {
 
         int getBatteryIcon(int batteryPercentage){
             if (batteryState == FcCommon.BatteryState.BATTERY_CRITICAL || batteryState == FcCommon.BatteryState.BATTERY_WARNING
-                    || batteryState == FcCommon.BatteryState.BATTERY_NOT_PRESENT || batteryPercentage <= 0 || batteryPercentage > 100) return SpritesMapping.BATT_ALERT;
+                    || batteryState == FcCommon.BatteryState.BATTERY_NOT_PRESENT || batteryPercentage <= 0 || batteryPercentage > 100
+                    || apBatteryFaultBitmask != 0 || voltage < 2) return SpritesMapping.BATT_ALERT;
             int step = batteryIconSteps - Math.round(batteryPercentage * batteryIconSteps / 100f);
             return SpritesMapping.BATT_FULL + step;
         }
@@ -808,14 +807,13 @@ public class Osd {
             return Math.round((cellVoltage - minCellVoltage) * 100 / (maxCellVoltage - minCellVoltage));
         }
 
-        float getCellVoltage(){
-            byte cellCount = batteryCellCount;
+        float getCellVoltage(byte cellCount){
             return cellCount > 0 ? voltage / cellCount : 0;
         }
 
         @Override
         public void draw(){
-            float cellVoltage = getCellVoltage();
+            float cellVoltage = getCellVoltage(batteryCellCount);
             int percentage = batteryPercentage >= 0 ? batteryPercentage : getBatteryPercentageFromCellVoltage(cellVoltage);
             int icon = getBatteryIcon(percentage);
             boolean warning = (icon == SpritesMapping.BATT_ALERT);
@@ -832,11 +830,39 @@ public class Osd {
 
         @Override
         public void draw(){
-            int percentage = batteryPercentage >= 0 ? batteryPercentage : getBatteryPercentageFromCellVoltage(getCellVoltage());
+            int percentage = batteryPercentage >= 0 ? batteryPercentage : getBatteryPercentageFromCellVoltage(getCellVoltage(batteryCellCount));
             int icon = getBatteryIcon(percentage);
             boolean warning = (icon == SpritesMapping.BATT_ALERT);
             warning = warning || voltage < osdConfig.warnBatVolt;
             renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), icon, formatVoltage(voltage), true, warning);
+        }
+    }
+
+    private class OsdItemMainBattVoltageArduPilot extends OsdItemMainBattCellVoltage{
+        public OsdItemMainBattVoltageArduPilot(OsdItem item) {
+            super(item);
+        }
+
+        @Override
+        public void draw(){
+            int icon = getBatteryIcon(batteryPercentage);
+            boolean warning = (icon == SpritesMapping.BATT_ALERT || voltage < osdConfig.warnBatVolt);
+            renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), icon, formatVoltage(voltage), true, warning);
+        }
+    }
+
+    private class OsdItemMainBattCellVoltageArduPilot extends OsdItemMainBattCellVoltage{
+        public OsdItemMainBattCellVoltageArduPilot(OsdItem item) {
+            super(item);
+        }
+
+        @Override
+        public void draw(){
+            int icon = getBatteryIcon(batteryPercentage);
+            byte cellCount = osdConfig.osdCellCount > 0 ? osdConfig.osdCellCount : batteryCellCount;
+            float cellVoltage = getCellVoltage(cellCount);
+            boolean warning = (icon == SpritesMapping.BATT_ALERT || cellVoltage < osdConfig.warnAvgCellVolt);
+            renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), icon, formatVoltage(cellVoltage), true, warning);
         }
     }
 
@@ -1362,7 +1388,36 @@ public class Osd {
     }
 
     public void setArduPilotMode(byte customMode){
+        updateLastDataTimestamp();
         apCustomMode = customMode;
+    }
+
+    public void setArduPilotSystemStatus(byte batteryCellCountDetected, int voltageBattery, short currentBattery, byte batteryRemaining){
+        updateLastDataTimestamp();
+        if (batteryCellCountDetected > 0) this.batteryCellCount = batteryCellCountDetected;
+        if (voltageBattery != Utils.UINT16_MAX){
+            this.voltage = voltageBattery / 1000f;
+            osdStats.setBatteryVoltage(this.voltage);
+        }
+        if (currentBattery > 0) {
+            this.amperage = currentBattery / 1000f;
+            osdStats.setCurrent(this.amperage);
+        }
+        if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
+    }
+
+    public void setArduPilotBatteryStatus(short currentBattery, int currentConsumed, byte batteryRemaining, long faultBitmask){
+        updateLastDataTimestamp();
+        if (currentBattery > 0) {
+            this.amperage = currentBattery / 1000f;
+            osdStats.setCurrent(this.amperage);
+        }
+        if (currentConsumed > 0) {
+            this.mahDrawn = currentConsumed;
+            osdStats.setUsedMah(currentConsumed);
+        }
+        if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
+        this.apBatteryFaultBitmask = faultBitmask;
     }
 
     private void initOsdItemsArduPilot(OsdConfig osdConfig) {
@@ -1386,7 +1441,7 @@ public class Osd {
                     activeItems[c] = new OsdItemAltitude(item);
                     break;
                 case OsdCommon.AP_OSD_BAT_VOLT:
-                    activeItems[c] = new OsdItemMainBattVoltage(item);
+                    activeItems[c] = new OsdItemMainBattVoltageArduPilot(item);
                     break;
                 case OsdCommon.AP_OSD_RSSI:
                     activeItems[c] = new OsdItemRssi(item);
@@ -1452,7 +1507,7 @@ public class Osd {
                     activeItems[c] = new OsdItemHomeDir(item);
                     break;
                 case OsdCommon.AP_OSD_CELLVOLT:
-                    activeItems[c] = new OsdItemMainBattCellVoltage(item);
+                    activeItems[c] = new OsdItemMainBattCellVoltageArduPilot(item);
                     break;
                 case OsdCommon.AP_OSD_VTX_PWR:
                     activeItems[c] = new OsdItemVtxPower(item);
@@ -1659,8 +1714,9 @@ public class Osd {
         byte msgTime = buffer.readByte();
         byte rssiAlarm = buffer.readByte();
         byte warnNumSat = buffer.readByte();
-        byte warnBatVolt = buffer.readByte();
-        byte warnAvgCellVolt = buffer.readByte();
+        float warnBatVolt = buffer.readFloat();
+        float warnAvgCellVolt = buffer.readFloat();
+        byte osdCellCount = buffer.readByte();
         byte osdItemsCount = buffer.readByte();
         OsdItem[] osdItems = new OsdItem[osdItemsCount];
         for (int i = 0; i < osdItemsCount; i++) {
@@ -1669,7 +1725,7 @@ public class Osd {
             byte y = buffer.readByte();
             osdItems[i] = new OsdItem(i, isEnabled, x, y);
         }
-        osdConfig = new OsdConfig(videoSystem, units, msgTime, rssiAlarm, warnNumSat, warnBatVolt, warnAvgCellVolt, osdItems);
+        osdConfig = new OsdConfig(videoSystem, units, msgTime, rssiAlarm, warnNumSat, warnBatVolt, warnAvgCellVolt, osdCellCount, osdItems);
         initCanvasArduPilot(videoSystem);
         initOsdItemsArduPilot(osdConfig);
     }
@@ -2006,8 +2062,9 @@ public class Osd {
         public final int cameraFrameHeight;
         public byte msgTime;
         public byte warnNumSat;
-        public byte warnBatVolt;
-        public byte warnAvgCellVolt;
+        public float warnBatVolt;
+        public float warnAvgCellVolt;
+        public byte osdCellCount;
 
         public OsdConfig(byte videoSystem, byte units, byte rssiAlarm, short capacityWarning, short timeAlarm, short altAlarm, short distAlarm, short negAltAlarm, short[] osdItems) {
             this.videoSystem = videoSystem;
@@ -2038,7 +2095,7 @@ public class Osd {
             cameraFrameHeight = 0;
         }
 
-        public OsdConfig(byte videoSystem, byte units, byte msgTime, byte rssiAlarm, byte warnNumSat, byte warnBatVolt, byte warnAvgCellVolt, OsdItem[] osdItems){
+        public OsdConfig(byte videoSystem, byte units, byte msgTime, byte rssiAlarm, byte warnNumSat, float warnBatVolt, float warnAvgCellVolt, byte osdCellCount, OsdItem[] osdItems){
             this.videoSystem = videoSystem;
             this.units = units;
             this.msgTime = msgTime;
@@ -2046,6 +2103,7 @@ public class Osd {
             this.warnNumSat = warnNumSat;
             this.warnBatVolt = warnBatVolt;
             this.warnAvgCellVolt = warnAvgCellVolt;
+            this.osdCellCount = osdCellCount;
             capacityWarning = 0;
             timeAlarmSec = 0;
             altAlarm = 0;

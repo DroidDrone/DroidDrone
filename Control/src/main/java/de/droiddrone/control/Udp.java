@@ -682,6 +682,22 @@ public class Udp {
                     osd.setArduPilotMode(customMode);
                     break;
                 }
+                case FcCommon.DD_AP_BATTERY_STATUS: {
+                    short currentBattery = buffer.readShort();
+                    int currentConsumed = buffer.readInt();
+                    byte batteryRemaining = buffer.readByte();
+                    long faultBitmask = buffer.readLong();
+                    osd.setArduPilotBatteryStatus(currentBattery, currentConsumed, batteryRemaining, faultBitmask);
+                    break;
+                }
+                case FcCommon.DD_AP_SYS_STATUS: {
+                    byte batteryCellCountDetected = buffer.readByte();
+                    int voltageBattery = buffer.readInt();
+                    short currentBattery = buffer.readShort();
+                    byte batteryRemaining = buffer.readByte();
+                    osd.setArduPilotSystemStatus(batteryCellCountDetected, voltageBattery, currentBattery, batteryRemaining);
+                    break;
+                }
                 default:
                     return;
             }

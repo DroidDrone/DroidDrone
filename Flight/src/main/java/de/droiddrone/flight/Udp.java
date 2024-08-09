@@ -775,6 +775,8 @@ public class Udp {
                 // already Big Endian encoded, can be written as a whole array
                 case FcCommon.DD_AP_OSD_CONFIG:
                 case FcCommon.DD_AP_MODE:
+                case FcCommon.DD_AP_BATTERY_STATUS:
+                case FcCommon.DD_AP_SYS_STATUS:
                 case FcCommon.DD_AP_ATTITUDE: {
                     packetData.daos.write(buffer.getData());
                     break;

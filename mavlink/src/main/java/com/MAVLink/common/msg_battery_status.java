@@ -12,6 +12,8 @@ import com.MAVLink.Messages.MAVLinkPayload;
 import com.MAVLink.Messages.Units;
 import com.MAVLink.Messages.Description;
 
+import java.util.Arrays;
+
 /**
  * Battery information. Updates GCS with flight controller battery status. Smart batteries also use this message, but may additionally send BATTERY_INFO.
  */
@@ -274,7 +276,7 @@ public class msg_battery_status extends MAVLinkMessage {
      */
     @Override
     public String toString() {
-        return "MAVLINK_MSG_ID_BATTERY_STATUS - sysid:"+sysid+" compid:"+compid+" current_consumed:"+current_consumed+" energy_consumed:"+energy_consumed+" temperature:"+temperature+" voltages:"+voltages+" current_battery:"+current_battery+" id:"+id+" battery_function:"+battery_function+" type:"+type+" battery_remaining:"+battery_remaining+" time_remaining:"+time_remaining+" charge_state:"+charge_state+" voltages_ext:"+voltages_ext+" mode:"+mode+" fault_bitmask:"+fault_bitmask+"";
+        return "MAVLINK_MSG_ID_BATTERY_STATUS - sysid:"+sysid+" compid:"+compid+" current_consumed:"+current_consumed+" energy_consumed:"+energy_consumed+" temperature:"+temperature+" voltages:"+ Arrays.toString(voltages) +" current_battery:"+current_battery+" id:"+id+" battery_function:"+battery_function+" type:"+type+" battery_remaining:"+battery_remaining+" time_remaining:"+time_remaining+" charge_state:"+charge_state+" voltages_ext:"+ Arrays.toString(voltages_ext) +" mode:"+mode+" fault_bitmask:"+fault_bitmask+"";
     }
 
     /**

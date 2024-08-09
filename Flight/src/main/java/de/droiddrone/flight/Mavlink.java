@@ -23,10 +23,12 @@ import com.MAVLink.MAVLinkPacket;
 import com.MAVLink.Messages.MAVLinkPayload;
 import com.MAVLink.common.msg_attitude;
 import com.MAVLink.common.msg_autopilot_version;
+import com.MAVLink.common.msg_battery_status;
 import com.MAVLink.common.msg_command_ack;
 import com.MAVLink.common.msg_command_long;
 import com.MAVLink.common.msg_param_request_read;
 import com.MAVLink.common.msg_param_value;
+import com.MAVLink.common.msg_sys_status;
 import com.MAVLink.common.msg_timesync;
 import com.MAVLink.enums.MAV_CMD;
 import com.MAVLink.minimal.msg_heartbeat;
@@ -42,6 +44,7 @@ import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.OsdCommon;
 import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.TelemetryData;
+import de.droiddrone.common.Utils;
 
 public class Mavlink {
     private final Serial serial;
@@ -67,7 +70,10 @@ public class Mavlink {
     private FcParams fcParams;
     private int telemetryIntervalUs;
     private long lastAttitudeTs;
+    private long lastBatteryStatusTs;
+    private long lastSysStatusTs;
     private int  platformType;
+    private int batteryCellCountDetected;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -82,6 +88,7 @@ public class Mavlink {
         fcVersionPatchLevel = -1;
         platformType = -1;
         isHeartBeatReceived = false;
+        batteryCellCountDetected = 0;
     }
 
     public boolean isInitialized(){
@@ -137,7 +144,9 @@ public class Mavlink {
                             fcParams.initializeOsdConfig();
                         }
                     }
-                    getAttitude();
+                    getAttitude(telemetryIntervalUs);
+                    getBatteryStatus(telemetryIntervalUs * 10);
+                    getSystemStatus(telemetryIntervalUs * 10);
                     Thread.sleep(timerDelayMs);
                 } catch (Exception e) {
                     log("Mavlink thread error: " + e);
@@ -162,9 +171,25 @@ public class Mavlink {
         serial.writeDataMavlink(packet.encodePacket());
     }
 
-    private void getAttitude(){
-        if (telemetryIntervalUs > 0 && System.currentTimeMillis() - lastAttitudeTs < 1500) return;
-        MAVLinkPacket packet = new msg_command_long(msg_attitude.MAVLINK_MSG_ID_ATTITUDE, telemetryIntervalUs, 0, 0, 0, 0, 0,
+    private void getAttitude(int interval){
+        if (interval > 0 && System.currentTimeMillis() - lastAttitudeTs < interval / 200) return;
+        MAVLinkPacket packet = new msg_command_long(msg_attitude.MAVLINK_MSG_ID_ATTITUDE, interval, 0, 0, 0, 0, 0,
+                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
+        packet.seq = getSequence();
+        serial.writeDataMavlink(packet.encodePacket());
+    }
+
+    private void getBatteryStatus(int interval){
+        if (interval > 0 && System.currentTimeMillis() - lastBatteryStatusTs < interval / 200) return;
+        MAVLinkPacket packet = new msg_command_long(msg_battery_status.MAVLINK_MSG_ID_BATTERY_STATUS, interval, 0, 0, 0, 0, 0,
+                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
+        packet.seq = getSequence();
+        serial.writeDataMavlink(packet.encodePacket());
+    }
+
+    private void getSystemStatus(int interval){
+        if (interval > 0 && System.currentTimeMillis() - lastSysStatusTs < interval / 200) return;
+        MAVLinkPacket packet = new msg_command_long(msg_sys_status.MAVLINK_MSG_ID_SYS_STATUS, interval, 0, 0, 0, 0, 0,
                 MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
         packet.seq = getSequence();
         serial.writeDataMavlink(packet.encodePacket());
@@ -227,6 +252,34 @@ public class Mavlink {
                     buffer.writeShort((short) (Math.toDegrees(message.pitch) * 10));
                     buffer.writeShort((short) Math.toDegrees(message.yaw));
                     telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_ATTITUDE, buffer.getData()));
+                    break;
+                }
+                case msg_battery_status.MAVLINK_MSG_ID_BATTERY_STATUS: {
+                    msg_battery_status message = new msg_battery_status(packet);
+                    lastBatteryStatusTs = System.currentTimeMillis();
+                    DataWriter buffer = new DataWriter(true);
+                    buffer.writeShort(message.current_battery);
+                    buffer.writeInt(message.current_consumed);
+                    buffer.writeByte(message.battery_remaining);
+                    buffer.writeLong(message.fault_bitmask);
+                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_BATTERY_STATUS, buffer.getData()));
+                    break;
+                }
+                case msg_sys_status.MAVLINK_MSG_ID_SYS_STATUS: {
+                    msg_sys_status message = new msg_sys_status(packet);
+                    lastSysStatusTs = System.currentTimeMillis();
+                    DataWriter buffer = new DataWriter(true);
+                    if (message.voltage_battery != Utils.UINT16_MAX) {
+                        int cellCountDetected = Math.round(message.voltage_battery / 4100f);
+                        if (batteryCellCountDetected < cellCountDetected) {
+                            batteryCellCountDetected = cellCountDetected;
+                        }
+                    }
+                    buffer.writeByte((byte)batteryCellCountDetected);
+                    buffer.writeInt(message.voltage_battery);
+                    buffer.writeShort(message.current_battery);
+                    buffer.writeByte(message.battery_remaining);
+                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYS_STATUS, buffer.getData()));
                     break;
                 }
             }
@@ -303,10 +356,12 @@ public class Mavlink {
         boolean osdWarnRssiReceived;
         byte osdWarnNumSat;
         boolean osdWarnNumSatReceived;
-        byte osdWarnBatVolt;
+        float osdWarnBatVolt;
         boolean osdWarnBatVoltReceived;
-        byte osdWarnAvgCellVolt;
+        float osdWarnAvgCellVolt;
         boolean osdWarnAvgCellVoltReceived;
+        byte osdCellCount;
+        boolean osdCellCountReceived;
 
         private FcParams(Mavlink mavlink) {
             this.mavlink = mavlink;
@@ -365,6 +420,7 @@ public class Mavlink {
                 if (!osdWarnNumSatReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_W_NSAT);
                 if (!osdWarnBatVoltReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_W_BATVOLT);
                 if (!osdWarnAvgCellVoltReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_W_AVGCELLV);
+                if (!osdCellCountReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_CELL_COUNT);
                 for (OsdItemParam item : osdItems){
                     if (item.isInitialized()) continue;
                     try {
@@ -383,7 +439,7 @@ public class Mavlink {
         public boolean isOsdConfigInitialized(){
             if (!osd1EnabledReceived || !osd1TxtResReceived || !osdUnitsReceived
                     || !osdMsgTimeReceived || !osdWarnRssiReceived || !osdWarnNumSatReceived
-                    || !osdWarnBatVoltReceived || !osdWarnAvgCellVoltReceived) return false;
+                    || !osdWarnBatVoltReceived || !osdWarnAvgCellVoltReceived || !osdCellCountReceived) return false;
             for (OsdItemParam item : osdItems){
                 if (!item.isInitialized()) {
                     return false;
@@ -400,8 +456,9 @@ public class Mavlink {
             buffer.writeByte(osdMsgTime);
             buffer.writeByte(osdWarnRssi);
             buffer.writeByte(osdWarnNumSat);
-            buffer.writeByte(osdWarnBatVolt);
-            buffer.writeByte(osdWarnAvgCellVolt);
+            buffer.writeFloat(osdWarnBatVolt);
+            buffer.writeFloat(osdWarnAvgCellVolt);
+            buffer.writeByte(osdCellCount);
             int osdItemsCount = osdItems.length;
             buffer.writeByte((byte) osdItemsCount);
             for (OsdItemParam osdItem : osdItems) {
@@ -445,6 +502,10 @@ public class Mavlink {
                 case FcCommon.AP_PARAM_OSD_W_AVGCELLV:
                     osdWarnAvgCellVolt = (byte)paramValue;
                     osdWarnAvgCellVoltReceived = true;
+                    break;
+                case FcCommon.AP_PARAM_OSD_CELL_COUNT:
+                    osdCellCount = (byte)paramValue;
+                    osdCellCountReceived = true;
                     break;
                 default:
                     if (paramId.contains("OSD1_") &&
@@ -514,8 +575,9 @@ public class Mavlink {
     }
 
     private void disableIntervalMessages(){
-        telemetryIntervalUs = -1;
-        getAttitude();
+        getAttitude(-1);
+        getBatteryStatus(-1);
+        getSystemStatus(-1);
     }
 
     public void close(){
@@ -530,5 +592,6 @@ public class Mavlink {
         isHeartBeatReceived = false;
         fcParams = null;
         telemetryOutputBuffer.clear();
+        batteryCellCountDetected = 0;
     }
 }
