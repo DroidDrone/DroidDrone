@@ -12,6 +12,8 @@ import com.MAVLink.Messages.MAVLinkPayload;
 import com.MAVLink.Messages.Units;
 import com.MAVLink.Messages.Description;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Status text message. These messages are printed in yellow in the COMM console of QGroundControl. WARNING: They consume quite some bandwidth, so use only for important status and error messages. If implemented wisely, these messages are buffered on the MCU and sent only at a limited rate (e.g. 10 Hz).
  */
@@ -185,7 +187,7 @@ public class msg_statustext extends MAVLinkMessage {
      */
     @Override
     public String toString() {
-        return "MAVLINK_MSG_ID_STATUSTEXT - sysid:"+sysid+" compid:"+compid+" severity:"+severity+" text:"+text+" id:"+id+" chunk_seq:"+chunk_seq+"";
+        return "MAVLINK_MSG_ID_STATUSTEXT - sysid:"+sysid+" compid:"+compid+" severity:"+severity+" text:"+new String(text, StandardCharsets.US_ASCII)+" id:"+id+" chunk_seq:"+chunk_seq+"";
     }
 
     /**

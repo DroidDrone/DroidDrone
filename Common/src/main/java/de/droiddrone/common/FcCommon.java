@@ -67,6 +67,7 @@ public class FcCommon {
     public static final short DD_AP_MODE = 0x4009;
     public static final short DD_AP_BATTERY_STATUS = 0x400A;
     public static final short DD_AP_SYS_STATUS = 0x400B;
+    public static final short DD_AP_STATUS_TEXT = 0x400C;
 
     public static final short MAX_RSSI = 1023;
     public static final byte BF_BOXMODES_PAGE_COUNT = 2;

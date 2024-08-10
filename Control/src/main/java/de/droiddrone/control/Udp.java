@@ -698,6 +698,12 @@ public class Udp {
                     osd.setArduPilotSystemStatus(batteryCellCountDetected, voltageBattery, currentBattery, batteryRemaining);
                     break;
                 }
+                case FcCommon.DD_AP_STATUS_TEXT: {
+                    short severity = (short)buffer.readUnsignedByteAsInt();
+                    String message = buffer.readUTF();
+                    osd.setArduPilotStatusText(severity, message);
+                    break;
+                }
                 default:
                     return;
             }

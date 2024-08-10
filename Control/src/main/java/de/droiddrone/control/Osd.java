@@ -129,6 +129,7 @@ public class Osd {
     private boolean apOsd1Enabled = true;
     private int apCustomMode = -1;
     private long apBatteryFaultBitmask;
+    private List<ArduPilotStatusText> arduPilotMessages = new ArrayList<>();
 
     public Osd(GlRenderer renderer, Config config) {
         this.renderer = renderer;
@@ -554,6 +555,50 @@ public class Osd {
             if (armingFlags.armingDisabledMotorProtocol) messages.add("Motor protocol");
             if (messages.isEmpty()) return;
             renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), SpritesMapping.ALERT, messages.get(0), true, false);
+        }
+    }
+
+    private final class OsdItemMessagesArduPilot extends OsdItem{
+
+        public OsdItemMessagesArduPilot(OsdItem item) {
+            super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
+        }
+
+        @Override
+        public void draw(){
+            if (arduPilotMessages.isEmpty()) return;
+            long current = System.currentTimeMillis();
+            int msgTime = osdConfig.msgTime;
+            if (msgTime < 1 || msgTime > 10) msgTime = 10;
+            msgTime *= 1000;
+            List<ArduPilotStatusText> toRemove = new ArrayList<>();
+            for (ArduPilotStatusText item : arduPilotMessages){
+                if (item.startTimeStamp > 0 && item.startTimeStamp + msgTime < current){
+                    toRemove.add(item);
+                    continue;
+                }
+                item.show(getOsdItemScreenX(posX), getOsdItemScreenY(posY), renderer);
+                break;
+            }
+            if (!toRemove.isEmpty()) arduPilotMessages.removeAll(toRemove);
+        }
+    }
+
+    private static final class ArduPilotStatusText{
+        final short severity;
+        final String message;
+        long startTimeStamp;
+
+        public ArduPilotStatusText(short severity, String message) {
+            this.severity = severity;
+            this.message = message;
+            startTimeStamp = 0;
+        }
+
+        public void show(float x, float y, GlRenderer renderer){
+            if (startTimeStamp == 0) startTimeStamp = System.currentTimeMillis();
+            boolean warning = severity <= 3;
+            renderer.addText(message, x, y, warning);
         }
     }
 
@@ -1406,6 +1451,16 @@ public class Osd {
         if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
     }
 
+    public void setArduPilotStatusText(short severity, String message){
+        updateLastDataTimestamp();
+        if (message == null || message.isEmpty()) return;
+        for (ArduPilotStatusText item : arduPilotMessages){
+            if (item.message.equals(message)) return;
+        }
+        if (arduPilotMessages.size() > 5) arduPilotMessages.remove(0);
+        arduPilotMessages.add(new ArduPilotStatusText(severity, message));
+    }
+
     public void setArduPilotBatteryStatus(short currentBattery, int currentConsumed, byte batteryRemaining, long faultBitmask){
         updateLastDataTimestamp();
         if (currentBattery > 0) {
@@ -1459,7 +1514,7 @@ public class Osd {
                     activeItems[c] = new OsdItemFlyModeArduPilot(item);
                     break;
                 case OsdCommon.AP_OSD_MESSAGE:
-                    activeItems[c] = new OsdItemMessages(item);
+                    activeItems[c] = new OsdItemMessagesArduPilot(item);
                     break;
                 case OsdCommon.AP_OSD_GSPEED:
                     activeItems[c] = new OsdItemGpsSpeed(item);

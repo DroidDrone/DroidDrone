@@ -28,6 +28,7 @@ import com.MAVLink.common.msg_command_ack;
 import com.MAVLink.common.msg_command_long;
 import com.MAVLink.common.msg_param_request_read;
 import com.MAVLink.common.msg_param_value;
+import com.MAVLink.common.msg_statustext;
 import com.MAVLink.common.msg_sys_status;
 import com.MAVLink.common.msg_timesync;
 import com.MAVLink.enums.MAV_CMD;
@@ -74,6 +75,7 @@ public class Mavlink {
     private long lastSysStatusTs;
     private int  platformType;
     private int batteryCellCountDetected;
+    private boolean isStatusTextReceived;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -88,6 +90,7 @@ public class Mavlink {
         fcVersionPatchLevel = -1;
         platformType = -1;
         isHeartBeatReceived = false;
+        isStatusTextReceived = false;
         batteryCellCountDetected = 0;
     }
 
@@ -144,9 +147,12 @@ public class Mavlink {
                             fcParams.initializeOsdConfig();
                         }
                     }
-                    getAttitude(telemetryIntervalUs);
-                    getBatteryStatus(telemetryIntervalUs * 10);
-                    getSystemStatus(telemetryIntervalUs * 10);
+                    if (fcParams.isOsdConfigInitialized()) {
+                        getAttitude(telemetryIntervalUs);
+                        getBatteryStatus(telemetryIntervalUs * 10);
+                        getSystemStatus(telemetryIntervalUs * 10);
+                        getStatusText(telemetryIntervalUs * 20);
+                    }
                     Thread.sleep(timerDelayMs);
                 } catch (Exception e) {
                     log("Mavlink thread error: " + e);
@@ -195,6 +201,14 @@ public class Mavlink {
         serial.writeDataMavlink(packet.encodePacket());
     }
 
+    private void getStatusText(int interval){
+        if (isStatusTextReceived) return;
+        MAVLinkPacket packet = new msg_command_long(msg_statustext.MAVLINK_MSG_ID_STATUSTEXT, interval, 0, 0, 0, 0, 0,
+                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
+        packet.seq = getSequence();
+        serial.writeDataMavlink(packet.encodePacket());
+    }
+
     public void processData(byte[] buf, int dataLength){
         if (dataLength < MAVLinkPacket.MAVLINK1_HEADER_LEN) return;
         byte[] data = new byte[dataLength];
@@ -216,11 +230,6 @@ public class Mavlink {
                     apiVersionMinor = message.mavlink_version;
                     platformType = message.type;
                     isHeartBeatReceived = true;
-                    break;
-                }
-                case msg_timesync.MAVLINK_MSG_ID_TIMESYNC: {
-                    msg_timesync message = new msg_timesync(packet);
-                    log(message.toString());
                     break;
                 }
                 case msg_command_ack.MAVLINK_MSG_ID_COMMAND_ACK: {
@@ -280,6 +289,16 @@ public class Mavlink {
                     buffer.writeShort(message.current_battery);
                     buffer.writeByte(message.battery_remaining);
                     telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYS_STATUS, buffer.getData()));
+                    break;
+                }
+                case msg_statustext.MAVLINK_MSG_ID_STATUSTEXT: {
+                    msg_statustext message = new msg_statustext(packet);
+                    isStatusTextReceived = true;
+                    if ("No ap_message for mavlink id (253)".equals(message.getText())) break;
+                    DataWriter buffer = new DataWriter(true);
+                    buffer.writeByte((byte) message.severity);
+                    buffer.writeUTF(message.getText());
+                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_STATUS_TEXT, buffer.getData()));
                     break;
                 }
             }
@@ -578,6 +597,7 @@ public class Mavlink {
         getAttitude(-1);
         getBatteryStatus(-1);
         getSystemStatus(-1);
+        getStatusText(-1);
     }
 
     public void close(){
