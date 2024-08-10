@@ -496,11 +496,11 @@ public class Mavlink {
                     osdWarnNumSatReceived = true;
                     break;
                 case FcCommon.AP_PARAM_OSD_W_BATVOLT:
-                    osdWarnBatVolt = (byte)paramValue;
+                    osdWarnBatVolt = paramValue;
                     osdWarnBatVoltReceived = true;
                     break;
                 case FcCommon.AP_PARAM_OSD_W_AVGCELLV:
-                    osdWarnAvgCellVolt = (byte)paramValue;
+                    osdWarnAvgCellVolt = paramValue;
                     osdWarnAvgCellVoltReceived = true;
                     break;
                 case FcCommon.AP_PARAM_OSD_CELL_COUNT:
