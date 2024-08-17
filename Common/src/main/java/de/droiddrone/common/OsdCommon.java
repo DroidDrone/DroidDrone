@@ -45,12 +45,13 @@ public class OsdCommon {
     public static final String AP_OSD_HOMEDIR = "HOMEDIR";
     public static final String AP_OSD_CELLVOLT = "CELLVOLT";
     public static final String AP_OSD_VTX_PWR = "VTX_PWR";
+    public static final String AP_OSD_THROTTLE = "THROTTLE";
     public static final String[] AP_OSD_ITEMS = {AP_OSD_ALTITUDE, AP_OSD_BAT_VOLT, AP_OSD_RSSI,
             AP_OSD_CURRENT, AP_OSD_BATUSED, AP_OSD_SATS, AP_OSD_FLTMODE, AP_OSD_MESSAGE,
             AP_OSD_GSPEED, AP_OSD_HORIZON, AP_OSD_HOME, AP_OSD_HEADING, AP_OSD_COMPASS,
             AP_OSD_GPSLAT, AP_OSD_GPSLONG, AP_OSD_TEMP, AP_OSD_DIST, AP_OSD_FLTIME, AP_OSD_EFF,
             AP_OSD_SIDEBARS, AP_OSD_CRSSHAIR, AP_OSD_HOMEDIST, AP_OSD_HOMEDIR, AP_OSD_CELLVOLT,
-            AP_OSD_VTX_PWR};
+            AP_OSD_VTX_PWR, AP_OSD_THROTTLE};
 
     public enum InavOsdItems{
         OSD_RSSI_VALUE,

@@ -778,6 +778,14 @@ public class Udp {
                 case FcCommon.DD_AP_BATTERY_STATUS:
                 case FcCommon.DD_AP_SYS_STATUS:
                 case FcCommon.DD_AP_STATUS_TEXT:
+                case FcCommon.DD_AP_GPS_RAW_INT:
+                case FcCommon.DD_AP_GLOBAL_POSITION_INT:
+                case FcCommon.DD_AP_HOME_POSITION:
+                case FcCommon.DD_AP_SYSTEM_TIME:
+                case FcCommon.DD_AP_RC_CHANNELS:
+                case FcCommon.DD_AP_SCALED_PRESSURE:
+                case FcCommon.DD_AP_VTX_POWER:
+                case FcCommon.DD_AP_VFR_HUD:
                 case FcCommon.DD_AP_ATTITUDE: {
                     packetData.daos.write(buffer.getData());
                     break;

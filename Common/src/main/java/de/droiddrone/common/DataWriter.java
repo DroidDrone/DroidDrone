@@ -42,6 +42,10 @@ public class DataWriter {
         writeNum(value, 2);
     }
 
+    public void writeInt24(int value){
+        writeNum(value, 3);
+    }
+
     public void writeInt(int value){
         writeNum(value, 4);
     }

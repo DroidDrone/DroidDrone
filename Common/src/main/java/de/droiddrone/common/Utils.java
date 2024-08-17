@@ -20,6 +20,7 @@ package de.droiddrone.common;
 public class Utils {
     public static int UINT16_MAX = 65535;
     public static int INT16_MAX = 32767;
+    public static int UINT8_MAX = 255;
 
     public static int getNextPow2(int i){
         int pow = i == 0 ? 0 : 32 - Integer.numberOfLeadingZeros(i - 1);

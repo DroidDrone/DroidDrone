@@ -20,6 +20,8 @@ package de.droiddrone.control;
 import android.location.Location;
 import android.location.LocationManager;
 
+import androidx.annotation.NonNull;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,9 +49,9 @@ public class Osd {
     private float pitch;
     private float yaw;
     private int mahDrawn;
-    private int rssi;
-    private float amperage;
-    private float voltage;
+    private int rssi; // %
+    private float amperage; // A
+    private float voltage; // V
     private int capacity;
     private float minCellVoltage;
     private float maxCellVoltage;
@@ -70,34 +72,38 @@ public class Osd {
     private byte configProfile;
     private boolean configStateRebootRequired;
     private byte pidProfileIndex;
-    private int coreTemperatureCelsius;
+    private int coreTemperatureCelsius; // deg C
+    private int baroTemperatureCelsius; // deg C
     private final ArmingFlags armingFlags = new ArmingFlags();
     private final SensorStatus sensorStatus = new SensorStatus();
-    private int onTime;
-    private int flyTime;
-    private int lastArmTime;
-    private int altitude;
-    private float altVelocity;
+    private int onTime; // s
+    private int flyTime; // s
+    private int lastArmTime; // s
+    private int altitude; // m
+    private float altVelocity; // m/s
     private int altBaro;
     private FcCommon.GpsFixTypes fixType;
     private int numSat;
     private float latDeg;
     private float lonDeg;
+    private float homeLatDeg;
+    private float homeLonDeg;
     private int altGps;
     private float groundSpeed; // km/h
     private float groundCourse;
     private int mahPerKm;
     private int hdop;
-    private int distanceToHome;
-    private float traveledDistance;
-    private float directionToHome;
+    private int distanceToHome; // m
+    private float traveledDistance; // m
+    private float directionToHome; // grad
     private boolean gpsHeartbeat;
     private String vtxBand;
     private byte vtxChannel;
-    private byte vtxPower;
+    private short vtxPower;
     private boolean vtxPitMode;
     private int vtxFrequency;
     private boolean vtxDeviceIsReady;
+    private int throttle; // %
     private FcCommon.VtxLowerPowerDisarm vtxLowPowerDisarm;
     private byte dronePhoneBatteryPercentage, controlPhoneBatteryPercentage;
     private boolean dronePhoneBatteryIsCharging, controlPhoneBatteryIsCharging;
@@ -221,6 +227,18 @@ public class Osd {
         }
     }
 
+    private class OsdItemThrottle extends OsdItem{
+
+        public OsdItemThrottle(OsdItem item) {
+            super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
+        }
+
+        @Override
+        public void draw(){
+            renderer.addText("THR: " + throttle + "%", getOsdItemScreenX(posX), getOsdItemScreenY(posY));
+        }
+    }
+
     private class OsdItemCoreTemperature extends OsdItem{
 
         public OsdItemCoreTemperature(OsdItem item) {
@@ -229,7 +247,19 @@ public class Osd {
 
         @Override
         public void draw(){
-            renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), SpritesMapping.TEMPERATURE, coreTemperatureCelsius + " C", true, false);
+            renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), SpritesMapping.TEMPERATURE, coreTemperatureCelsius + " °C", true, false);
+        }
+    }
+
+    private class OsdItemBaroTemperature extends OsdItem{
+
+        public OsdItemBaroTemperature(@NonNull OsdItem item) {
+            super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
+        }
+
+        @Override
+        public void draw(){
+            renderer.addSpriteWithText(getOsdItemScreenX(posX), getOsdItemScreenY(posY), SpritesMapping.TEMPERATURE, baroTemperatureCelsius + " °C", true, false);
         }
     }
 
@@ -1404,23 +1434,12 @@ public class Osd {
         this.numSat = numSat & 0xFF;
         float latDeg = lat / 10000000f;
         float lonDeg = lon / 10000000f;
-        if (this.fixType == FcCommon.GpsFixTypes.GPS_FIX_3D && groundSpeed > 0.2f && this.latDeg != 0){
-            Location oldLocation = new Location(LocationManager.GPS_PROVIDER);
-            Location newLocation = new Location(LocationManager.GPS_PROVIDER);
-            oldLocation.setLatitude(this.latDeg);
-            oldLocation.setLongitude(this.lonDeg);
-            newLocation.setLatitude(latDeg);
-            newLocation.setLongitude(lonDeg);
-            traveledDistance += oldLocation.distanceTo(newLocation);
-            osdStats.setTraveledDistance(traveledDistance);
-        }
-        this.latDeg = latDeg;
-        this.lonDeg = lonDeg;
         this.altGps = altGps;
         this.groundSpeed = groundSpeed * 0.036f;
         this.groundCourse = groundCourse * 0.1f;
         this.hdop = hdop;
         osdStats.setSpeed(this.groundSpeed);
+        calculateTraveledDist(latDeg, lonDeg);
         calculateMahPerKm(this.amperage, this.groundSpeed);
     }
 
@@ -1432,7 +1451,7 @@ public class Osd {
         osdStats.setHomeDistance(this.distanceToHome);
     }
 
-    public void setArduPilotMode(byte customMode){
+    public void setArduPilotMode(int customMode){
         updateLastDataTimestamp();
         apCustomMode = customMode;
     }
@@ -1447,6 +1466,7 @@ public class Osd {
         if (currentBattery > 0) {
             this.amperage = currentBattery / 1000f;
             osdStats.setCurrent(this.amperage);
+            calculateMahPerKm(this.amperage, this.groundSpeed);
         }
         if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
     }
@@ -1473,6 +1493,98 @@ public class Osd {
         }
         if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
         this.apBatteryFaultBitmask = faultBitmask;
+    }
+
+    public void setArduPilotGpsRawInt(int fixType, int vel, int satellitesVisible){
+        updateLastDataTimestamp();
+        if (fixType >= 0 && fixType < FcCommon.GpsFixTypes.values().length) this.fixType = FcCommon.GpsFixTypes.values()[fixType];
+        if (vel != Utils.UINT16_MAX) {
+            this.groundSpeed = vel * 0.036f;
+            calculateMahPerKm(this.amperage, this.groundSpeed);
+            osdStats.setSpeed(this.groundSpeed);
+        }
+        if (satellitesVisible != Utils.UINT8_MAX){
+            this.numSat = satellitesVisible;
+        }
+    }
+
+    public void setArduPilotGlobalPositionInt(int lat, int lon, int relativeAlt, short vz) {
+        updateLastDataTimestamp();
+        float latDeg = lat / 10000000f;
+        float lonDeg = lon / 10000000f;
+        this.altitude = Math.round(relativeAlt / 1000f);
+        this.altVelocity = vz / 100f;
+        calculateTraveledDist(latDeg, lonDeg);
+        calculateHomeDistDir();
+    }
+
+    private void calculateTraveledDist(float newLatDeg, float newLonDeg){
+        if (fixType == FcCommon.GpsFixTypes.GPS_FIX_3D && groundSpeed > 0.2f && this.latDeg != 0) {
+            Location oldLocation = new Location(LocationManager.GPS_PROVIDER);
+            Location newLocation = new Location(LocationManager.GPS_PROVIDER);
+            oldLocation.setLatitude(this.latDeg);
+            oldLocation.setLongitude(this.lonDeg);
+            newLocation.setLatitude(newLatDeg);
+            newLocation.setLongitude(newLonDeg);
+            traveledDistance += oldLocation.distanceTo(newLocation);
+            osdStats.setTraveledDistance(traveledDistance);
+        }
+        this.latDeg = newLatDeg;
+        this.lonDeg = newLonDeg;
+    }
+
+    private void calculateHomeDistDir(){
+        if (fixType == FcCommon.GpsFixTypes.GPS_FIX_3D && latDeg != 0 && homeLatDeg != 0) {
+            Location droneLocation = new Location(LocationManager.GPS_PROVIDER);
+            Location homeLocation = new Location(LocationManager.GPS_PROVIDER);
+            droneLocation.setLatitude(latDeg);
+            droneLocation.setLongitude(lonDeg);
+            homeLocation.setLatitude(homeLatDeg);
+            homeLocation.setLongitude(homeLonDeg);
+            distanceToHome = Math.round(droneLocation.distanceTo(homeLocation));
+            osdStats.setHomeDistance(distanceToHome);
+            directionToHome = droneLocation.bearingTo(homeLocation);
+        }
+    }
+
+    public void setArduPilotHomePosition(int lat, int lon){
+        updateLastDataTimestamp();
+        float latDeg = lat / 10000000f;
+        float lonDeg = lon / 10000000f;
+        this.homeLatDeg = latDeg;
+        this.homeLonDeg = lonDeg;
+        calculateHomeDistDir();
+    }
+
+    public void setArduPilotSystemTime(long timeBootMs, long flightTime, long armingTime){
+        updateLastDataTimestamp();
+        this.onTime = Math.round(timeBootMs / 1000f);
+        this.flyTime = Math.round(flightTime / 1000f);
+        this.lastArmTime = Math.round(armingTime / 1000f);
+        osdStats.setTimers(this.onTime, this.flyTime, this.lastArmTime);
+    }
+
+    public void setArduPilotRcChannels(int rssi){
+        updateLastDataTimestamp();
+        if (rssi != Utils.UINT8_MAX){
+            this.rssi = Math.round(rssi / 254f * 100);
+            osdStats.setRssi(this.rssi);
+        }
+    }
+
+    public void setArduPilotScaledPressure(short temperature){
+        updateLastDataTimestamp();
+        this.baroTemperatureCelsius = Math.round(temperature / 100f);
+    }
+
+    public void setArduPilotVtxPower(short vtxPower){
+        updateLastDataTimestamp();
+        this.vtxPower = vtxPower;
+    }
+
+    public void setArduPilotVfrHud(int throttle){
+        updateLastDataTimestamp();
+        this.throttle = throttle;
     }
 
     private void initOsdItemsArduPilot(OsdConfig osdConfig) {
@@ -1538,7 +1650,7 @@ public class Osd {
                     activeItems[c] = new OsdItemGpsLon(item);
                     break;
                 case OsdCommon.AP_OSD_TEMP:
-                    activeItems[c] = new OsdItemCoreTemperature(item);
+                    activeItems[c] = new OsdItemBaroTemperature(item);
                     break;
                 case OsdCommon.AP_OSD_DIST:
                     activeItems[c] = new OsdItemTripDistance(item);
@@ -1566,6 +1678,9 @@ public class Osd {
                     break;
                 case OsdCommon.AP_OSD_VTX_PWR:
                     activeItems[c] = new OsdItemVtxPower(item);
+                    break;
+                case OsdCommon.AP_OSD_THROTTLE:
+                    activeItems[c] = new OsdItemThrottle(item);
                     break;
             }
             if (activeItems[c] == null) activeItems[c] = item;// OSD item not implemented. Use parent class

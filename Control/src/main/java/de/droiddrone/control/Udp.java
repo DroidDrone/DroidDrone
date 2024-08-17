@@ -678,7 +678,7 @@ public class Udp {
                     break;
                 }
                 case FcCommon.DD_AP_MODE: {
-                    byte customMode = buffer.readByte();
+                    int customMode = buffer.readUnsignedByteAsInt();
                     osd.setArduPilotMode(customMode);
                     break;
                 }
@@ -686,13 +686,13 @@ public class Udp {
                     short currentBattery = buffer.readShort();
                     int currentConsumed = buffer.readInt();
                     byte batteryRemaining = buffer.readByte();
-                    long faultBitmask = buffer.readLong();
+                    long faultBitmask = buffer.readUnsignedIntAsLong();
                     osd.setArduPilotBatteryStatus(currentBattery, currentConsumed, batteryRemaining, faultBitmask);
                     break;
                 }
                 case FcCommon.DD_AP_SYS_STATUS: {
                     byte batteryCellCountDetected = buffer.readByte();
-                    int voltageBattery = buffer.readInt();
+                    int voltageBattery = buffer.readUnsignedShortAsInt();
                     short currentBattery = buffer.readShort();
                     byte batteryRemaining = buffer.readByte();
                     osd.setArduPilotSystemStatus(batteryCellCountDetected, voltageBattery, currentBattery, batteryRemaining);
@@ -702,6 +702,54 @@ public class Udp {
                     short severity = (short)buffer.readUnsignedByteAsInt();
                     String message = buffer.readUTF();
                     osd.setArduPilotStatusText(severity, message);
+                    break;
+                }
+                case FcCommon.DD_AP_GPS_RAW_INT: {
+                    int fixType = buffer.readUnsignedByteAsInt();
+                    int vel = buffer.readUnsignedShortAsInt();
+                    int satellitesVisible = buffer.readUnsignedByteAsInt();
+                    osd.setArduPilotGpsRawInt(fixType, vel, satellitesVisible);
+                    break;
+                }
+                case FcCommon.DD_AP_GLOBAL_POSITION_INT: {
+                    int lat = buffer.readInt();
+                    int lon = buffer.readInt();
+                    int relativeAlt = buffer.readInt();
+                    short vz = buffer.readShort();
+                    osd.setArduPilotGlobalPositionInt(lat, lon, relativeAlt, vz);
+                    break;
+                }
+                case FcCommon.DD_AP_HOME_POSITION: {
+                    int lat = buffer.readInt();
+                    int lon = buffer.readInt();
+                    osd.setArduPilotHomePosition(lat, lon);
+                    break;
+                }
+                case FcCommon.DD_AP_SYSTEM_TIME: {
+                    long timeBootMs = buffer.readUnsignedIntAsLong();
+                    long flightTime = buffer.readUnsignedIntAsLong();
+                    long armingTime = buffer.readUnsignedIntAsLong();
+                    osd.setArduPilotSystemTime(timeBootMs, flightTime, armingTime);
+                    break;
+                }
+                case FcCommon.DD_AP_RC_CHANNELS: {
+                    int rssi = buffer.readUnsignedByteAsInt();
+                    osd.setArduPilotRcChannels(rssi);
+                    break;
+                }
+                case FcCommon.DD_AP_SCALED_PRESSURE: {
+                    short temperature = buffer.readShort();
+                    osd.setArduPilotScaledPressure(temperature);
+                    break;
+                }
+                case FcCommon.DD_AP_VTX_POWER: {
+                    short vtxPower = buffer.readShort();
+                    osd.setArduPilotVtxPower(vtxPower);
+                    break;
+                }
+                case FcCommon.DD_AP_VFR_HUD: {
+                    int throttle = buffer.readUnsignedByteAsInt();
+                    osd.setArduPilotVfrHud(throttle);
                     break;
                 }
                 default:

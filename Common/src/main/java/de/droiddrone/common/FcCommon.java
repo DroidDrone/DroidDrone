@@ -68,6 +68,14 @@ public class FcCommon {
     public static final short DD_AP_BATTERY_STATUS = 0x400A;
     public static final short DD_AP_SYS_STATUS = 0x400B;
     public static final short DD_AP_STATUS_TEXT = 0x400C;
+    public static final short DD_AP_GPS_RAW_INT = 0x400D;
+    public static final short DD_AP_GLOBAL_POSITION_INT = 0x400E;
+    public static final short DD_AP_HOME_POSITION = 0x400F;
+    public static final short DD_AP_SYSTEM_TIME = 0x4010;
+    public static final short DD_AP_RC_CHANNELS = 0x4011;
+    public static final short DD_AP_SCALED_PRESSURE = 0x4012;
+    public static final short DD_AP_VTX_POWER = 0x4013;
+    public static final short DD_AP_VFR_HUD = 0x4014;
 
     public static final short MAX_RSSI = 1023;
     public static final byte BF_BOXMODES_PAGE_COUNT = 2;
@@ -84,6 +92,7 @@ public class FcCommon {
     public static final String AP_PARAM_OSD1_ENABLE = "OSD1_ENABLE";
     public static final String AP_PARAM_OSD1_TXT_RES = "OSD1_TXT_RES";// 0 - 30x16, 1 - 50x18, 2 - 60x22
     public static final String AP_PARAM_OSD_CELL_COUNT = "OSD_CELL_COUNT";
+    public static final String AP_PARAM_VTX_POWER = "VTX_POWER";
 
     public enum VtxLowerPowerDisarm{
         VTX_LOW_POWER_DISARM_OFF,
@@ -95,6 +104,18 @@ public class FcCommon {
         GPS_NO_FIX,
         GPS_FIX_2D,
         GPS_FIX_3D
+    }
+
+    public enum GpsFixTypesArduPilot{
+        GPS_FIX_TYPE_NO_GPS,
+        GPS_FIX_TYPE_NO_FIX,
+        GPS_FIX_TYPE_2D_FIX,
+        GPS_FIX_TYPE_3D_FIX,
+        GPS_FIX_TYPE_DGPS,
+        GPS_FIX_TYPE_RTK_FLOAT,
+        GPS_FIX_TYPE_RTK_FIXED,
+        GPS_FIX_TYPE_STATIC,
+        GPS_FIX_TYPE_PPP
     }
 
     public enum BatteryState{

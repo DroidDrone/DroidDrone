@@ -43,9 +43,7 @@ public class DataReader {
     }
 
     public int readUnsignedByteAsInt(){
-        byte value = data[offset];
-        offset++;
-        return value & 0xFF;
+        return readByte() & 0xFF;
     }
 
     public short readShort(){
@@ -60,25 +58,18 @@ public class DataReader {
     }
 
     public int readUnsignedShortAsInt(){
-        short value;
-        if (isBigEndian){
-            value = (short) (((data[offset] & 0xFF) << 8) | (data[offset+1] & 0xFF));
-        }else{
-            value = (short) (((data[offset + 1] & 0xFF) << 8) | (data[offset] & 0xFF));
-        }
-        offset += 2;
-        return value & 0xFFFF;
+        return readShort() & 0xFFFF;
     }
 
-    public int readUnsignedInt24AsInt(){
-        short value;
+    public int readInt24AsInt(){
+        int value;
         if (isBigEndian){
-            value = (short) (((data[offset] & 0xFF) << 16) | ((data[offset+1] & 0xFF) << 8) | (data[offset+2] & 0xFF));
+            value = ((data[offset] & 0xFF) << 16) | ((data[offset+1] & 0xFF) << 8) | (data[offset+2] & 0xFF);
         }else{
-            value = (short) (((data[offset + 2] & 0xFF) << 16) | ((data[offset + 1] & 0xFF) << 8) | (data[offset] & 0xFF));
+            value = ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 1] & 0xFF) << 8) | (data[offset] & 0xFF);
         }
         offset += 3;
-        return value & 0xFFFFFF;
+        return value;
     }
 
     public int readInt(){
@@ -90,6 +81,10 @@ public class DataReader {
         }
         offset += 4;
         return value;
+    }
+
+    public long readUnsignedIntAsLong(){
+        return readInt() & 0xFFFFFFFFL;
     }
 
     public float readFloat(){
