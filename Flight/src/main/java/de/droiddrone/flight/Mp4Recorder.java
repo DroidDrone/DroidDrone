@@ -112,7 +112,14 @@ public class Mp4Recorder {
             return null;
         }
         this.surface = surface;
-        videoEncoder.start();
+        try {
+            videoEncoder.start();
+        } catch (Exception e) {
+            log("Mp4Encoder videoEncoder start error: " + e);
+            this.surface.release();
+            this.surface = null;
+            return null;
+        }
         isInitialized = true;
         return surface;
     }
