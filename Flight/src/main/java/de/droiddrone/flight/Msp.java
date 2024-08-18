@@ -69,8 +69,8 @@ public class Msp {
     private byte[] modeFlagsBtfl = null;
     private byte[] osdConfig = null;
     private boolean oldCamSwitchState;
-    private int rawRcMinPeriod;
-    private long rawRcLastFrame;
+    private int rcMinPeriod;
+    private long rcLastFrame;
     private int platformType;
 
     public Msp(Serial serial, Config config){
@@ -103,8 +103,8 @@ public class Msp {
         log("MSP API Ver.: " + fcInfo.getFcApiVersionStr());
     }
 
-    public void setRawRcMinPeriod(){
-        rawRcMinPeriod = 1000 / config.getMspRcRefreshRate() / 2;
+    public void setRcMinPeriod(){
+        rcMinPeriod = 1000 / config.getRcRefreshRate() / 2;
     }
 
     public FcInfo getFcInfo(){
@@ -119,7 +119,7 @@ public class Msp {
         onTime = 0;
         flyTime = 0;
         lastArmTime = 0;
-        setRawRcMinPeriod();
+        setRcMinPeriod();
         telemetryOutputBuffer.clear();
         threadsId++;
         Thread mspThread = new Thread(mspRun);
@@ -154,7 +154,7 @@ public class Msp {
     private final Runnable mspRun = new Runnable() {
         public void run() {
             final int id = threadsId;
-            final int timerDelayMs = 1000 / config.getMspTelemetryRefreshRate();
+            final int timerDelayMs = 1000 / config.getTelemetryRefreshRate();
             int timerDiv = 0;
             log("Start MSP thread - OK");
             while (id == threadsId) {
@@ -531,11 +531,11 @@ public class Msp {
     public void setRawRc(short[] rcChannels){
         if (rcChannels == null || rcChannels.length > FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT) return;
         long current = System.currentTimeMillis();
-        if (current - rawRcLastFrame < rawRcMinPeriod){
-            rawRcLastFrame = current;
+        if (current - rcLastFrame < rcMinPeriod){
+            rcLastFrame = current;
             return;
         }
-        rawRcLastFrame = current;
+        rcLastFrame = current;
         DataWriter writer = new DataWriter(false);
         short[] mappedChannels = processRxMap(rcChannels);
         for (short rcChannel : mappedChannels) {

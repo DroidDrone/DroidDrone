@@ -52,8 +52,8 @@
     <string name="osd_text_color">OSD text color</string>
     <string name="fc">FC</string>
     <string name="rc">RC</string>
-    <string name="msp_telemetry_refresh_rate">MSP telemetry refresh rate</string>
-    <string name="msp_rc_refresh_rate">MSP RC refresh rate</string>
+    <string name="telemetry_refresh_rate">Telemetry refresh rate</string>
+    <string name="rc_refresh_rate">RC refresh rate</string>
     <string name="serial_baud_rate">Serial port baud rate</string>
     <string name="serial_port_index">Serial port index</string>
     <string name="version_mismatch">Control/Flight version mismatch!</string>
@@ -179,21 +179,21 @@
         <item>6000000</item>
     </string-array>
 
-    <string-array name="mspTelemetryRefreshRateEntries">
+    <string-array name="telemetryRefreshRateEntries">
         <item>20 Hz</item>
         <item>15 Hz</item>
         <item>10 Hz</item>
         <item>5 Hz</item>
     </string-array>
 
-    <string-array name="mspTelemetryRefreshRateValues">
+    <string-array name="telemetryRefreshRateValues">
         <item>20</item>
         <item>15</item>
         <item>10</item>
         <item>5</item>
     </string-array>
 
-    <string-array name="mspRcRefreshRateEntries">
+    <string-array name="rcRefreshRateEntries">
         <item>50 Hz</item>
         <item>40 Hz</item>
         <item>30 Hz</item>
@@ -201,7 +201,7 @@
         <item>10 Hz</item>
     </string-array>
 
-    <string-array name="mspRcRefreshRateValues">
+    <string-array name="rcRefreshRateValues">
         <item>50</item>
         <item>40</item>
         <item>30</item>

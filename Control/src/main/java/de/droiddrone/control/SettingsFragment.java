@@ -62,8 +62,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setListPreferenceSummary(findPreference("audioStreamBitrate"));
         setListPreferenceSummary(findPreference("recordedAudioBitrate"));
         setListPreferenceSummary(findPreference("recordedVideoBitrate"));
-        setListPreferenceSummary(findPreference("mspTelemetryRefreshRate"));
-        setListPreferenceSummary(findPreference("mspRcRefreshRate"));
+        setListPreferenceSummary(findPreference("telemetryRefreshRate"));
+        setListPreferenceSummary(findPreference("rcRefreshRate"));
         setListPreferenceSummary(findPreference("serialBaudRate"));
         Preference channelsMapping = findPreference("channelsMapping");
         if (channelsMapping != null) {

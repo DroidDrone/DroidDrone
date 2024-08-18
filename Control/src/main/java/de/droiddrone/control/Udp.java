@@ -815,7 +815,7 @@ public class Udp {
     private final Runnable rcRun = new Runnable() {
         public void run() {
             final int id = threadsId;
-            int periodMs = 1000 / config.getMspRcRefreshRate();
+            int periodMs = 1000 / config.getRcRefreshRate();
             while (id == threadsId) {
                 try {
                     if (isConnected() && configReceived){
@@ -947,8 +947,8 @@ public class Udp {
             packetData.daos.writeShort(config.getAudioStreamBitrate() / 1000);
             packetData.daos.writeBoolean(config.isRecordAudio());
             packetData.daos.writeShort(config.getRecordedAudioBitrate() / 1000);
-            packetData.daos.writeByte(config.getMspTelemetryRefreshRate());
-            packetData.daos.writeByte(config.getMspRcRefreshRate());
+            packetData.daos.writeByte(config.getTelemetryRefreshRate());
+            packetData.daos.writeByte(config.getRcRefreshRate());
             packetData.daos.writeInt(config.getSerialBaudRate());
             packetData.daos.writeByte(config.getSerialPortIndex());
             packetData.daos.writeBoolean(config.isUseUsbCamera());

@@ -47,8 +47,8 @@ public class Config {
     private int audioStreamBitrate;
     private boolean recordAudio;
     private int recordedAudioBitrate;
-    private int mspTelemetryRefreshRate;
-    private int mspRcRefreshRate;
+    private int telemetryRefreshRate;
+    private int rcRefreshRate;
     private int serialBaudRate;
     private int serialPortIndex;
 
@@ -134,12 +134,12 @@ public class Config {
         return recordedAudioBitrate;
     }
 
-    public int getMspTelemetryRefreshRate() {
-        return mspTelemetryRefreshRate;
+    public int getTelemetryRefreshRate() {
+        return telemetryRefreshRate;
     }
 
-    public int getMspRcRefreshRate() {
-        return mspRcRefreshRate;
+    public int getRcRefreshRate() {
+        return rcRefreshRate;
     }
 
     public int getSerialBaudRate() {
@@ -166,8 +166,8 @@ public class Config {
             audioStreamBitrate = buffer.readShort() * 1000;
             recordAudio = buffer.readBoolean();
             recordedAudioBitrate = buffer.readShort() * 1000;
-            mspTelemetryRefreshRate = buffer.readUnsignedByteAsInt();
-            mspRcRefreshRate = buffer.readUnsignedByteAsInt();
+            telemetryRefreshRate = buffer.readUnsignedByteAsInt();
+            rcRefreshRate = buffer.readUnsignedByteAsInt();
             serialBaudRate = buffer.readInt();
             serialPortIndex = buffer.readByte();
             useUsbCamera = buffer.readBoolean();
@@ -202,8 +202,8 @@ public class Config {
         audioStreamBitrate = preferences.getInt("audioStreamBitrate", 96000);
         recordAudio = preferences.getBoolean("recordAudio", true);
         recordedAudioBitrate = preferences.getInt("recordedAudioBitrate", 192000);
-        mspTelemetryRefreshRate = preferences.getInt("mspTelemetryRefreshRate", 10);
-        mspRcRefreshRate = preferences.getInt("mspRcRefreshRate", 20);
+        telemetryRefreshRate = preferences.getInt("telemetryRefreshRate", 10);
+        rcRefreshRate = preferences.getInt("rcRefreshRate", 20);
         serialBaudRate = preferences.getInt("serialBaudRate", 115200);
         serialPortIndex = preferences.getInt("serialPortIndex", 0);
     }
@@ -243,8 +243,8 @@ public class Config {
         editor.putInt("audioStreamBitrate", audioStreamBitrate);
         editor.putBoolean("recordAudio", recordAudio);
         editor.putInt("recordedAudioBitrate", recordedAudioBitrate);
-        editor.putInt("mspTelemetryRefreshRate", mspTelemetryRefreshRate);
-        editor.putInt("mspRcRefreshRate", mspRcRefreshRate);
+        editor.putInt("telemetryRefreshRate", telemetryRefreshRate);
+        editor.putInt("rcRefreshRate", rcRefreshRate);
         editor.putInt("serialBaudRate", serialBaudRate);
         editor.putInt("serialPortIndex", serialPortIndex);
         editor.apply();

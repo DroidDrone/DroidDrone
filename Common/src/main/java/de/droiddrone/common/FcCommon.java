@@ -93,6 +93,10 @@ public class FcCommon {
     public static final String AP_PARAM_OSD1_TXT_RES = "OSD1_TXT_RES";// 0 - 30x16, 1 - 50x18, 2 - 60x22
     public static final String AP_PARAM_OSD_CELL_COUNT = "OSD_CELL_COUNT";
     public static final String AP_PARAM_VTX_POWER = "VTX_POWER";
+    public static final String AP_PARAM_RCMAP_PITCH = "RCMAP_PITCH";
+    public static final String AP_PARAM_RCMAP_ROLL = "RCMAP_ROLL";
+    public static final String AP_PARAM_RCMAP_THROTTLE = "RCMAP_THROTTLE";
+    public static final String AP_PARAM_RCMAP_YAW = "RCMAP_YAW";
 
     public enum VtxLowerPowerDisarm{
         VTX_LOW_POWER_DISARM_OFF,

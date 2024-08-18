@@ -360,7 +360,8 @@ public class Udp {
                 int resCode = config.processReceivedConfig(buffer);
                 if (resCode == 0) {
                     sendConfigReceived();
-                    msp.setRawRcMinPeriod();
+                    msp.setRcMinPeriod();
+                    mavlink.setRcMinPeriod();
                 }else if (resCode == -1){
                     sendVersionMismatch();
                 }
@@ -369,13 +370,14 @@ public class Udp {
             case UdpCommon.RcFrame:
             {
                 byte channelsCount = buffer.readByte();
-                if (channelsCount <= 0 || channelsCount > FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT) break;
+                if (channelsCount < 4 || channelsCount > FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT) break;
                 if (channelsCount * 2 != buffer.getRemaining()) break;
                 short[] rcChannels = new short[channelsCount];
                 for (int i = 0; i < channelsCount; i++) {
                     rcChannels[i] = buffer.readShort();
                 }
-                msp.setRawRc(rcChannels);
+                if (msp.isInitialized()) msp.setRawRc(rcChannels);
+                if (mavlink.isInitialized()) mavlink.setRcChannelsOverride(rcChannels);
                 break;
             }
             case UdpCommon.Disconnect:

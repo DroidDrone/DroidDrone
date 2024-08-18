@@ -59,8 +59,8 @@ public class Config {
     private boolean showVideoRecordButton;
     private boolean showVideoRecordIndication;
     private int osdTextColor;
-    private int mspTelemetryRefreshRate;
-    private int mspRcRefreshRate;
+    private int telemetryRefreshRate;
+    private int rcRefreshRate;
     private int serialBaudRate;
     private int serialPortIndex;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -113,8 +113,8 @@ public class Config {
         showVideoRecordButton = preferences.getBoolean("showVideoRecordButton", true);
         showVideoRecordIndication = preferences.getBoolean("showVideoRecordIndication", true);
         osdTextColor = preferences.getInt("osdTextColor", 0xFFFFFFFF);
-        mspTelemetryRefreshRate = parseInt(preferences.getString("mspTelemetryRefreshRate", ""), 10);
-        mspRcRefreshRate = parseInt(preferences.getString("mspRcRefreshRate", ""), 20);
+        telemetryRefreshRate = parseInt(preferences.getString("telemetryRefreshRate", ""), 10);
+        rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), 20);
         serialBaudRate = parseInt(preferences.getString("serialBaudRate", ""), 115200);
         serialPortIndex = parseInt(preferences.getString("serialPortIndex", ""), 0);
         ip = preferences.getString("ip", "");
@@ -247,12 +247,12 @@ public class Config {
         return osdTextColor;
     }
 
-    public int getMspTelemetryRefreshRate() {
-        return mspTelemetryRefreshRate;
+    public int getTelemetryRefreshRate() {
+        return telemetryRefreshRate;
     }
 
-    public int getMspRcRefreshRate() {
-        return mspRcRefreshRate;
+    public int getRcRefreshRate() {
+        return rcRefreshRate;
     }
 
     public int getSerialBaudRate() {

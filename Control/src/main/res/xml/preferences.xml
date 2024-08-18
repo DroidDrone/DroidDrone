@@ -166,16 +166,16 @@
         app:key="fc"
         app:title="@string/fc">
         <ListPreference
-            app:key="mspTelemetryRefreshRate"
-            app:title="@string/msp_telemetry_refresh_rate"
-            app:entries="@array/mspTelemetryRefreshRateEntries"
-            app:entryValues="@array/mspTelemetryRefreshRateValues"
+            app:key="telemetryRefreshRate"
+            app:title="@string/telemetry_refresh_rate"
+            app:entries="@array/telemetryRefreshRateEntries"
+            app:entryValues="@array/telemetryRefreshRateValues"
             app:defaultValue="10"/>
         <ListPreference
-            app:key="mspRcRefreshRate"
-            app:title="@string/msp_rc_refresh_rate"
-            app:entries="@array/mspRcRefreshRateEntries"
-            app:entryValues="@array/mspRcRefreshRateValues"
+            app:key="rcRefreshRate"
+            app:title="@string/rc_refresh_rate"
+            app:entries="@array/rcRefreshRateEntries"
+            app:entryValues="@array/rcRefreshRateValues"
             app:defaultValue="20"/>
         <ListPreference
             app:key="serialBaudRate"

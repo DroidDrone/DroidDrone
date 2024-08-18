@@ -31,6 +31,7 @@ import com.MAVLink.common.msg_home_position;
 import com.MAVLink.common.msg_param_request_read;
 import com.MAVLink.common.msg_param_value;
 import com.MAVLink.common.msg_rc_channels;
+import com.MAVLink.common.msg_rc_channels_override;
 import com.MAVLink.common.msg_scaled_pressure;
 import com.MAVLink.common.msg_statustext;
 import com.MAVLink.common.msg_sys_status;
@@ -94,6 +95,8 @@ public class Mavlink {
     private long flightTs = 0;
     private long flightTime = 0;
     private int throttle = 0;
+    private int rcMinPeriod;
+    private long rcLastFrame;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -128,6 +131,10 @@ public class Mavlink {
         log("Mavlink API Ver.: " + fcInfo.getFcApiVersionStr());
     }
 
+    public void setRcMinPeriod(){
+        rcMinPeriod = 1000 / config.getRcRefreshRate() / 2;
+    }
+
     public FcInfo getFcInfo(){
         return fcInfo;
     }
@@ -139,7 +146,8 @@ public class Mavlink {
     public void initialize() {
         fcParams = new FcParams(this);
         telemetryOutputBuffer.clear();
-        telemetryIntervalUs = 1000000 / config.getMspTelemetryRefreshRate();
+        telemetryIntervalUs = 1000000 / config.getTelemetryRefreshRate();
+        setRcMinPeriod();
         threadsId++;
         Thread mavlinkThread = new Thread(mavlinkRun);
         mavlinkThread.setDaemon(false);
@@ -160,14 +168,14 @@ public class Mavlink {
                         continue;
                     }
                     if (runGetOsdConfig) {
-                        if (fcParams.isOsdConfigInitialized()){
+                        if (fcParams.isFcConfigInitialized()){
                             runGetOsdConfig = false;
                             fcParams.sendOsdConfig();
                         } else {
-                            fcParams.initializeOsdConfig();
+                            fcParams.initializeFcConfig();
                         }
                     }
-                    if (fcParams.isOsdConfigInitialized()) {
+                    if (fcParams.isFcConfigInitialized()) {
                         getAttitude(telemetryIntervalUs);
                         getBatteryStatus(telemetryIntervalUs * 10);
                         getSystemStatus(telemetryIntervalUs * 10);
@@ -293,6 +301,43 @@ public class Mavlink {
         serial.writeDataMavlink(packet.encodePacket());
     }
 
+    public void setRcChannelsOverride(short[] channels){
+        if (channels == null || fcParams == null) return;
+        int rcCount = channels.length;
+        long current = System.currentTimeMillis();
+        if (current - rcLastFrame < rcMinPeriod){
+            rcLastFrame = current;
+            return;
+        }
+        rcLastFrame = current;
+        short roll = channels[0];
+        short pitch = channels[1];
+        short yaw = channels[2];
+        short throttle = channels[3];
+        int rcMapPitch = fcParams.rcMapPitch - 1;
+        int rcMapRoll = fcParams.rcMapRoll - 1;
+        int rcMapThrottle = fcParams.rcMapThrottle - 1;
+        int rcMapYaw = fcParams.rcMapYaw - 1;
+        if (rcMapPitch < 0 || rcMapPitch >= rcCount || rcMapRoll < 0 || rcMapRoll >= rcCount
+                || rcMapThrottle < 0 || rcMapThrottle >= rcCount || rcMapYaw < 0 || rcMapYaw >= rcCount) return;
+        channels[rcMapRoll] = roll;
+        channels[rcMapPitch] = pitch;
+        channels[rcMapYaw] = yaw;
+        channels[rcMapThrottle] = throttle;
+        MAVLinkPacket packet = new msg_rc_channels_override(channels[0], channels[1], channels[2], channels[3],
+                rcCount > 4 ? channels[4] : Utils.UINT16_MAX, rcCount > 5 ? channels[5] : Utils.UINT16_MAX,
+                rcCount > 6 ? channels[6] : Utils.UINT16_MAX, rcCount > 7 ? channels[7] : Utils.UINT16_MAX,
+                targetSystem, targetComponent,
+                rcCount > 8 ? channels[8] : 0, rcCount > 9 ? channels[9] : 0,
+                rcCount > 10 ? channels[10] : 0, rcCount > 11 ? channels[11] : 0,
+                rcCount > 12 ? channels[12] : 0, rcCount > 13 ? channels[13] : 0,
+                rcCount > 14 ? channels[14] : 0, rcCount > 15 ? channels[15] : 0,
+                rcCount > 16 ? channels[16] : 0, rcCount > 17 ? channels[17] : 0,
+                systemId, componentId, isMavlink2).pack();
+        packet.seq = getSequence();
+        serial.writeDataMavlink(packet.encodePacket());
+    }
+
     public void processData(byte[] buf, int dataLength){
         if (dataLength < MAVLinkPacket.MAVLINK1_HEADER_LEN) return;
         byte[] data = new byte[dataLength];
@@ -303,7 +348,7 @@ public class Mavlink {
             switch (packet.msgid) {
                 case msg_heartbeat.MAVLINK_MSG_ID_HEARTBEAT: {
                     msg_heartbeat message = new msg_heartbeat(packet);
-                    if (fcParams.isOsdConfigInitialized()){
+                    if (fcParams.isFcConfigInitialized()){
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeByte((byte) message.custom_mode);
                         telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_MODE, buffer.getData()));
@@ -541,6 +586,14 @@ public class Mavlink {
         boolean osdWarnAvgCellVoltReceived;
         byte osdCellCount;
         boolean osdCellCountReceived;
+        byte rcMapPitch;
+        boolean rcMapPitchReceived;
+        byte rcMapRoll;
+        boolean rcMapRollReceived;
+        byte rcMapThrottle;
+        boolean rcMapThrottleReceived;
+        byte rcMapYaw;
+        boolean rcMapYawReceived;
 
         private FcParams(Mavlink mavlink) {
             this.mavlink = mavlink;
@@ -589,7 +642,7 @@ public class Mavlink {
             return null;
         }
 
-        public void initializeOsdConfig(){
+        public void initializeFcConfig(){
             new Thread(() -> {
                 if (!osd1EnabledReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD1_ENABLE);
                 if (!osd1TxtResReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD1_TXT_RES);
@@ -598,8 +651,17 @@ public class Mavlink {
                 if (!osdWarnRssiReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_W_RSSI);
                 if (!osdWarnNumSatReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_W_NSAT);
                 if (!osdWarnBatVoltReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_W_BATVOLT);
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    //
+                }
                 if (!osdWarnAvgCellVoltReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_W_AVGCELLV);
                 if (!osdCellCountReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD_CELL_COUNT);
+                if (!rcMapPitchReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_RCMAP_PITCH);
+                if (!rcMapRollReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_RCMAP_ROLL);
+                if (!rcMapThrottleReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_RCMAP_THROTTLE);
+                if (!rcMapYawReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_RCMAP_YAW);
                 for (OsdItemParam item : osdItems){
                     if (item.isInitialized()) continue;
                     try {
@@ -615,10 +677,12 @@ public class Mavlink {
             }).start();
         }
 
-        public boolean isOsdConfigInitialized(){
+        public boolean isFcConfigInitialized(){
             if (!osd1EnabledReceived || !osd1TxtResReceived || !osdUnitsReceived
                     || !osdMsgTimeReceived || !osdWarnRssiReceived || !osdWarnNumSatReceived
-                    || !osdWarnBatVoltReceived || !osdWarnAvgCellVoltReceived || !osdCellCountReceived) return false;
+                    || !osdWarnBatVoltReceived || !osdWarnAvgCellVoltReceived || !osdCellCountReceived
+                    || !rcMapPitchReceived || !rcMapRollReceived
+                    || !rcMapThrottleReceived || !rcMapYawReceived) return false;
             for (OsdItemParam item : osdItems){
                 if (!item.isInitialized()) {
                     return false;
@@ -690,6 +754,22 @@ public class Mavlink {
                     DataWriter buffer = new DataWriter(true);
                     buffer.writeShort((short) Math.round(paramValue));
                     mavlink.telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_VTX_POWER, buffer.getData()));
+                    break;
+                case FcCommon.AP_PARAM_RCMAP_PITCH:
+                    rcMapPitch = (byte)paramValue;
+                    rcMapPitchReceived = true;
+                    break;
+                case FcCommon.AP_PARAM_RCMAP_ROLL:
+                    rcMapRoll = (byte)paramValue;
+                    rcMapRollReceived = true;
+                    break;
+                case FcCommon.AP_PARAM_RCMAP_THROTTLE:
+                    rcMapThrottle = (byte)paramValue;
+                    rcMapThrottleReceived = true;
+                    break;
+                case FcCommon.AP_PARAM_RCMAP_YAW:
+                    rcMapYaw = (byte)paramValue;
+                    rcMapYawReceived = true;
                     break;
                 default:
                     if (paramId.contains("OSD1_") &&
