@@ -43,6 +43,7 @@ import com.MAVLink.minimal.msg_heartbeat;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -97,6 +98,8 @@ public class Mavlink {
     private int throttle = 0;
     private int rcMinPeriod;
     private long rcLastFrame;
+    private byte cameraRecordVideoChannel = -1;
+    private boolean cameraRecordLastState = false;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -171,6 +174,7 @@ public class Mavlink {
                         if (fcParams.isFcConfigInitialized()){
                             runGetOsdConfig = false;
                             fcParams.sendOsdConfig();
+                            cameraRecordVideoChannel = fcParams.getOptionChannelForValue(FcCommon.AP_RC_OPTION_CAMERA_RECORD_VIDEO);
                         } else {
                             fcParams.initializeFcConfig();
                         }
@@ -310,6 +314,7 @@ public class Mavlink {
             return;
         }
         rcLastFrame = current;
+        checkRcOptionsChannels(channels);
         short roll = channels[0];
         short pitch = channels[1];
         short yaw = channels[2];
@@ -336,6 +341,17 @@ public class Mavlink {
                 systemId, componentId, isMavlink2).pack();
         packet.seq = getSequence();
         serial.writeDataMavlink(packet.encodePacket());
+    }
+
+    private void checkRcOptionsChannels(short[] channels){
+        final short optionActivePwm = 1600;
+        if (cameraRecordVideoChannel != -1){
+            boolean camRecordActive = channels[cameraRecordVideoChannel] >= optionActivePwm;
+            if (camRecordActive != cameraRecordLastState){
+                telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_VIDEO_RECORDER_START_STOP, new byte[1]));
+            }
+            cameraRecordLastState = camRecordActive;
+        }
     }
 
     public void processData(byte[] buf, int dataLength){
@@ -566,9 +582,51 @@ public class Mavlink {
         }
     }
 
+    private static class RcOptionParam{
+        private final String rcOptionName;
+        private byte channel;
+        private short value;
+        private boolean isValueReceived;
+
+        public RcOptionParam(String rcOptionName){
+            this.rcOptionName = rcOptionName;
+            String num = rcOptionName.replace("RC", "").replace("_OPTION", "");
+            try {
+                channel = (byte)(Byte.parseByte(num) - 1);
+            } catch (NumberFormatException ignored) {
+                channel = -1;
+            }
+            if (channel < 0 || channel >= FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT) channel = -1;
+            value = 0;
+            isValueReceived = false;
+        }
+
+        public boolean isInitialized(){
+            return isValueReceived;
+        }
+
+        public String getRcOptionName(){
+            return rcOptionName;
+        }
+
+        public byte getChannel() {
+            return channel;
+        }
+
+        public short getValue() {
+            return value;
+        }
+
+        public void setValue(short value) {
+            this.value = value;
+            isValueReceived = true;
+        }
+    }
+
     private static class FcParams{
         private final Mavlink mavlink;
         private final OsdItemParam[] osdItems = new OsdItemParam[OsdCommon.AP_OSD_ITEMS.length];
+        private final RcOptionParam[] rcOptionParams = new RcOptionParam[FcCommon.AP_PARAM_RC_OPTIONS.length];
         boolean osd1Enabled;
         boolean osd1EnabledReceived;
         byte osd1TxtRes;
@@ -601,6 +659,10 @@ public class Mavlink {
             int count = OsdCommon.AP_OSD_ITEMS.length;
             for (int i = 0; i < count; i++) {
                 osdItems[i] = new OsdItemParam(OsdCommon.AP_OSD_ITEMS[i]);
+            }
+            count = FcCommon.AP_PARAM_RC_OPTIONS.length;
+            for (int i = 0; i < count; i++) {
+                rcOptionParams[i] = new RcOptionParam(FcCommon.AP_PARAM_RC_OPTIONS[i]);
             }
         }
 
@@ -636,11 +698,29 @@ public class Mavlink {
             }
         }
 
+        private void setRcOptionParam(String paramId, float paramValue) {
+            if (paramId == null) return;
+            for (RcOptionParam item : rcOptionParams){
+                if (item.getRcOptionName().equals(paramId)){
+                    item.setValue((short)paramValue);
+                    break;
+                }
+            }
+        }
+
         private OsdItemParam getOsdItemParamFromName(String osdItemName){
             for (OsdItemParam item : osdItems){
                 if (item.getOsdItemName().equals(osdItemName)) return item;
             }
             return null;
+        }
+
+        public byte getOptionChannelForValue(short rcOptionValue){
+            byte channel = -1;
+            for (RcOptionParam item : rcOptionParams){
+                if (item.getValue() == rcOptionValue) return item.getChannel();
+            }
+            return channel;
         }
 
         public void initializeFcConfig(){
@@ -663,6 +743,15 @@ public class Mavlink {
                 if (!rcMapRollReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_RCMAP_ROLL);
                 if (!rcMapThrottleReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_RCMAP_THROTTLE);
                 if (!rcMapYawReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_RCMAP_YAW);
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    //
+                }
+                for (RcOptionParam item : rcOptionParams){
+                    if (item.isInitialized()) continue;
+                    mavlink.requestFcParameter(item.rcOptionName);
+                }
                 for (OsdItemParam item : osdItems){
                     if (item.isInitialized()) continue;
                     try {
@@ -684,6 +773,9 @@ public class Mavlink {
                     || !osdWarnBatVoltReceived || !osdWarnAvgCellVoltReceived || !osdCellCountReceived
                     || !rcMapPitchReceived || !rcMapRollReceived
                     || !rcMapThrottleReceived || !rcMapYawReceived) return false;
+            for (RcOptionParam item : rcOptionParams){
+                if (!item.isInitialized()) return false;
+            }
             for (OsdItemParam item : osdItems){
                 if (!item.isInitialized()) {
                     return false;
@@ -776,6 +868,8 @@ public class Mavlink {
                     if (paramId.contains("OSD1_") &&
                             (paramId.contains("_EN") || paramId.contains("_X") || paramId.contains("_Y"))) {
                         setOsdItemParam(paramId, paramValue);
+                    }else if (Arrays.asList(FcCommon.AP_PARAM_RC_OPTIONS).contains(paramId)){
+                        setRcOptionParam(paramId, paramValue);
                     }
                     break;
             }

@@ -97,6 +97,11 @@ public class FcCommon {
     public static final String AP_PARAM_RCMAP_ROLL = "RCMAP_ROLL";
     public static final String AP_PARAM_RCMAP_THROTTLE = "RCMAP_THROTTLE";
     public static final String AP_PARAM_RCMAP_YAW = "RCMAP_YAW";
+    public static final String[] AP_PARAM_RC_OPTIONS = {"RC5_OPTION", "RC6_OPTION", "RC7_OPTION",
+            "RC8_OPTION", "RC9_OPTION", "RC10_OPTION", "RC11_OPTION", "RC12_OPTION", "RC13_OPTION",
+            "RC14_OPTION", "RC15_OPTION", "RC16_OPTION"};
+
+    public static final short AP_RC_OPTION_CAMERA_RECORD_VIDEO = 166;
 
     public enum VtxLowerPowerDisarm{
         VTX_LOW_POWER_DISARM_OFF,
