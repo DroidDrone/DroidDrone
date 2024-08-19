@@ -1484,7 +1484,7 @@ public class Osd {
     public void setArduPilotBatteryStatus(short currentBattery, int currentConsumed, byte batteryRemaining, long faultBitmask){
         updateLastDataTimestamp();
         if (currentBattery > 0) {
-            this.amperage = currentBattery / 1000f;
+            this.amperage = currentBattery / 100f;
             osdStats.setCurrent(this.amperage);
         }
         if (currentConsumed > 0) {
