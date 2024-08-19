@@ -679,7 +679,8 @@ public class Udp {
                 }
                 case FcCommon.DD_AP_MODE: {
                     int customMode = buffer.readUnsignedByteAsInt();
-                    osd.setArduPilotMode(customMode);
+                    boolean isArmed = buffer.readBoolean();
+                    osd.setArduPilotMode(customMode, isArmed);
                     break;
                 }
                 case FcCommon.DD_AP_BATTERY_STATUS: {

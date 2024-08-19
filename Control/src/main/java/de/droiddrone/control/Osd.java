@@ -135,7 +135,7 @@ public class Osd {
     private boolean apOsd1Enabled = true;
     private int apCustomMode = -1;
     private long apBatteryFaultBitmask;
-    private List<ArduPilotStatusText> arduPilotMessages = new ArrayList<>();
+    private final List<ArduPilotStatusText> arduPilotMessages = new ArrayList<>();
 
     public Osd(GlRenderer renderer, Config config) {
         this.renderer = renderer;
@@ -1131,7 +1131,7 @@ public class Osd {
             }
         }
         boolean drawStatistic = wasArmed && !isArmed;
-        if (drawStatistic && lastArmTime > 5){
+        if (drawStatistic && osdStats.lastArmTime > 5){
             osdStats.draw();
         }else{
             if (isTelemetryDataReceived()) {
@@ -1451,9 +1451,11 @@ public class Osd {
         osdStats.setHomeDistance(this.distanceToHome);
     }
 
-    public void setArduPilotMode(int customMode){
+    public void setArduPilotMode(int customMode, boolean isArmed){
         updateLastDataTimestamp();
         apCustomMode = customMode;
+        this.isArmed = isArmed;
+        if (isArmed) wasArmed = true;
     }
 
     public void setArduPilotSystemStatus(byte batteryCellCountDetected, int voltageBattery, short currentBattery, byte batteryRemaining){

@@ -348,17 +348,18 @@ public class Mavlink {
             switch (packet.msgid) {
                 case msg_heartbeat.MAVLINK_MSG_ID_HEARTBEAT: {
                     msg_heartbeat message = new msg_heartbeat(packet);
-                    if (fcParams.isFcConfigInitialized()){
-                        DataWriter buffer = new DataWriter(true);
-                        buffer.writeByte((byte) message.custom_mode);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_MODE, buffer.getData()));
-                    }
                     isArmed = (message.base_mode & MAV_MODE_FLAG.MAV_MODE_FLAG_SAFETY_ARMED) != 0;
                     if (isArmed){
                         if (armedTs == 0) armedTs = System.currentTimeMillis();
                     }else{
                         armedTs = 0;
                         flightTs = 0;
+                    }
+                    if (fcParams.isFcConfigInitialized()){
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeByte((byte) message.custom_mode);
+                        buffer.writeBoolean(isArmed);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_MODE, buffer.getData()));
                     }
                     if (isHeartBeatReceived) break;
                     isMavlink2 = message.isMavlink2;
