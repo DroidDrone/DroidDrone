@@ -150,14 +150,16 @@ public class Serial {
             return true;
         }
         if (status == STATUS_USB_PERMISSION_REQUESTED) return false;
-        PendingIntent intent;
+        PendingIntent pendingIntent;
+        Intent intent = new Intent(ACTION_USB_PERMISSION);
+        intent.setPackage(context.getPackageName());
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            intent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+            pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
         }else{
-            intent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_UPDATE_CURRENT);
+            pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_UPDATE_CURRENT);
         }
         status = STATUS_USB_PERMISSION_REQUESTED;
-        manager.requestPermission(driver.getDevice(), intent);
+        manager.requestPermission(driver.getDevice(), pendingIntent);
         return false;
     }
 
