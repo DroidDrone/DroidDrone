@@ -82,7 +82,8 @@ public class Osd {
     private int altitude; // m
     private float altVelocity; // m/s
     private int altBaro;
-    private FcCommon.GpsFixTypes fixType;
+    private FcCommon.GpsFixTypes fixType = FcCommon.GpsFixTypes.GPS_NO_FIX;
+    private FcCommon.GpsFixTypesArduPilot fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS;
     private int numSat;
     private float latDeg;
     private float lonDeg;
@@ -1499,7 +1500,9 @@ public class Osd {
 
     public void setArduPilotGpsRawInt(int fixType, int vel, int satellitesVisible){
         updateLastDataTimestamp();
-        if (fixType >= 0 && fixType < FcCommon.GpsFixTypes.values().length) this.fixType = FcCommon.GpsFixTypes.values()[fixType];
+        if (fixType >= 0 && fixType < FcCommon.GpsFixTypesArduPilot.values().length) {
+            this.fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.values()[fixType];
+        }
         if (vel != Utils.UINT16_MAX) {
             this.groundSpeed = vel * 0.036f;
             calculateMahPerKm(this.amperage, this.groundSpeed);
@@ -1520,8 +1523,20 @@ public class Osd {
         calculateHomeDistDir();
     }
 
+    private boolean checkGpsFix(){
+        if (fcInfo == null) return false;
+        if (fcInfo.getFcVariant() == FcInfo.FC_VARIANT_ARDUPILOT){
+            return fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS
+                    && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_FIX
+                    && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_2D_FIX;
+        }else{
+            return fixType == FcCommon.GpsFixTypes.GPS_FIX_3D;
+        }
+    }
+
     private void calculateTraveledDist(float newLatDeg, float newLonDeg){
-        if (fixType == FcCommon.GpsFixTypes.GPS_FIX_3D && groundSpeed > 0.2f && this.latDeg != 0) {
+        if (!checkGpsFix()) return;
+        if (groundSpeed > 0.2f && this.latDeg != 0 && isArmed) {
             Location oldLocation = new Location(LocationManager.GPS_PROVIDER);
             Location newLocation = new Location(LocationManager.GPS_PROVIDER);
             oldLocation.setLatitude(this.latDeg);
@@ -1536,7 +1551,7 @@ public class Osd {
     }
 
     private void calculateHomeDistDir(){
-        if (fixType == FcCommon.GpsFixTypes.GPS_FIX_3D && latDeg != 0 && homeLatDeg != 0) {
+        if (checkGpsFix() && latDeg != 0 && homeLatDeg != 0 && isArmed) {
             Location droneLocation = new Location(LocationManager.GPS_PROVIDER);
             Location homeLocation = new Location(LocationManager.GPS_PROVIDER);
             droneLocation.setLatitude(latDeg);
