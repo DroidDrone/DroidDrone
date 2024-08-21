@@ -379,7 +379,7 @@ public class Mavlink {
                     lastAttitudeTs = System.currentTimeMillis();
                     DataWriter buffer = new DataWriter(true);
                     buffer.writeShort((short) (Math.toDegrees(message.roll) * 10));
-                    buffer.writeShort((short) (Math.toDegrees(message.pitch) * 10));
+                    buffer.writeShort((short) (Math.toDegrees(message.pitch) * -10));
                     buffer.writeShort((short) Math.toDegrees(message.yaw));
                     telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_ATTITUDE, buffer.getData()));
                     break;
