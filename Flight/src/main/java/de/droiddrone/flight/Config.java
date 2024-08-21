@@ -51,6 +51,8 @@ public class Config {
     private int rcRefreshRate;
     private int serialBaudRate;
     private int serialPortIndex;
+    private int mavlinkTargetSysId;
+    private int mavlinkGcsSysId;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
@@ -150,6 +152,14 @@ public class Config {
         return serialPortIndex;
     }
 
+    public short getMavlinkTargetSysId() {
+        return (short)mavlinkTargetSysId;
+    }
+
+    public short getMavlinkGcsSysId() {
+        return (short)mavlinkGcsSysId;
+    }
+
     public int processReceivedConfig(DataReader buffer){
         try {
             int version = buffer.readShort();
@@ -173,6 +183,8 @@ public class Config {
             useUsbCamera = buffer.readBoolean();
             usbCameraFrameFormat = buffer.readByte();
             usbCameraReset = buffer.readBoolean();
+            mavlinkTargetSysId = buffer.readUnsignedByteAsInt();
+            mavlinkGcsSysId = buffer.readUnsignedByteAsInt();
             if (!updateConfig()) return -2;
             return 0;
         }catch (Exception e){
@@ -206,6 +218,8 @@ public class Config {
         rcRefreshRate = preferences.getInt("rcRefreshRate", 20);
         serialBaudRate = preferences.getInt("serialBaudRate", 115200);
         serialPortIndex = preferences.getInt("serialPortIndex", 0);
+        mavlinkTargetSysId = preferences.getInt("mavlinkTargetSysId", 1);
+        mavlinkGcsSysId = preferences.getInt("mavlinkGcsSysId", 255);
     }
 
     public boolean updateConfig(){
@@ -247,6 +261,8 @@ public class Config {
         editor.putInt("rcRefreshRate", rcRefreshRate);
         editor.putInt("serialBaudRate", serialBaudRate);
         editor.putInt("serialPortIndex", serialPortIndex);
+        editor.putInt("mavlinkTargetSysId", mavlinkTargetSysId);
+        editor.putInt("mavlinkGcsSysId", mavlinkGcsSysId);
         editor.apply();
         return true;
     }

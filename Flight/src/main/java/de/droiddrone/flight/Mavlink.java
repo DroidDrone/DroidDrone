@@ -59,9 +59,7 @@ public class Mavlink {
     private final Serial serial;
     private final Config config;
     public final ArrayBlockingQueue<TelemetryData> telemetryOutputBuffer = new ArrayBlockingQueue<>(30);
-    private final int systemId = 255;
     private final int componentId = 1;
-    private final short targetSystem = 1;
     private final short targetComponent = 1;
     private final int fcVariant;
     private final int apiProtocolVersion;
@@ -205,102 +203,78 @@ public class Mavlink {
         if (paramIdStr == null || paramIdStr.isEmpty() || paramIdStr.length() > 16) return;
         byte[] paramId = new byte[16];
         System.arraycopy(paramIdStr.getBytes(StandardCharsets.US_ASCII), 0, paramId, 0, paramIdStr.length());
-        MAVLinkPacket packet = new msg_param_request_read((short)-1, targetSystem, targetComponent, paramId, systemId, componentId, isMavlink2).pack();
+        MAVLinkPacket packet = new msg_param_request_read((short)-1, config.getMavlinkTargetSysId(), targetComponent,
+                paramId, config.getMavlinkGcsSysId(), componentId, isMavlink2).pack();
         packet.seq = getSequence();
         serial.writeDataMavlink(packet.encodePacket());
     }
 
     private void getFcVersion(){
         MAVLinkPacket packet = new msg_command_long(msg_autopilot_version.MAVLINK_MSG_ID_AUTOPILOT_VERSION, 0, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_REQUEST_MESSAGE, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
+                MAV_CMD.MAV_CMD_REQUEST_MESSAGE, config.getMavlinkTargetSysId(), targetComponent, (short)0, config.getMavlinkGcsSysId(), componentId, isMavlink2).pack();
         packet.seq = getSequence();
         serial.writeDataMavlink(packet.encodePacket());
     }
 
     private void getAttitude(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastAttitudeTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_attitude.MAVLINK_MSG_ID_ATTITUDE, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_attitude.MAVLINK_MSG_ID_ATTITUDE, interval);
     }
 
     private void getBatteryStatus(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastBatteryStatusTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_battery_status.MAVLINK_MSG_ID_BATTERY_STATUS, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_battery_status.MAVLINK_MSG_ID_BATTERY_STATUS, interval);
     }
 
     private void getSystemStatus(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastSysStatusTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_sys_status.MAVLINK_MSG_ID_SYS_STATUS, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_sys_status.MAVLINK_MSG_ID_SYS_STATUS, interval);
     }
 
     private void getStatusText(int interval){
         if (interval > 0 && isStatusTextReceived) return;
-        MAVLinkPacket packet = new msg_command_long(msg_statustext.MAVLINK_MSG_ID_STATUSTEXT, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_statustext.MAVLINK_MSG_ID_STATUSTEXT, interval);
     }
 
     private void getGpsRawInt(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastGpsRawIntTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_gps_raw_int.MAVLINK_MSG_ID_GPS_RAW_INT, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_gps_raw_int.MAVLINK_MSG_ID_GPS_RAW_INT, interval);
     }
 
     private void getGlobalPositionInt(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastGlobalPositionIntTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_global_position_int.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_global_position_int.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, interval);
     }
 
     private void getHomePosition(int interval){
         if (interval > 0 && isHomePositionReceived) return;
-        MAVLinkPacket packet = new msg_command_long(msg_home_position.MAVLINK_MSG_ID_HOME_POSITION, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_home_position.MAVLINK_MSG_ID_HOME_POSITION, interval);
     }
 
     private void getSystemTime(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastSystemTimeTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_system_time.MAVLINK_MSG_ID_SYSTEM_TIME, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_system_time.MAVLINK_MSG_ID_SYSTEM_TIME, interval);
     }
 
     private void getRcChannels(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastRcChannelsTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_rc_channels.MAVLINK_MSG_ID_RC_CHANNELS, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_rc_channels.MAVLINK_MSG_ID_RC_CHANNELS, interval);
     }
 
     private void getScaledPressure(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastScaledPressureTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_scaled_pressure.MAVLINK_MSG_ID_SCALED_PRESSURE, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
-        packet.seq = getSequence();
-        serial.writeDataMavlink(packet.encodePacket());
+        setMessageInterval(msg_scaled_pressure.MAVLINK_MSG_ID_SCALED_PRESSURE, interval);
     }
 
     private void getVfrHud(int interval){
         if (interval > 0 && System.currentTimeMillis() - lastVfrHudTs < interval / 200) return;
-        MAVLinkPacket packet = new msg_command_long(msg_vfr_hud.MAVLINK_MSG_ID_VFR_HUD, interval, 0, 0, 0, 0, 0,
-                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, targetSystem, targetComponent, (short)0, systemId, componentId, isMavlink2).pack();
+        setMessageInterval(msg_vfr_hud.MAVLINK_MSG_ID_VFR_HUD, interval);
+    }
+
+    private void setMessageInterval(int messageId, int intervalUs){
+        MAVLinkPacket packet = new msg_command_long(messageId, intervalUs, 0, 0, 0, 0, 0,
+                MAV_CMD.MAV_CMD_SET_MESSAGE_INTERVAL, config.getMavlinkTargetSysId(), targetComponent,
+                (short)0, config.getMavlinkGcsSysId(), componentId, isMavlink2).pack();
         packet.seq = getSequence();
         serial.writeDataMavlink(packet.encodePacket());
     }
@@ -332,13 +306,13 @@ public class Mavlink {
         MAVLinkPacket packet = new msg_rc_channels_override(channels[0], channels[1], channels[2], channels[3],
                 rcCount > 4 ? channels[4] : Utils.UINT16_MAX, rcCount > 5 ? channels[5] : Utils.UINT16_MAX,
                 rcCount > 6 ? channels[6] : Utils.UINT16_MAX, rcCount > 7 ? channels[7] : Utils.UINT16_MAX,
-                targetSystem, targetComponent,
+                config.getMavlinkTargetSysId(), targetComponent,
                 rcCount > 8 ? channels[8] : 0, rcCount > 9 ? channels[9] : 0,
                 rcCount > 10 ? channels[10] : 0, rcCount > 11 ? channels[11] : 0,
                 rcCount > 12 ? channels[12] : 0, rcCount > 13 ? channels[13] : 0,
                 rcCount > 14 ? channels[14] : 0, rcCount > 15 ? channels[15] : 0,
                 rcCount > 16 ? channels[16] : 0, rcCount > 17 ? channels[17] : 0,
-                systemId, componentId, isMavlink2).pack();
+                config.getMavlinkGcsSysId(), componentId, isMavlink2).pack();
         packet.seq = getSequence();
         serial.writeDataMavlink(packet.encodePacket());
     }
@@ -948,8 +922,8 @@ public class Mavlink {
     }
 
     public void close(){
-        disableIntervalMessages();
         threadsId++;
+        disableIntervalMessages();
         apiVersionMajor = -1;
         apiVersionMinor = -1;
         fcVersionMajor = -1;

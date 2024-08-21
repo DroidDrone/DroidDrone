@@ -187,6 +187,14 @@
             app:key="serialPortIndex"
             app:defaultValue="0"
             app:title="@string/serial_port_index" />
+        <EditTextPreference
+            app:key="mavlinkTargetSysId"
+            app:defaultValue="1"
+            app:title="@string/mavlink_target_sysid" />
+        <EditTextPreference
+            app:key="mavlinkGcsSysId"
+            app:defaultValue="255"
+            app:title="@string/mavlink_gcs_sysid" />
     </PreferenceCategory>
 
     <PreferenceCategory

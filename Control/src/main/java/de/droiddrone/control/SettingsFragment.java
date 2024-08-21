@@ -19,6 +19,7 @@ package de.droiddrone.control;
 
 import android.os.Bundle;
 import android.text.InputType;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -46,15 +47,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         EditTextPreference cameraId = findPreference("cameraId");
         SwitchPreferenceCompat useUsbCamera = findPreference("useUsbCamera");
         if (cameraId != null) {
-            cameraId.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
-            cameraId.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+            setNumericEditTextPreferenceSummary(cameraId);
             cameraId.setEnabled(useUsbCamera == null || !useUsbCamera.isChecked());
         }
-        EditTextPreference serialPortIndex = findPreference("serialPortIndex");
-        if (serialPortIndex != null) {
-            serialPortIndex.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
-            serialPortIndex.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+        if (useUsbCamera != null) {
+            useUsbCamera.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (cameraId != null) cameraId.setEnabled(Boolean.FALSE.equals(newValue));
+                return true;
+            });
         }
+        setNumericEditTextPreferenceSummary(findPreference("serialPortIndex"));
+        setNumericEditTextPreferenceSummary(findPreference("mavlinkTargetSysId"));
+        setNumericEditTextPreferenceSummary(findPreference("mavlinkGcsSysId"));
         setListPreferenceSummary(findPreference("usbCameraFrameFormat"));
         setListPreferenceSummary(findPreference("cameraResolution"));
         setListPreferenceSummary(findPreference("cameraFps"));
@@ -72,12 +76,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
-        if (useUsbCamera != null) {
-            useUsbCamera.setOnPreferenceChangeListener((preference, newValue) -> {
-                if (cameraId != null) cameraId.setEnabled(Boolean.FALSE.equals(newValue));
-                return true;
-            });
-        }
     }
 
     @Override
@@ -90,6 +88,13 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private void setListPreferenceSummary(ListPreference preference){
         if (preference != null){
             preference.setSummaryProvider((Preference.SummaryProvider<ListPreference>) ListPreference::getEntry);
+        }
+    }
+
+    private void setNumericEditTextPreferenceSummary(EditTextPreference preference){
+        if (preference != null) {
+            preference.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
+            preference.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
         }
     }
 }

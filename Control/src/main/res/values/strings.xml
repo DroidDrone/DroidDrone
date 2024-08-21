@@ -56,6 +56,8 @@
     <string name="rc_refresh_rate">RC refresh rate</string>
     <string name="serial_baud_rate">Serial port baud rate</string>
     <string name="serial_port_index">Serial port index</string>
+    <string name="mavlink_target_sysid">Mavlink target system ID</string>
+    <string name="mavlink_gcs_sysid">Mavlink GCS system ID</string>
     <string name="version_mismatch">Control/Flight version mismatch!</string>
     <string name="use_usb_camera">Use external USB camera (UVC)</string>
     <string name="usb_camera_frame_format">USB camera frame format</string>
