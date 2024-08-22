@@ -17,7 +17,7 @@
 
 package de.droiddrone.flight;
 
-interface Camera {
+public interface Camera {
     boolean initialize(StreamEncoder streamEncoder, Mp4Recorder mp4Recorder);
     boolean openCamera();
     int getCurrentFps();

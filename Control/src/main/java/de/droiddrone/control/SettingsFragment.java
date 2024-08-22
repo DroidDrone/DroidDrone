@@ -19,7 +19,6 @@ package de.droiddrone.control;
 
 import android.os.Bundle;
 import android.text.InputType;
-import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,8 +29,6 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
 import com.rarepebble.colorpicker.ColorPreference;
-
-import de.droiddrone.common.Logcat;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final int fragmentId = 3;

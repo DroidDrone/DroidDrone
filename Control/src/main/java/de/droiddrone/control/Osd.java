@@ -24,6 +24,7 @@ import androidx.annotation.NonNull;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import de.droiddrone.common.DataReader;
@@ -2041,7 +2042,7 @@ public class Osd {
 
         private void initialize(){
             if (osdConfig == null || osdConfig.osdStats == null){
-                for (int i = 0; i < statsCount; i++) statEnabled[i] = true;
+                Arrays.fill(statEnabled, true);
             }else{
                 if (fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_BETAFLIGHT) {
                     for (OsdConfig.OsdStat stat : osdConfig.osdStats) {
@@ -2073,6 +2074,8 @@ public class Osd {
                             statEnabled[13] = true;
                         }
                     }
+                }else{
+                    Arrays.fill(statEnabled, true);
                 }
             }
             isInitialized = true;

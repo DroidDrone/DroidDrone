@@ -75,7 +75,7 @@ public class GlButtons {
         buttons.clear();
     }
 
-    static abstract class OnClickListener{
+    public static abstract class OnClickListener{
         abstract void onClick(Button button);
     }
 

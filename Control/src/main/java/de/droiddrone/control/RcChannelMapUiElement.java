@@ -132,7 +132,7 @@ public class RcChannelMapUiElement {
         }
     }
 
-    static abstract class OnClickListener{
+    public static abstract class OnClickListener{
         abstract void onClick(int channelId, boolean selected);
     }
 
