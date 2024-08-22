@@ -1460,17 +1460,12 @@ public class Osd {
         if (isArmed) wasArmed = true;
     }
 
-    public void setArduPilotSystemStatus(byte batteryCellCountDetected, int voltageBattery, short currentBattery, byte batteryRemaining){
+    public void setArduPilotSystemStatus(byte batteryCellCountDetected, int voltageBattery, byte batteryRemaining){
         updateLastDataTimestamp();
         if (batteryCellCountDetected > 0) this.batteryCellCount = batteryCellCountDetected;
         if (voltageBattery != Utils.UINT16_MAX){
             this.voltage = voltageBattery / 1000f;
             osdStats.setBatteryVoltage(this.voltage);
-        }
-        if (currentBattery > 0) {
-            this.amperage = currentBattery / 1000f;
-            osdStats.setCurrent(this.amperage);
-            calculateMahPerKm(this.amperage, this.groundSpeed);
         }
         if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
     }
@@ -1490,6 +1485,7 @@ public class Osd {
         if (currentBattery > 0) {
             this.amperage = currentBattery / 100f;
             osdStats.setCurrent(this.amperage);
+            calculateMahPerKm(this.amperage, this.groundSpeed);
         }
         if (currentConsumed > 0) {
             this.mahDrawn = currentConsumed;

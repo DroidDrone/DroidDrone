@@ -407,7 +407,6 @@ public class Mavlink {
                     }
                     buffer.writeByte((byte)batteryCellCountDetected);
                     buffer.writeShort((short)message.voltage_battery);
-                    buffer.writeShort(message.current_battery);
                     buffer.writeByte(message.battery_remaining);
                     telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYS_STATUS, buffer.getData()));
                     break;
