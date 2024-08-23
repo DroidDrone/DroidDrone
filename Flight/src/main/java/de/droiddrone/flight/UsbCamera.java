@@ -181,14 +181,8 @@ public class UsbCamera implements Camera {
                         targetFrameRange.getUpper(),
                         frameFormat);
             } catch (final IllegalArgumentException e) {
-                try {
-                    e.printStackTrace();
-                    log("UsbCamera: unsupported format. Set to defaults.");
-                    uvcCamera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.FRAME_FORMAT_YUYV);
-                } catch (final IllegalArgumentException e1) {
-                    uvcCamera.destroy();
-                    return false;
-                }
+                uvcCamera.destroy();
+                return false;
             }
 
             Surface streamEncoderSurface = null;
