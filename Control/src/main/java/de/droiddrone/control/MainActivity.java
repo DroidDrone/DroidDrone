@@ -256,20 +256,23 @@ public class MainActivity extends AppCompatActivity {
                     }
                     if (!isConnected()){
                         udp.sendConnect();
+                        Thread.sleep(500);
                     }else if (!udp.isConfigReceived() && !config.isViewer()){
                         udp.sendConfig();
+                        Thread.sleep(500);
                     }else if (!udp.isVideoInitialFrameReceived()){
                         udp.startVideoStream();
+                        Thread.sleep(2500);
                     }else if (!osd.isInitialized() || osd.getOsdConfig() == null || !osd.isHasBoxIds() || !osd.isHasBatteryConfig()) {
                         if (!osd.isInitialized()) udp.sendGetFcInfo();
                         if (osd.getOsdConfig() == null) udp.sendGetOsdConfig();
                         if (!osd.isHasBoxIds()) udp.sendGetBoxIds();
                         if (!osd.isHasBatteryConfig()) udp.sendGetBatteryConfig();
+                        Thread.sleep(1000);
                     }else{
                         log("Connection thread finished.");
                         break;
                     }
-                    Thread.sleep(1500);
                 }catch (Exception e) {
                     log("connectionThread error: " + e);
                 }
