@@ -332,170 +332,180 @@ public class Mavlink {
         if (dataLength < MAVLinkPacket.MAVLINK1_HEADER_LEN) return;
         byte[] data = new byte[dataLength];
         System.arraycopy(buf, 0, data, 0, dataLength);
-        List<MAVLinkPacket> packets = parsePackets(data);
+        List<MAVLinkPacket> packets = null;
+        try {
+            packets = parsePackets(data);
+        }catch (Exception e){
+            log("Mavlink - parsePackets error: " + e);
+        }
         if (packets == null || packets.isEmpty()) return;
         for (MAVLinkPacket packet : packets) {
-            switch (packet.msgid) {
-                case msg_heartbeat.MAVLINK_MSG_ID_HEARTBEAT: {
-                    msg_heartbeat message = new msg_heartbeat(packet);
-                    isArmed = (message.base_mode & MAV_MODE_FLAG.MAV_MODE_FLAG_SAFETY_ARMED) != 0;
-                    if (isArmed){
-                        if (armedTs == 0) armedTs = System.currentTimeMillis();
-                    }else{
-                        armedTs = 0;
-                        flightTs = 0;
+            try {
+                switch (packet.msgid) {
+                    case msg_heartbeat.MAVLINK_MSG_ID_HEARTBEAT: {
+                        msg_heartbeat message = new msg_heartbeat(packet);
+                        isArmed = (message.base_mode & MAV_MODE_FLAG.MAV_MODE_FLAG_SAFETY_ARMED) != 0;
+                        if (isArmed) {
+                            if (armedTs == 0) armedTs = System.currentTimeMillis();
+                        } else {
+                            armedTs = 0;
+                            flightTs = 0;
+                        }
+                        if (fcParams != null && fcParams.isFcConfigInitialized()) {
+                            DataWriter buffer = new DataWriter(true);
+                            buffer.writeByte((byte) message.custom_mode);
+                            buffer.writeBoolean(isArmed);
+                            telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_MODE, buffer.getData()));
+                        }
+                        if (isHeartBeatReceived) break;
+                        isMavlink2 = message.isMavlink2;
+                        apiVersionMajor = message.isMavlink2 ? 2 : 1;
+                        apiVersionMinor = message.mavlink_version;
+                        platformType = message.type;
+                        isHeartBeatReceived = true;
+                        break;
                     }
-                    if (fcParams.isFcConfigInitialized()){
+                    case msg_autopilot_version.MAVLINK_MSG_ID_AUTOPILOT_VERSION: {
+                        msg_autopilot_version message = new msg_autopilot_version(packet);
+                        fcVersionMajor = (int) (message.flight_sw_version >> 24 & 0xFF);
+                        fcVersionMinor = (int) (message.flight_sw_version >> 16 & 0xFF);
+                        fcVersionPatchLevel = (int) (message.flight_sw_version >> 8 & 0xFF);
+                        byte fw_type = (byte) (message.flight_sw_version & 0xFF);
+                        setFcInfo();
+                        break;
+                    }
+                    case msg_param_value.MAVLINK_MSG_ID_PARAM_VALUE: {
+                        msg_param_value message = new msg_param_value(packet);
+                        if (fcParams == null) break;
+                        fcParams.setParam(message.getParam_Id(), message.param_value);
+                        break;
+                    }
+                    case msg_attitude.MAVLINK_MSG_ID_ATTITUDE: {
+                        msg_attitude message = new msg_attitude(packet);
+                        lastAttitudeTs = System.currentTimeMillis();
                         DataWriter buffer = new DataWriter(true);
-                        buffer.writeByte((byte) message.custom_mode);
-                        buffer.writeBoolean(isArmed);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_MODE, buffer.getData()));
+                        buffer.writeShort((short) (Math.toDegrees(message.roll) * 10));
+                        buffer.writeShort((short) (Math.toDegrees(message.pitch) * -10));
+                        buffer.writeShort((short) Math.toDegrees(message.yaw));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_ATTITUDE, buffer.getData()));
+                        break;
                     }
-                    if (isHeartBeatReceived) break;
-                    isMavlink2 = message.isMavlink2;
-                    apiVersionMajor = message.isMavlink2 ? 2 : 1;
-                    apiVersionMinor = message.mavlink_version;
-                    platformType = message.type;
-                    isHeartBeatReceived = true;
-                    break;
-                }
-                case msg_autopilot_version.MAVLINK_MSG_ID_AUTOPILOT_VERSION: {
-                    msg_autopilot_version message = new msg_autopilot_version(packet);
-                    fcVersionMajor = (int) (message.flight_sw_version >> 24 & 0xFF);
-                    fcVersionMinor = (int) (message.flight_sw_version >> 16 & 0xFF);
-                    fcVersionPatchLevel = (int) (message.flight_sw_version >> 8 & 0xFF);
-                    byte fw_type = (byte) (message.flight_sw_version & 0xFF);
-                    setFcInfo();
-                    break;
-                }
-                case msg_param_value.MAVLINK_MSG_ID_PARAM_VALUE: {
-                    msg_param_value message = new msg_param_value(packet);
-                    if (fcParams == null) break;
-                    fcParams.setParam(message.getParam_Id(), message.param_value);
-                    break;
-                }
-                case msg_attitude.MAVLINK_MSG_ID_ATTITUDE: {
-                    msg_attitude message = new msg_attitude(packet);
-                    lastAttitudeTs = System.currentTimeMillis();
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeShort((short) (Math.toDegrees(message.roll) * 10));
-                    buffer.writeShort((short) (Math.toDegrees(message.pitch) * -10));
-                    buffer.writeShort((short) Math.toDegrees(message.yaw));
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_ATTITUDE, buffer.getData()));
-                    break;
-                }
-                case msg_battery_status.MAVLINK_MSG_ID_BATTERY_STATUS: {
-                    msg_battery_status message = new msg_battery_status(packet);
-                    lastBatteryStatusTs = System.currentTimeMillis();
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeShort(message.current_battery);
-                    buffer.writeInt(message.current_consumed);
-                    buffer.writeByte(message.battery_remaining);
-                    buffer.writeInt((int)message.fault_bitmask);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_BATTERY_STATUS, buffer.getData()));
-                    break;
-                }
-                case msg_sys_status.MAVLINK_MSG_ID_SYS_STATUS: {
-                    msg_sys_status message = new msg_sys_status(packet);
-                    lastSysStatusTs = System.currentTimeMillis();
-                    DataWriter buffer = new DataWriter(true);
-                    if (message.voltage_battery != Utils.UINT16_MAX) {
-                        int cellCountDetected = Math.round(message.voltage_battery / 4100f);
-                        if (batteryCellCountDetected < cellCountDetected) {
-                            batteryCellCountDetected = cellCountDetected;
+                    case msg_battery_status.MAVLINK_MSG_ID_BATTERY_STATUS: {
+                        msg_battery_status message = new msg_battery_status(packet);
+                        lastBatteryStatusTs = System.currentTimeMillis();
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeShort(message.current_battery);
+                        buffer.writeInt(message.current_consumed);
+                        buffer.writeByte(message.battery_remaining);
+                        buffer.writeInt((int) message.fault_bitmask);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_BATTERY_STATUS, buffer.getData()));
+                        break;
+                    }
+                    case msg_sys_status.MAVLINK_MSG_ID_SYS_STATUS: {
+                        msg_sys_status message = new msg_sys_status(packet);
+                        lastSysStatusTs = System.currentTimeMillis();
+                        DataWriter buffer = new DataWriter(true);
+                        if (message.voltage_battery != Utils.UINT16_MAX) {
+                            int cellCountDetected = Math.round(message.voltage_battery / 4100f);
+                            if (batteryCellCountDetected < cellCountDetected) {
+                                batteryCellCountDetected = cellCountDetected;
+                            }
                         }
+                        buffer.writeByte((byte) batteryCellCountDetected);
+                        buffer.writeShort((short) message.voltage_battery);
+                        buffer.writeByte(message.battery_remaining);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYS_STATUS, buffer.getData()));
+                        break;
                     }
-                    buffer.writeByte((byte)batteryCellCountDetected);
-                    buffer.writeShort((short)message.voltage_battery);
-                    buffer.writeByte(message.battery_remaining);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYS_STATUS, buffer.getData()));
-                    break;
-                }
-                case msg_statustext.MAVLINK_MSG_ID_STATUSTEXT: {
-                    msg_statustext message = new msg_statustext(packet);
-                    isStatusTextReceived = true;
-                    if (message.getText() == null || message.getText().contains("No ap_message for mavlink")) break;
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeByte((byte) message.severity);
-                    buffer.writeUTF(message.getText());
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_STATUS_TEXT, buffer.getData()));
-                    break;
-                }
-                case msg_gps_raw_int.MAVLINK_MSG_ID_GPS_RAW_INT: {
-                    msg_gps_raw_int message = new msg_gps_raw_int(packet);
-                    lastGpsRawIntTs = System.currentTimeMillis();
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeByte((byte)message.fix_type);
-                    buffer.writeShort((short)message.vel);
-                    buffer.writeByte((byte)message.satellites_visible);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_GPS_RAW_INT, buffer.getData()));
-                    break;
-                }
-                case msg_global_position_int.MAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
-                    msg_global_position_int message = new msg_global_position_int(packet);
-                    lastGlobalPositionIntTs = System.currentTimeMillis();
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeInt(message.lat);
-                    buffer.writeInt(message.lon);
-                    buffer.writeInt(message.relative_alt);
-                    buffer.writeShort(message.vz);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_GLOBAL_POSITION_INT, buffer.getData()));
-                    break;
-                }
-                case msg_home_position.MAVLINK_MSG_ID_HOME_POSITION: {
-                    msg_home_position message = new msg_home_position(packet);
-                    isHomePositionReceived = true;
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeInt(message.latitude);
-                    buffer.writeInt(message.longitude);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_HOME_POSITION, buffer.getData()));
-                    break;
-                }
-                case msg_system_time.MAVLINK_MSG_ID_SYSTEM_TIME: {
-                    msg_system_time message = new msg_system_time(packet);
-                    lastSystemTimeTs = System.currentTimeMillis();
-                    long armingTime = 0;
-                    if (armedTs != 0) armingTime = lastSystemTimeTs - armedTs;
-                    if (isArmed){
-                        if (flightTs == 0){
-                            if (throttle >= 2) flightTs = lastSystemTimeTs;
-                        }else{
-                            flightTime += (lastSystemTimeTs - flightTs);
-                            flightTs = lastSystemTimeTs;
+                    case msg_statustext.MAVLINK_MSG_ID_STATUSTEXT: {
+                        msg_statustext message = new msg_statustext(packet);
+                        isStatusTextReceived = true;
+                        if (message.getText() == null || message.getText().contains("No ap_message for mavlink"))
+                            break;
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeByte((byte) message.severity);
+                        buffer.writeUTF(message.getText());
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_STATUS_TEXT, buffer.getData()));
+                        break;
+                    }
+                    case msg_gps_raw_int.MAVLINK_MSG_ID_GPS_RAW_INT: {
+                        msg_gps_raw_int message = new msg_gps_raw_int(packet);
+                        lastGpsRawIntTs = System.currentTimeMillis();
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeByte((byte) message.fix_type);
+                        buffer.writeShort((short) message.vel);
+                        buffer.writeByte((byte) message.satellites_visible);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_GPS_RAW_INT, buffer.getData()));
+                        break;
+                    }
+                    case msg_global_position_int.MAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
+                        msg_global_position_int message = new msg_global_position_int(packet);
+                        lastGlobalPositionIntTs = System.currentTimeMillis();
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeInt(message.lat);
+                        buffer.writeInt(message.lon);
+                        buffer.writeInt(message.relative_alt);
+                        buffer.writeShort(message.vz);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_GLOBAL_POSITION_INT, buffer.getData()));
+                        break;
+                    }
+                    case msg_home_position.MAVLINK_MSG_ID_HOME_POSITION: {
+                        msg_home_position message = new msg_home_position(packet);
+                        isHomePositionReceived = true;
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeInt(message.latitude);
+                        buffer.writeInt(message.longitude);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_HOME_POSITION, buffer.getData()));
+                        break;
+                    }
+                    case msg_system_time.MAVLINK_MSG_ID_SYSTEM_TIME: {
+                        msg_system_time message = new msg_system_time(packet);
+                        lastSystemTimeTs = System.currentTimeMillis();
+                        long armingTime = 0;
+                        if (armedTs != 0) armingTime = lastSystemTimeTs - armedTs;
+                        if (isArmed) {
+                            if (flightTs == 0) {
+                                if (throttle >= 2) flightTs = lastSystemTimeTs;
+                            } else {
+                                flightTime += (lastSystemTimeTs - flightTs);
+                                flightTs = lastSystemTimeTs;
+                            }
                         }
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeInt((int) message.time_boot_ms);
+                        buffer.writeInt((int) flightTime);
+                        buffer.writeInt((int) armingTime);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYSTEM_TIME, buffer.getData()));
+                        break;
                     }
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeInt((int)message.time_boot_ms);
-                    buffer.writeInt((int)flightTime);
-                    buffer.writeInt((int)armingTime);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYSTEM_TIME, buffer.getData()));
-                    break;
+                    case msg_rc_channels.MAVLINK_MSG_ID_RC_CHANNELS: {
+                        msg_rc_channels message = new msg_rc_channels(packet);
+                        lastRcChannelsTs = System.currentTimeMillis();
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeByte((byte) message.rssi);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_RC_CHANNELS, buffer.getData()));
+                        break;
+                    }
+                    case msg_scaled_pressure.MAVLINK_MSG_ID_SCALED_PRESSURE: {
+                        msg_scaled_pressure message = new msg_scaled_pressure(packet);
+                        lastScaledPressureTs = System.currentTimeMillis();
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeShort(message.temperature);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SCALED_PRESSURE, buffer.getData()));
+                        break;
+                    }
+                    case msg_vfr_hud.MAVLINK_MSG_ID_VFR_HUD: {
+                        msg_vfr_hud message = new msg_vfr_hud(packet);
+                        lastVfrHudTs = System.currentTimeMillis();
+                        throttle = message.throttle;
+                        DataWriter buffer = new DataWriter(true);
+                        buffer.writeByte((byte) message.throttle);
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_VFR_HUD, buffer.getData()));
+                        break;
+                    }
                 }
-                case msg_rc_channels.MAVLINK_MSG_ID_RC_CHANNELS: {
-                    msg_rc_channels message = new msg_rc_channels(packet);
-                    lastRcChannelsTs = System.currentTimeMillis();
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeByte((byte)message.rssi);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_RC_CHANNELS, buffer.getData()));
-                    break;
-                }
-                case msg_scaled_pressure.MAVLINK_MSG_ID_SCALED_PRESSURE: {
-                    msg_scaled_pressure message = new msg_scaled_pressure(packet);
-                    lastScaledPressureTs = System.currentTimeMillis();
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeShort(message.temperature);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SCALED_PRESSURE, buffer.getData()));
-                    break;
-                }
-                case msg_vfr_hud.MAVLINK_MSG_ID_VFR_HUD: {
-                    msg_vfr_hud message = new msg_vfr_hud(packet);
-                    lastVfrHudTs = System.currentTimeMillis();
-                    throttle = message.throttle;
-                    DataWriter buffer = new DataWriter(true);
-                    buffer.writeByte((byte)message.throttle);
-                    telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_VFR_HUD, buffer.getData()));
-                    break;
-                }
+            }catch (Exception e){
+                log("Mavlink process packet data error: " + e + ", msgId: " + packet.msgid);
             }
         }
     }
