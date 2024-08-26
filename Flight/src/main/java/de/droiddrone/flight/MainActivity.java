@@ -30,6 +30,7 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -55,6 +56,7 @@ public class MainActivity extends Activity {
     Spinner connectionMode;
     EditText etIp, etPort, etKey;
     private TextView tvNetworkStatus, tvFcStatus, tvConnectionModeHint;
+    CheckBox cbConnectOnStartup;
     private Timer uiTimer;
     private boolean isPaused = false;
     public static Config config;
@@ -115,8 +117,19 @@ public class MainActivity extends Activity {
         etPort.setText(String.valueOf(config.getPort()));
         etKey.setText(config.getKey());
         connectionMode.setSelection(config.getConnectionMode());
+        cbConnectOnStartup = findViewById(R.id.cbConnectOnStartup);
+        cbConnectOnStartup.setChecked(config.isConnectOnStartup());
         TextView tvVersion = findViewById(R.id.tvVersion);
         tvVersion.setText(getResources().getString(R.string.version, MainActivity.versionName));
+        if (config.isConnectOnStartup() && !DDService.isRunning){
+            new Thread(() -> {
+                try{
+                    Thread.sleep(3000);
+                    startStopService();
+                }catch (Exception ignore){
+                }
+            }).start();
+        }
     }
 
     private void updateUi(){
@@ -194,6 +207,7 @@ public class MainActivity extends Activity {
             etIp.setEnabled(false);
             etPort.setEnabled(false);
             etKey.setEnabled(false);
+            cbConnectOnStartup.setEnabled(false);
         }else{
             bStartStopService.setText(getResources().getString(R.string.connect));
             tvNetworkStatus.setText(getResources().getString(R.string.status_disconnected));
@@ -204,6 +218,7 @@ public class MainActivity extends Activity {
             etIp.setEnabled(true);
             etPort.setEnabled(true);
             etKey.setEnabled(true);
+            cbConnectOnStartup.setEnabled(true);
         }
     }
 

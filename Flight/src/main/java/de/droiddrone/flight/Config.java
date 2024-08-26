@@ -53,6 +53,7 @@ public class Config {
     private int serialPortIndex;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
+    private boolean connectOnStartup;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
@@ -160,6 +161,10 @@ public class Config {
         return (short)mavlinkGcsSysId;
     }
 
+    public boolean isConnectOnStartup(){
+        return connectOnStartup;
+    }
+
     public int processReceivedConfig(DataReader buffer){
         try {
             int version = buffer.readShort();
@@ -220,6 +225,7 @@ public class Config {
         serialPortIndex = preferences.getInt("serialPortIndex", 0);
         mavlinkTargetSysId = preferences.getInt("mavlinkTargetSysId", 1);
         mavlinkGcsSysId = preferences.getInt("mavlinkGcsSysId", 255);
+        connectOnStartup = preferences.getBoolean("connectOnStartup", false);
     }
 
     public boolean updateConfig(){
@@ -263,6 +269,8 @@ public class Config {
         editor.putInt("serialPortIndex", serialPortIndex);
         editor.putInt("mavlinkTargetSysId", mavlinkTargetSysId);
         editor.putInt("mavlinkGcsSysId", mavlinkGcsSysId);
+        connectOnStartup = activity.cbConnectOnStartup.isChecked();
+        editor.putBoolean("connectOnStartup", connectOnStartup);
         editor.apply();
         return true;
     }

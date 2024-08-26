@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">DroidDrone - Flight</string>
     <string name="connect">Connect</string>
+    <string name="connect_on_startup">Connect on startup</string>
     <string name="disconnect">Disconnect</string>
     <string name="status_network">Network connection status:&#160;</string>
     <string name="status_fc">FC connection status:&#160;</string>
