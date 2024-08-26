@@ -321,7 +321,7 @@ public class Mavlink {
         final short optionActivePwm = 1600;
         if (cameraRecordVideoChannel != -1){
             boolean camRecordActive = channels[cameraRecordVideoChannel] >= optionActivePwm;
-            if (camRecordActive != cameraRecordLastState){
+            if (camRecordActive && !cameraRecordLastState){
                 telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_VIDEO_RECORDER_START_STOP, new byte[1]));
             }
             cameraRecordLastState = camRecordActive;
