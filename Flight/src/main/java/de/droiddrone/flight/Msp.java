@@ -576,7 +576,7 @@ public class Msp {
         }
 
         if (isCamSwitch && !oldCamSwitchState){
-            telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_VIDEO_RECORDER_START_STOP, new byte[1]));
+            telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_VIDEO_RECORDER_START_STOP, null));
         }
         oldCamSwitchState = isCamSwitch;
     }

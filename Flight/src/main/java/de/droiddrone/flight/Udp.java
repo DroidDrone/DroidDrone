@@ -461,15 +461,19 @@ public class Udp {
             boolean sendData = false;
             UdpPacketData packetData = new UdpPacketData(UdpCommon.TelemetryData);
             do{
-                if (msp.isInitialized()) buf = msp.telemetryOutputBuffer.poll();
-                if (buf != null){
-                    sendData = true;
-                    fillTelemetryPacketData(buf, packetData);
+                if (msp.isInitialized()) {
+                    buf = msp.telemetryOutputBuffer.poll();
+                    if (buf != null) {
+                        sendData = true;
+                        fillTelemetryPacketData(buf, packetData);
+                    }
                 }
-                if (mavlink.isInitialized()) buf = mavlink.telemetryOutputBuffer.poll();
-                if (buf != null){
-                    sendData = true;
-                    fillTelemetryPacketData(buf, packetData);
+                if (mavlink.isInitialized()) {
+                    buf = mavlink.telemetryOutputBuffer.poll();
+                    if (buf != null) {
+                        sendData = true;
+                        fillTelemetryPacketData(buf, packetData);
+                    }
                 }
                 buf = phoneTelemetry.telemetryOutputBuffer.poll();
                 if (buf != null){
@@ -765,7 +769,7 @@ public class Udp {
                     packetData.daos.writeInt(buffer.readInt());//recordingTimeSec
                     break;
                 }
-                case FcCommon.DD_VIDEO_RECORDER_START_STOP: {//BOXCAMERA2
+                case FcCommon.DD_VIDEO_RECORDER_START_STOP: {
                     startStopRecording();
                     break;
                 }
