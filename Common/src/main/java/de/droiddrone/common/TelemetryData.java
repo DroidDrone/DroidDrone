@@ -18,11 +18,11 @@
 package de.droiddrone.common;
 
 public class TelemetryData {
-    public final short code;
+    public final int code;
     public final byte[] data;
 
 
-    public TelemetryData(short code, byte[] data) {
+    public TelemetryData(int code, byte[] data) {
         this.code = code;
         this.data = data;
     }

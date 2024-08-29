@@ -19,7 +19,9 @@ package de.droiddrone.flight;
 
 import static de.droiddrone.common.Logcat.log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import de.droiddrone.common.DataReader;
@@ -35,9 +37,11 @@ public class Msp {
     private static final byte MSP_HEADER_REQUEST = 0x3C;//<
     private static final byte MSP_HEADER_RESPONSE = 0x3E;//>
     private static final byte MSP_HEADER_ERROR = 0x21;//!
+    private static final byte MSP_V1_HEADER_SIZE = 5;
     private static final byte MSP_V2_HEADER_SIZE = 8;
-    private static final byte MSP_V2_CRC_SIZE = 1;
-    private static final byte MSP_V2_MIN_REQUEST_SIZE = MSP_V2_HEADER_SIZE + MSP_V2_CRC_SIZE;
+    private static final byte MSP_CRC_SIZE = 1;
+    private static final byte MSP_V1_MIN_REQUEST_SIZE = MSP_V1_HEADER_SIZE + MSP_CRC_SIZE;
+    private static final byte MSP_V2_MIN_REQUEST_SIZE = MSP_V2_HEADER_SIZE + MSP_CRC_SIZE;
     private final Serial serial;
     private final Config config;
     public final ArrayBlockingQueue<TelemetryData> telemetryOutputBuffer = new ArrayBlockingQueue<>(30);
@@ -231,254 +235,317 @@ public class Msp {
         }
     };
 
-    public void processData(byte[] data, int dataLength){
-        short code = 0;
-        int size;
-        try {
-            if (!checkCrc(data, dataLength)) return;
-            if (data[0] != MSP_HEADER_START) return;
-            if (data[1] != MSP_HEADER_V1 && data[1] != MSP_HEADER_V2) return;
-            if (data[2] == MSP_HEADER_ERROR) {
-                StringBuilder s = new StringBuilder();
-                for (byte b : data) s.append(String.valueOf(b)).append(" ");
-                log("MSP error received: " + s);
-                return;
-            }
-            if (data[2] != MSP_HEADER_RESPONSE) return;
-            byte mspVersion = 1;
-            if (data[1] == MSP_HEADER_V2) mspVersion = 2;
-            byte[] payload;
-            code = data[4];
-            if (mspVersion == 1) {
-                size = data[3];
-            } else {
-                code |= data[5] << 8;
-                size = data[6];
-                size |= data[7] << 8;
-            }
-            if (code < 0) code += 256;
-            if (size < 0) size += 256;
-            if (size > 0) {
-                payload = new byte[size];
-                System.arraycopy(data, 8, payload, 0, size);
-            }else{
-                payload = null;
-            }
-            DataReader buffer = new DataReader(payload, false);
-            switch (code) {
-                case FcCommon.MSP_API_VERSION:
-                    apiProtocolVersion = buffer.readUnsignedByteAsInt();
-                    apiVersionMajor = buffer.readUnsignedByteAsInt();
-                    apiVersionMinor = buffer.readUnsignedByteAsInt();
-                    break;
-                case FcCommon.MSP_FC_VARIANT: {
-                    String fcStr = buffer.readBufferAsString();
-                    if (FcInfo.INAV_ID.equals(fcStr)) fcVariant = FcInfo.FC_VARIANT_INAV;
-                    if (FcInfo.BETAFLIGHT_ID.equals(fcStr)) fcVariant = FcInfo.FC_VARIANT_BETAFLIGHT;
-                    break;
+    public static class MspPacket{
+        public final byte version;
+        public final byte type;
+        public final byte flag;
+        public final int code;
+        public final int payloadSize;
+        public final byte[] payload;
+
+        public MspPacket(byte type, byte flag, int code, int payloadSize, byte[] payload) {
+            this.version = MSP_HEADER_V2;
+            this.type = type;
+            this.flag = flag;
+            this.code = code;
+            this.payloadSize = payloadSize;
+            this.payload = payload;
+        }
+
+        public MspPacket(byte type, int code, int payloadSize, byte[] payload) {
+            this.version = MSP_HEADER_V1;
+            this.type = type;
+            this.flag = 0;
+            this.code = code;
+            this.payloadSize = payloadSize;
+            this.payload = payload;
+        }
+    }
+
+    private List<MspPacket> parsePackets(byte[] data){
+        DataReader reader = new DataReader(data, false);
+        List<MspPacket> packets = new ArrayList<>();
+        while (reader.getRemaining() > 0) {
+            byte headerStart = reader.readByte();
+            if (headerStart != MSP_HEADER_START) return packets;
+            byte magic = reader.readByte();
+            if (magic != MSP_HEADER_V1 && magic != MSP_HEADER_V2) return packets;
+            boolean isMsp2 = magic == MSP_HEADER_V2;
+            byte type = reader.readByte();
+            if (type != MSP_HEADER_REQUEST && type != MSP_HEADER_RESPONSE && type != MSP_HEADER_ERROR) return packets;
+            byte[] payload = null;
+            if (isMsp2){
+                if (reader.getRemaining() < MSP_V2_MIN_REQUEST_SIZE - 3) return packets;
+                byte flag = reader.readByte();
+                int code = reader.readUnsignedShortAsInt();
+                int payloadSize = reader.readUnsignedShortAsInt();
+                if (reader.getRemaining() < payloadSize + 1) return packets;
+                if (payloadSize > 0) {
+                    payload = new byte[payloadSize];
+                    reader.read(payload, 0, payloadSize);
                 }
-                case FcCommon.MSP_FC_VERSION:
-                    fcVersionMajor = buffer.readUnsignedByteAsInt();
-                    fcVersionMinor = buffer.readUnsignedByteAsInt();
-                    fcVersionPatchLevel = buffer.readUnsignedByteAsInt();
-                    break;
-                case FcCommon.MSP_MIXER_CONFIG:
-                    platformType = buffer.readUnsignedByteAsInt();
-                    break;
-                case FcCommon.MSP2_INAV_MIXER:
-                    buffer.readUnsignedByteAsInt();// motorDirectionInverted
-                    buffer.readUnsignedByteAsInt();// 0
-                    buffer.readUnsignedByteAsInt();// motorstopOnLow
-                    platformType = buffer.readUnsignedByteAsInt();
-                    break;
-                case FcCommon.MSP_BOXNAMES: {
-                    switch (fcVariant) {
-                        case FcInfo.FC_VARIANT_INAV: {
-                            runGetBoxNames = false;
-                            telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                            break;
-                        }
-                        case FcInfo.FC_VARIANT_BETAFLIGHT: {
-                            byte[] pageData = buffer.getData();
-                            if (bfBoxNamesPage > 0){
-                                boolean found = false;
-                                for (int i = 0; i < bfBoxNamesPage; i++) {
-                                    if (Arrays.equals(bfBoxNamesData[i], pageData)){
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (found) break;
-                            }
-                            bfBoxNamesData[bfBoxNamesPage] = pageData;
-                            bfBoxNamesPage++;
-                            if (bfBoxNamesPage == FcCommon.BF_BOXMODES_PAGE_COUNT || pageData == null && bfBoxNamesPage > 1){
+                int checksum = reader.readUnsignedByteAsInt();
+                if (checksum == calculateCrcV2(flag, code, payloadSize, payload)){
+                    packets.add(new MspPacket(type, flag, code, payloadSize, payload));
+                }else{
+                    return packets;
+                }
+            }else{
+                if (reader.getRemaining() < MSP_V1_MIN_REQUEST_SIZE - 3) return packets;
+                int payloadSize = reader.readUnsignedByteAsInt();
+                if (reader.getRemaining() < payloadSize + 2) return packets;
+                int code = reader.readUnsignedByteAsInt();
+                if (payloadSize > 0) {
+                    payload = new byte[payloadSize];
+                    reader.read(payload, 0, payloadSize);
+                }
+                int checksum = reader.readUnsignedByteAsInt();
+                if (checksum == calculateCrcV1(code, payloadSize, payload)){
+                    packets.add(new MspPacket(type, code, payloadSize, payload));
+                }
+            }
+        }
+        return packets;
+    }
+
+    public void processData(byte[] buf, int dataLength){
+        if (dataLength <= MSP_V1_HEADER_SIZE) return;
+        byte[] data = new byte[dataLength];
+        System.arraycopy(buf, 0, data, 0, dataLength);
+        List<MspPacket> packets = null;
+        try {
+            packets = parsePackets(data);
+        }catch (Exception e){
+            log("Msp - parsePackets error: " + e);
+        }
+        if (packets == null || packets.isEmpty()) return;
+        for (MspPacket packet : packets) {
+            try {
+                if (packet.type == MSP_HEADER_ERROR) {
+                    StringBuilder s = new StringBuilder();
+                    for (byte b : data) s.append(String.valueOf(b)).append(" ");
+                    log("MSP error received: " + s);
+                    continue;
+                }
+                if (packet.type != MSP_HEADER_RESPONSE) continue;
+                DataReader buffer = new DataReader(packet.payload, false);
+                switch (packet.code) {
+                    case FcCommon.MSP_API_VERSION:
+                        apiProtocolVersion = buffer.readUnsignedByteAsInt();
+                        apiVersionMajor = buffer.readUnsignedByteAsInt();
+                        apiVersionMinor = buffer.readUnsignedByteAsInt();
+                        break;
+                    case FcCommon.MSP_FC_VARIANT: {
+                        String fcStr = buffer.readBufferAsString();
+                        if (FcInfo.INAV_ID.equals(fcStr)) fcVariant = FcInfo.FC_VARIANT_INAV;
+                        if (FcInfo.BETAFLIGHT_ID.equals(fcStr))
+                            fcVariant = FcInfo.FC_VARIANT_BETAFLIGHT;
+                        break;
+                    }
+                    case FcCommon.MSP_FC_VERSION:
+                        fcVersionMajor = buffer.readUnsignedByteAsInt();
+                        fcVersionMinor = buffer.readUnsignedByteAsInt();
+                        fcVersionPatchLevel = buffer.readUnsignedByteAsInt();
+                        break;
+                    case FcCommon.MSP_MIXER_CONFIG:
+                        platformType = buffer.readUnsignedByteAsInt();
+                        break;
+                    case FcCommon.MSP2_INAV_MIXER:
+                        buffer.readUnsignedByteAsInt();// motorDirectionInverted
+                        buffer.readUnsignedByteAsInt();// 0
+                        buffer.readUnsignedByteAsInt();// motorstopOnLow
+                        platformType = buffer.readUnsignedByteAsInt();
+                        break;
+                    case FcCommon.MSP_BOXNAMES: {
+                        switch (fcVariant) {
+                            case FcInfo.FC_VARIANT_INAV: {
                                 runGetBoxNames = false;
-                                bfBoxNamesPage = 0;
-                                int total = 0;
-                                int offset = 0;
-                                for (int i = 0; i < FcCommon.BF_BOXMODES_PAGE_COUNT; i++) {
-                                    if (bfBoxNamesData[i] == null) continue;
-                                    total += bfBoxNamesData[i].length;
+                                telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                                break;
+                            }
+                            case FcInfo.FC_VARIANT_BETAFLIGHT: {
+                                byte[] pageData = buffer.getData();
+                                if (bfBoxNamesPage > 0) {
+                                    boolean found = false;
+                                    for (int i = 0; i < bfBoxNamesPage; i++) {
+                                        if (Arrays.equals(bfBoxNamesData[i], pageData)) {
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found) break;
                                 }
-                                if (total > 0){
-                                    byte[] allPages = new byte[total];
+                                bfBoxNamesData[bfBoxNamesPage] = pageData;
+                                bfBoxNamesPage++;
+                                if (bfBoxNamesPage == FcCommon.BF_BOXMODES_PAGE_COUNT || pageData == null && bfBoxNamesPage > 1) {
+                                    runGetBoxNames = false;
+                                    bfBoxNamesPage = 0;
+                                    int total = 0;
+                                    int offset = 0;
                                     for (int i = 0; i < FcCommon.BF_BOXMODES_PAGE_COUNT; i++) {
                                         if (bfBoxNamesData[i] == null) continue;
-                                        int length = bfBoxNamesData[i].length;
-                                        System.arraycopy(bfBoxNamesData[i], 0, allPages, offset, length);
-                                        offset += length;
+                                        total += bfBoxNamesData[i].length;
                                     }
-                                    telemetryOutputBuffer.offer(new TelemetryData(code, allPages));
+                                    if (total > 0) {
+                                        byte[] allPages = new byte[total];
+                                        for (int i = 0; i < FcCommon.BF_BOXMODES_PAGE_COUNT; i++) {
+                                            if (bfBoxNamesData[i] == null) continue;
+                                            int length = bfBoxNamesData[i].length;
+                                            System.arraycopy(bfBoxNamesData[i], 0, allPages, offset, length);
+                                            offset += length;
+                                        }
+                                        telemetryOutputBuffer.offer(new TelemetryData(packet.code, allPages));
+                                    }
                                 }
+                                break;
                             }
-                            break;
                         }
+                        break;
                     }
-                    break;
-                }
-                case FcCommon.MSP_BOXIDS: {
-                    switch (fcVariant) {
-                        case FcInfo.FC_VARIANT_INAV: {
-                            runGetBoxIds = false;
-                            boxIds = FcCommon.getBoxIds(buffer.getData());
-                            telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                            break;
-                        }
-                        case FcInfo.FC_VARIANT_BETAFLIGHT: {
-                            byte[] pageData = buffer.getData();
-                            if (bfBoxIdsPage > 0){
-                                boolean found = false;
-                                for (int i = 0; i < bfBoxIdsPage; i++) {
-                                    if (Arrays.equals(bfBoxIdsData[i], pageData)){
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (found) break;
-                            }
-                            bfBoxIdsData[bfBoxIdsPage] = pageData;
-                            bfBoxIdsPage++;
-                            if (bfBoxIdsPage == FcCommon.BF_BOXMODES_PAGE_COUNT || pageData == null && bfBoxIdsPage > 1){
+                    case FcCommon.MSP_BOXIDS: {
+                        switch (fcVariant) {
+                            case FcInfo.FC_VARIANT_INAV: {
                                 runGetBoxIds = false;
-                                bfBoxIdsPage = 0;
-                                int total = 0;
-                                int offset = 0;
-                                for (int i = 0; i < FcCommon.BF_BOXMODES_PAGE_COUNT; i++) {
-                                    if (bfBoxIdsData[i] == null) continue;
-                                    total += bfBoxIdsData[i].length;
+                                boxIds = FcCommon.getBoxIds(buffer.getData());
+                                telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                                break;
+                            }
+                            case FcInfo.FC_VARIANT_BETAFLIGHT: {
+                                byte[] pageData = buffer.getData();
+                                if (bfBoxIdsPage > 0) {
+                                    boolean found = false;
+                                    for (int i = 0; i < bfBoxIdsPage; i++) {
+                                        if (Arrays.equals(bfBoxIdsData[i], pageData)) {
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (found) break;
                                 }
-                                if (total > 0){
-                                    byte[] allPages = new byte[total];
+                                bfBoxIdsData[bfBoxIdsPage] = pageData;
+                                bfBoxIdsPage++;
+                                if (bfBoxIdsPage == FcCommon.BF_BOXMODES_PAGE_COUNT || pageData == null && bfBoxIdsPage > 1) {
+                                    runGetBoxIds = false;
+                                    bfBoxIdsPage = 0;
+                                    int total = 0;
+                                    int offset = 0;
                                     for (int i = 0; i < FcCommon.BF_BOXMODES_PAGE_COUNT; i++) {
                                         if (bfBoxIdsData[i] == null) continue;
-                                        int length = bfBoxIdsData[i].length;
-                                        System.arraycopy(bfBoxIdsData[i], 0, allPages, offset, length);
-                                        offset += length;
+                                        total += bfBoxIdsData[i].length;
                                     }
-                                    boxIds = FcCommon.getBoxIds(allPages);
-                                    telemetryOutputBuffer.offer(new TelemetryData(code, allPages));
+                                    if (total > 0) {
+                                        byte[] allPages = new byte[total];
+                                        for (int i = 0; i < FcCommon.BF_BOXMODES_PAGE_COUNT; i++) {
+                                            if (bfBoxIdsData[i] == null) continue;
+                                            int length = bfBoxIdsData[i].length;
+                                            System.arraycopy(bfBoxIdsData[i], 0, allPages, offset, length);
+                                            offset += length;
+                                        }
+                                        boxIds = FcCommon.getBoxIds(allPages);
+                                        telemetryOutputBuffer.offer(new TelemetryData(packet.code, allPages));
+                                    }
                                 }
+                                break;
                             }
-                            break;
                         }
+                        break;
                     }
-                    break;
-                }
-                case FcCommon.MSP_BATTERY_CONFIG: {
-                    runGetBatteryConfig = false;
-                    telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                    break;
-                }
-                case FcCommon.MSP_RX_MAP: {
-                    if (buffer.getSize() == 0) break;
-                    rxMap = new int[buffer.getSize()];
-                    for (int i = 0; i < buffer.getSize(); i++) {
-                        rxMap[i] = buffer.readUnsignedByteAsInt();
+                    case FcCommon.MSP_BATTERY_CONFIG: {
+                        runGetBatteryConfig = false;
+                        telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                        break;
                     }
-                    runGetRxMap = false;
-                    break;
-                }
-                case FcCommon.MSP_OSD_CONFIG: {
-                    runGetOsdConfig = false;
-                    osdConfig = buffer.getData();
-                    if (fcVariant == FcInfo.FC_VARIANT_BETAFLIGHT){
-                        getOsdCanvas();
-                    }else{
-                        telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                    }
-                    break;
-                }
-                case FcCommon.MSP_OSD_CANVAS: {
-                    telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                    if (osdConfig != null) telemetryOutputBuffer.offer(new TelemetryData(FcCommon.MSP_OSD_CONFIG, osdConfig));
-                    break;
-                }
-                case FcCommon.MSP2_INAV_STATUS: {
-                    buffer.readShort();//cycleTime
-                    buffer.readShort();//i2cErrorCount
-                    buffer.readShort();//sensorStatus
-                    buffer.readShort();//averageSystemLoad
-                    buffer.readByte();//profiles
-                    buffer.readInt();//armingFlags
-                    int[] modeFlags = null;
-                    int modeFlagsSize = (int)Math.ceil((buffer.getRemaining() - 1) / 4.0);
-                    if (modeFlagsSize > 0) {
-                        modeFlags = new int[modeFlagsSize];
-                        for (int i = 0; i < modeFlagsSize; i++) {
-                            modeFlags[i] = buffer.readInt();
+                    case FcCommon.MSP_RX_MAP: {
+                        if (buffer.getSize() == 0) break;
+                        rxMap = new int[buffer.getSize()];
+                        for (int i = 0; i < buffer.getSize(); i++) {
+                            rxMap[i] = buffer.readUnsignedByteAsInt();
                         }
+                        runGetRxMap = false;
+                        break;
                     }
-                    this.modeFlagsInav = modeFlags;
-                    telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                    break;
-                }
-                case FcCommon.MSP_STATUS:{
-                    switch (fcVariant) {
-                        case FcInfo.FC_VARIANT_INAV:
-                            telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                            break;
-                        case FcInfo.FC_VARIANT_BETAFLIGHT:{
-                            buffer.readShort();//cycleTime
-                            buffer.readShort();//i2cErrorCount
-                            buffer.readShort();//sensorStatus
-                            int firstModeFlag = buffer.readInt();
-                            buffer.readByte();//currentPidProfileIndex
-                            buffer.readShort();//averageSystemLoad
-                            buffer.readShort();//unused
-                            byte[] modeFlags;
-                            int modeFlagsSize = buffer.readByte()+4;
-                            if (modeFlagsSize > 0) {
-                                modeFlags = new byte[modeFlagsSize];
-                                modeFlags[0] = (byte) (firstModeFlag & 0xFF);
-                                modeFlags[1] = (byte) (firstModeFlag >> 8 & 0xFF);
-                                modeFlags[2] = (byte) (firstModeFlag >> 16 & 0xFF);
-                                modeFlags[3] = (byte) (firstModeFlag >> 24 & 0xFF);
-                                for (int i = 4; i < modeFlagsSize; i++) {
-                                    modeFlags[i] = buffer.readByte();
+                    case FcCommon.MSP_OSD_CONFIG: {
+                        runGetOsdConfig = false;
+                        osdConfig = buffer.getData();
+                        if (fcVariant == FcInfo.FC_VARIANT_BETAFLIGHT) {
+                            getOsdCanvas();
+                        } else {
+                            telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                        }
+                        break;
+                    }
+                    case FcCommon.MSP_OSD_CANVAS: {
+                        telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                        if (osdConfig != null)
+                            telemetryOutputBuffer.offer(new TelemetryData(FcCommon.MSP_OSD_CONFIG, osdConfig));
+                        break;
+                    }
+                    case FcCommon.MSP2_INAV_STATUS: {
+                        buffer.readShort();//cycleTime
+                        buffer.readShort();//i2cErrorCount
+                        buffer.readShort();//sensorStatus
+                        buffer.readShort();//averageSystemLoad
+                        buffer.readByte();//profiles
+                        buffer.readInt();//armingFlags
+                        int[] modeFlags = null;
+                        int modeFlagsSize = (int) Math.ceil((buffer.getRemaining() - 1) / 4.0);
+                        if (modeFlagsSize > 0) {
+                            modeFlags = new int[modeFlagsSize];
+                            for (int i = 0; i < modeFlagsSize; i++) {
+                                modeFlags[i] = buffer.readInt();
+                            }
+                        }
+                        this.modeFlagsInav = modeFlags;
+                        telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                        break;
+                    }
+                    case FcCommon.MSP_STATUS: {
+                        switch (fcVariant) {
+                            case FcInfo.FC_VARIANT_INAV:
+                                telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                                break;
+                            case FcInfo.FC_VARIANT_BETAFLIGHT: {
+                                buffer.readShort();//cycleTime
+                                buffer.readShort();//i2cErrorCount
+                                buffer.readShort();//sensorStatus
+                                int firstModeFlag = buffer.readInt();
+                                buffer.readByte();//currentPidProfileIndex
+                                buffer.readShort();//averageSystemLoad
+                                buffer.readShort();//unused
+                                byte[] modeFlags;
+                                int modeFlagsSize = buffer.readByte() + 4;
+                                if (modeFlagsSize > 0) {
+                                    modeFlags = new byte[modeFlagsSize];
+                                    modeFlags[0] = (byte) (firstModeFlag & 0xFF);
+                                    modeFlags[1] = (byte) (firstModeFlag >> 8 & 0xFF);
+                                    modeFlags[2] = (byte) (firstModeFlag >> 16 & 0xFF);
+                                    modeFlags[3] = (byte) (firstModeFlag >> 24 & 0xFF);
+                                    for (int i = 4; i < modeFlagsSize; i++) {
+                                        modeFlags[i] = buffer.readByte();
+                                    }
+                                    this.modeFlagsBtfl = modeFlags;
                                 }
-                                this.modeFlagsBtfl = modeFlags;
+                                telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                                break;
                             }
-                            telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                            break;
                         }
+                        break;
                     }
-                    break;
+                    case FcCommon.MSP_ATTITUDE:
+                    case FcCommon.MSP_ALTITUDE:
+                    case FcCommon.MSP_ANALOG:
+                    case FcCommon.MSP_VTX_CONFIG:
+                    case FcCommon.MSP_BATTERY_STATE:
+                    case FcCommon.MSP_RAW_GPS:
+                    case FcCommon.MSP_COMP_GPS:
+                    case FcCommon.MSP2_INAV_ANALOG: {
+                        telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
+                        break;
+                    }
                 }
-                case FcCommon.MSP_ATTITUDE:
-                case FcCommon.MSP_ALTITUDE:
-                case FcCommon.MSP_ANALOG:
-                case FcCommon.MSP_VTX_CONFIG:
-                case FcCommon.MSP_BATTERY_STATE:
-                case FcCommon.MSP_RAW_GPS:
-                case FcCommon.MSP_COMP_GPS:
-                case FcCommon.MSP2_INAV_ANALOG: {
-                    telemetryOutputBuffer.offer(new TelemetryData(code, buffer.getData()));
-                    break;
-                }
+            } catch (Exception e) {
+                log("MSP - processData error: " + e + ", MSP code: " + packet.code);
             }
-        }catch (Exception e){
-            log("MSP - processData error: " + e + ", MSP code: " + code);
         }
     }
 
@@ -653,7 +720,7 @@ public class Msp {
 
     private byte[] getMspRequest(short cmd){
         byte[] data = {MSP_HEADER_START, MSP_HEADER_V2, MSP_HEADER_REQUEST, 0, (byte) (cmd & 0xFF), (byte) (cmd >> 8 & 0xFF), 0, 0, 0};
-        setCrc(data);
+        setCrcV2(data);
         return data;
     }
 
@@ -664,29 +731,51 @@ public class Msp {
         byte[] header = {MSP_HEADER_START, MSP_HEADER_V2, MSP_HEADER_REQUEST, 0, (byte) (cmd & 0xFF), (byte) (cmd >> 8 & 0xFF), (byte) (payloadSize & 0xFF), (byte) (payloadSize >> 8 & 0xFF)};
         System.arraycopy(header, 0, data, 0, MSP_V2_HEADER_SIZE);
         System.arraycopy(payload, 0, data, MSP_V2_HEADER_SIZE, payloadSize);
-        setCrc(data);
+        setCrcV2(data);
         return data;
     }
 
-    private boolean checkCrc(byte[] data, int dataLength){
-        if (data == null || dataLength < MSP_V2_MIN_REQUEST_SIZE) return false;
-        return (data[dataLength-1] == calculateCrc(data, dataLength));
-    }
-
-    private void setCrc(byte[] data){
+    private void setCrcV2(byte[] data){
         if (data == null || data.length < MSP_V2_MIN_REQUEST_SIZE) return;
-        data[data.length-1] = calculateCrc(data, data.length);
+        data[data.length-1] = (byte)calculateCrcV2(data, data.length);
     }
 
-    private byte calculateCrc(byte[] data, int dataLength){
-        byte crc = 0;
+    private int calculateCrcV2(byte[] data, int dataLength){
+        int crc = 0;
         for (int i = 3; i < dataLength-1; i++) {
             crc = crc8_dvb_s2(crc, data[i]);
         }
         return crc;
     }
 
-    private byte crc8_dvb_s2(int crc, int a) {
+    private int calculateCrcV2(byte flag, int code, int payloadSize, byte[] payload){
+        int crc = 0;
+        crc = crc8_dvb_s2(crc, flag);
+        crc = crc8_dvb_s2(crc, code & 0xFF);
+        crc = crc8_dvb_s2(crc, code >> 8 & 0xFF);
+        crc = crc8_dvb_s2(crc, payloadSize & 0xFF);
+        crc = crc8_dvb_s2(crc, payloadSize >> 8 & 0xFF);
+        if (payloadSize > 0){
+            for (int i = 0; i < payloadSize; i++) {
+                crc = crc8_dvb_s2(crc, payload[i]);
+            }
+        }
+        return crc;
+    }
+
+    private int calculateCrcV1(int code, int payloadSize, byte[] payload){
+        int crc = 0;
+        crc ^= code;
+        crc ^= payloadSize;
+        if (payloadSize > 0){
+            for (int i = 0; i < payloadSize; i++) {
+                crc ^= payload[i];
+            }
+        }
+        return crc;
+    }
+
+    private int crc8_dvb_s2(int crc, int a) {
         crc ^= a;
         for (int i = 0; i < 8; i++) {
             if ((crc & 0x80) != 0) {
@@ -696,6 +785,6 @@ public class Msp {
             }
         }
         crc &= 0xFF;
-        return (byte)crc;
+        return crc;
     }
 }
