@@ -19,6 +19,9 @@ package de.droiddrone.flight;
 
 import static de.droiddrone.common.Logcat.log;
 
+import android.location.Location;
+import android.location.LocationManager;
+
 import com.MAVLink.MAVLinkPacket;
 import com.MAVLink.Messages.MAVLinkPayload;
 import com.MAVLink.common.msg_attitude;
@@ -98,6 +101,15 @@ public class Mavlink {
     private long rcLastFrame;
     private byte cameraRecordVideoChannel = -1;
     private boolean cameraRecordLastState = false;
+    private FcCommon.GpsFixTypesArduPilot fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS;
+    private float latDeg;
+    private float lonDeg;
+    private float homeLatDeg;
+    private float homeLonDeg;
+    private float groundSpeed; // km/h
+    private int distanceToHome; // m
+    private float traveledDistance; // m
+    private float directionToHome; // grad
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -431,6 +443,10 @@ public class Mavlink {
                     case msg_gps_raw_int.MAVLINK_MSG_ID_GPS_RAW_INT: {
                         msg_gps_raw_int message = new msg_gps_raw_int(packet);
                         lastGpsRawIntTs = System.currentTimeMillis();
+                        if (message.fix_type >= 0 && message.fix_type < FcCommon.GpsFixTypesArduPilot.values().length) {
+                            this.fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.values()[message.fix_type];
+                        }
+                        if (message.vel != Utils.UINT16_MAX) groundSpeed = message.vel * 0.036f;
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeByte((byte) message.fix_type);
                         buffer.writeShort((short) message.vel);
@@ -441,17 +457,27 @@ public class Mavlink {
                     case msg_global_position_int.MAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
                         msg_global_position_int message = new msg_global_position_int(packet);
                         lastGlobalPositionIntTs = System.currentTimeMillis();
+                        float latDeg = message.lat / 10000000f;
+                        float lonDeg = message.lon / 10000000f;
+                        calculateTraveledDist(latDeg, lonDeg);
+                        calculateHomeDistDir();
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeInt(message.lat);
                         buffer.writeInt(message.lon);
                         buffer.writeInt(message.relative_alt);
                         buffer.writeShort(message.vz);
+                        buffer.writeInt(Math.round(traveledDistance));
+                        buffer.writeInt(distanceToHome);
+                        buffer.writeShort((short)Math.round(directionToHome));
                         telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_GLOBAL_POSITION_INT, buffer.getData()));
                         break;
                     }
                     case msg_home_position.MAVLINK_MSG_ID_HOME_POSITION: {
                         msg_home_position message = new msg_home_position(packet);
                         isHomePositionReceived = true;
+                        homeLatDeg = message.latitude / 10000000f;
+                        homeLonDeg = message.longitude / 10000000f;
+                        calculateHomeDistDir();
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeInt(message.latitude);
                         buffer.writeInt(message.longitude);
@@ -508,6 +534,40 @@ public class Mavlink {
                 log("Mavlink process packet data error: " + e + ", msgId: " + packet.msgid);
             }
         }
+    }
+
+    private void calculateTraveledDist(float newLatDeg, float newLonDeg){
+        if (!checkGpsFix()) return;
+        if (groundSpeed > 0.2f && this.latDeg != 0 && isArmed) {
+            Location oldLocation = new Location(LocationManager.GPS_PROVIDER);
+            Location newLocation = new Location(LocationManager.GPS_PROVIDER);
+            oldLocation.setLatitude(this.latDeg);
+            oldLocation.setLongitude(this.lonDeg);
+            newLocation.setLatitude(newLatDeg);
+            newLocation.setLongitude(newLonDeg);
+            traveledDistance += oldLocation.distanceTo(newLocation);
+        }
+        this.latDeg = newLatDeg;
+        this.lonDeg = newLonDeg;
+    }
+
+    private void calculateHomeDistDir(){
+        if (checkGpsFix() && latDeg != 0 && homeLatDeg != 0 && isArmed) {
+            Location droneLocation = new Location(LocationManager.GPS_PROVIDER);
+            Location homeLocation = new Location(LocationManager.GPS_PROVIDER);
+            droneLocation.setLatitude(latDeg);
+            droneLocation.setLongitude(lonDeg);
+            homeLocation.setLatitude(homeLatDeg);
+            homeLocation.setLongitude(homeLonDeg);
+            distanceToHome = Math.round(droneLocation.distanceTo(homeLocation));
+            directionToHome = droneLocation.bearingTo(homeLocation);
+        }
+    }
+
+    private boolean checkGpsFix() {
+        return fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS
+                && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_FIX
+                && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_2D_FIX;
     }
 
     private static class OsdItemParam{

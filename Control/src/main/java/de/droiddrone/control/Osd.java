@@ -17,9 +17,6 @@
 
 package de.droiddrone.control;
 
-import android.location.Location;
-import android.location.LocationManager;
-
 import androidx.annotation.NonNull;
 
 import java.text.DecimalFormat;
@@ -96,8 +93,8 @@ public class Osd {
     private int mahPerKm;
     private int hdop;
     private int distanceToHome; // m
-    private float traveledDistance; // m
-    private float directionToHome; // grad
+    private int traveledDistance; // m
+    private short directionToHome; // grad
     private boolean gpsHeartbeat;
     private String vtxBand;
     private byte vtxChannel;
@@ -321,11 +318,11 @@ public class Osd {
         }
     }
 
-    private String formatDistance(float distance){
+    private String formatDistance(int distance){
         if (Math.abs(distance) > 1000){
             return format2Digit.format(distance / 1000) + " km";
         }else{
-            return Math.round(distance) + " m";
+            return distance + " m";
         }
     }
 
@@ -1430,18 +1427,19 @@ public class Osd {
         osdStats.setAltitude(this.altitude);
     }
 
-    public void setRawGps(byte fixType, byte numSat, int lat, int lon, short altGps, short groundSpeed, short groundCourse, short hdop){//MSP_RAW_GPS
+    public void setRawGps(byte fixType, byte numSat, int lat, int lon, short altGps, short groundSpeed, short groundCourse, short hdop, int traveledDistance){//MSP_RAW_GPS + traveledDistance
         updateLastDataTimestamp();
         if (fixType >= 0 && fixType < FcCommon.GpsFixTypes.values().length) this.fixType = FcCommon.GpsFixTypes.values()[fixType];
         this.numSat = numSat & 0xFF;
-        float latDeg = lat / 10000000f;
-        float lonDeg = lon / 10000000f;
+        latDeg = lat / 10000000f;
+        lonDeg = lon / 10000000f;
         this.altGps = altGps;
         this.groundSpeed = groundSpeed * 0.036f;
         this.groundCourse = groundCourse * 0.1f;
         this.hdop = hdop;
+        this.traveledDistance = traveledDistance;
         osdStats.setSpeed(this.groundSpeed);
-        calculateTraveledDist(latDeg, lonDeg);
+        osdStats.setTraveledDistance(traveledDistance);
         calculateMahPerKm(this.amperage, this.groundSpeed);
     }
 
@@ -1510,55 +1508,17 @@ public class Osd {
         }
     }
 
-    public void setArduPilotGlobalPositionInt(int lat, int lon, int relativeAlt, short vz) {
+    public void setArduPilotGlobalPositionInt(int lat, int lon, int relativeAlt, short vz, int traveledDistance, int distanceToHome, short directionToHome) {
         updateLastDataTimestamp();
-        float latDeg = lat / 10000000f;
-        float lonDeg = lon / 10000000f;
+        this.latDeg = lat / 10000000f;
+        this.lonDeg = lon / 10000000f;
         this.altitude = Math.round(relativeAlt / 1000f);
         this.altVelocity = vz / 100f;
-        calculateTraveledDist(latDeg, lonDeg);
-        calculateHomeDistDir();
-    }
-
-    private boolean checkGpsFix(){
-        if (fcInfo == null) return false;
-        if (fcInfo.getFcVariant() == FcInfo.FC_VARIANT_ARDUPILOT){
-            return fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS
-                    && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_FIX
-                    && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_2D_FIX;
-        }else{
-            return fixType == FcCommon.GpsFixTypes.GPS_FIX_3D;
-        }
-    }
-
-    private void calculateTraveledDist(float newLatDeg, float newLonDeg){
-        if (!checkGpsFix()) return;
-        if (groundSpeed > 0.2f && this.latDeg != 0 && isArmed) {
-            Location oldLocation = new Location(LocationManager.GPS_PROVIDER);
-            Location newLocation = new Location(LocationManager.GPS_PROVIDER);
-            oldLocation.setLatitude(this.latDeg);
-            oldLocation.setLongitude(this.lonDeg);
-            newLocation.setLatitude(newLatDeg);
-            newLocation.setLongitude(newLonDeg);
-            traveledDistance += oldLocation.distanceTo(newLocation);
-            osdStats.setTraveledDistance(traveledDistance);
-        }
-        this.latDeg = newLatDeg;
-        this.lonDeg = newLonDeg;
-    }
-
-    private void calculateHomeDistDir(){
-        if (checkGpsFix() && latDeg != 0 && homeLatDeg != 0 && isArmed) {
-            Location droneLocation = new Location(LocationManager.GPS_PROVIDER);
-            Location homeLocation = new Location(LocationManager.GPS_PROVIDER);
-            droneLocation.setLatitude(latDeg);
-            droneLocation.setLongitude(lonDeg);
-            homeLocation.setLatitude(homeLatDeg);
-            homeLocation.setLongitude(homeLonDeg);
-            distanceToHome = Math.round(droneLocation.distanceTo(homeLocation));
-            osdStats.setHomeDistance(distanceToHome);
-            directionToHome = droneLocation.bearingTo(homeLocation);
-        }
+        this.traveledDistance = traveledDistance;
+        this.distanceToHome = distanceToHome;
+        this.directionToHome = directionToHome;
+        osdStats.setTraveledDistance(traveledDistance);
+        osdStats.setHomeDistance(distanceToHome);
     }
 
     public void setArduPilotHomePosition(int lat, int lon){
@@ -1567,7 +1527,6 @@ public class Osd {
         float lonDeg = lon / 10000000f;
         this.homeLatDeg = latDeg;
         this.homeLonDeg = lonDeg;
-        calculateHomeDistDir();
     }
 
     public void setArduPilotSystemTime(long timeBootMs, long flightTime, long armingTime){
@@ -2001,7 +1960,7 @@ public class Osd {
         private int lastArmTime;
         private float maxSpeed;
         private int maxDistance;
-        private float traveledDistance;
+        private int traveledDistance;
         private float minBatteryVoltage = -1;
         private float endBatteryVoltage;
         private int minRssi = -1;
@@ -2181,7 +2140,7 @@ public class Osd {
             if (distance > maxDistance) maxDistance = distance;
         }
 
-        public void setTraveledDistance(float distance){
+        public void setTraveledDistance(int distance){
             if (wasArmed && !isArmed) return;
             traveledDistance = distance;
         }

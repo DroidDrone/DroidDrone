@@ -695,17 +695,6 @@ public class Udp {
                     }
                     break;
                 }
-                case FcCommon.MSP_RAW_GPS: {
-                    packetData.daos.writeByte(buffer.readByte());//fixType
-                    packetData.daos.writeByte(buffer.readByte());//numSat
-                    packetData.daos.writeInt(buffer.readInt());//lat
-                    packetData.daos.writeInt(buffer.readInt());//lon
-                    packetData.daos.writeShort(buffer.readShort());//altGps
-                    packetData.daos.writeShort(buffer.readShort());//groundSpeed
-                    packetData.daos.writeShort(buffer.readShort());//groundCourse
-                    packetData.daos.writeShort(buffer.readShort());//hdop
-                    break;
-                }
                 case FcCommon.MSP_COMP_GPS: {
                     packetData.daos.writeShort(buffer.readShort());//distanceToHome
                     packetData.daos.writeShort(buffer.readShort());//directionToHome
@@ -779,6 +768,7 @@ public class Udp {
                     break;
                 }
                 // already Big Endian encoded, can be written as a whole array
+                case FcCommon.MSP_RAW_GPS:
                 case FcCommon.DD_AP_OSD_CONFIG:
                 case FcCommon.DD_AP_MODE:
                 case FcCommon.DD_AP_BATTERY_STATUS:

@@ -590,7 +590,8 @@ public class Udp {
                     short groundSpeed = buffer.readShort();
                     short groundCourse = buffer.readShort();
                     short hdop = buffer.readShort();
-                    osd.setRawGps(fixType, numSat, lat, lon, altGps, groundSpeed, groundCourse, hdop);
+                    int traveledDistance = buffer.readInt();
+                    osd.setRawGps(fixType, numSat, lat, lon, altGps, groundSpeed, groundCourse, hdop, traveledDistance);
                     break;
                 }
                 case FcCommon.MSP_COMP_GPS: {
@@ -716,7 +717,10 @@ public class Udp {
                     int lon = buffer.readInt();
                     int relativeAlt = buffer.readInt();
                     short vz = buffer.readShort();
-                    osd.setArduPilotGlobalPositionInt(lat, lon, relativeAlt, vz);
+                    int traveledDistance = buffer.readInt();
+                    int distanceToHome = buffer.readInt();
+                    short directionToHome = buffer.readShort();
+                    osd.setArduPilotGlobalPositionInt(lat, lon, relativeAlt, vz, traveledDistance, distanceToHome, directionToHome);
                     break;
                 }
                 case FcCommon.DD_AP_HOME_POSITION: {

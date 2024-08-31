@@ -19,6 +19,9 @@ package de.droiddrone.flight;
 
 import static de.droiddrone.common.Logcat.log;
 
+import android.location.Location;
+import android.location.LocationManager;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -76,6 +79,12 @@ public class Msp {
     private int rcMinPeriod;
     private long rcLastFrame;
     private int platformType;
+    private FcCommon.GpsFixTypes fixType = FcCommon.GpsFixTypes.GPS_NO_FIX;
+    boolean isArmed = false;
+    private float groundSpeed; // km/h
+    private float latDeg;
+    private float lonDeg;
+    private float traveledDistance; // m
 
     public Msp(Serial serial, Config config){
         this.serial = serial;
@@ -531,12 +540,40 @@ public class Msp {
                         }
                         break;
                     }
+                    case FcCommon.MSP_RAW_GPS: {
+                        byte fixType = buffer.readByte();
+                        byte numSat = buffer.readByte();
+                        int lat = buffer.readInt();
+                        int lon = buffer.readInt();
+                        short altGps = buffer.readShort();
+                        short groundSpeed = buffer.readShort();
+                        short groundCourse = buffer.readShort();
+                        short hdop = buffer.readShort();
+
+                        if (fixType >= 0 && fixType < FcCommon.GpsFixTypes.values().length) this.fixType = FcCommon.GpsFixTypes.values()[fixType];
+                        float latDeg = lat / 10000000f;
+                        float lonDeg = lon / 10000000f;
+                        this.groundSpeed = groundSpeed * 0.036f;
+                        calculateTraveledDist(latDeg, lonDeg);
+
+                        DataWriter wBuffer = new DataWriter(true);
+                        wBuffer.writeByte(fixType);
+                        wBuffer.writeByte(numSat);
+                        wBuffer.writeInt(lat);
+                        wBuffer.writeInt(lon);
+                        wBuffer.writeShort(altGps);
+                        wBuffer.writeShort(groundSpeed);
+                        wBuffer.writeShort(groundCourse);
+                        wBuffer.writeShort(hdop);
+                        wBuffer.writeInt(Math.round(traveledDistance));
+                        telemetryOutputBuffer.offer(new TelemetryData(packet.code, wBuffer.getData()));
+                        break;
+                    }
                     case FcCommon.MSP_ATTITUDE:
                     case FcCommon.MSP_ALTITUDE:
                     case FcCommon.MSP_ANALOG:
                     case FcCommon.MSP_VTX_CONFIG:
                     case FcCommon.MSP_BATTERY_STATE:
-                    case FcCommon.MSP_RAW_GPS:
                     case FcCommon.MSP_COMP_GPS:
                     case FcCommon.MSP2_INAV_ANALOG: {
                         telemetryOutputBuffer.offer(new TelemetryData(packet.code, buffer.getData()));
@@ -549,8 +586,26 @@ public class Msp {
         }
     }
 
+    private void calculateTraveledDist(float newLatDeg, float newLonDeg){
+        if (!checkGpsFix()) return;
+        if (groundSpeed > 0.2f && this.latDeg != 0 && isArmed) {
+            Location oldLocation = new Location(LocationManager.GPS_PROVIDER);
+            Location newLocation = new Location(LocationManager.GPS_PROVIDER);
+            oldLocation.setLatitude(this.latDeg);
+            oldLocation.setLongitude(this.lonDeg);
+            newLocation.setLatitude(newLatDeg);
+            newLocation.setLongitude(newLonDeg);
+            traveledDistance += oldLocation.distanceTo(newLocation);
+        }
+        this.latDeg = newLatDeg;
+        this.lonDeg = newLonDeg;
+    }
+
+    private boolean checkGpsFix(){
+        return fixType == FcCommon.GpsFixTypes.GPS_FIX_3D;
+    }
+
     private void checkModeFlags(){
-        boolean isArmed = false;
         boolean isCamSwitch = false;
         FcCommon.BoxMode[] activeBoxModes = null;
         switch (fcVariant){
