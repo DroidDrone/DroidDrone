@@ -54,6 +54,13 @@
             app:defaultValue="true"
             app:title="@string/use_extra_encoder"/>
         <ListPreference
+            app:key="videoRecorderCodec"
+            app:title="@string/video_recorder_codec"
+            app:entries="@array/videoRecorderCodecEntries"
+            app:entryValues="@array/videoRecorderCodecValues"
+            app:defaultValue="0"
+            app:dependency="useExtraEncoder"/>
+        <ListPreference
             app:key="recordedVideoBitrate"
             app:title="@string/recorded_video_bitrate"
             app:entries="@array/recordedVideoBitrateEntries"

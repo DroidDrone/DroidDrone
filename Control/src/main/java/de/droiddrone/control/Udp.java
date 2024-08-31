@@ -946,6 +946,7 @@ public class Udp {
             packetData.daos.writeShort(config.getCameraFpsMax());
             packetData.daos.writeByte(config.getBitrateLimit() / 1000000);
             packetData.daos.writeBoolean(config.isUseExtraEncoder());
+            packetData.daos.writeByte(config.getVideoRecorderCodec());
             packetData.daos.writeByte(config.getRecordedVideoBitrate() / 1000000);
             packetData.daos.writeBoolean(config.isSendAudioStream());
             packetData.daos.writeShort(config.getAudioStreamBitrate() / 1000);

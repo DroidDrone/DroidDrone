@@ -46,7 +46,6 @@ public class Mp4Recorder {
     private final Context context;
     private final AudioSource audioSource;
     private final Config config;
-    private String codecType = MediaCommon.hevcCodecMime;
     private MediaCodec videoEncoder, audioEncoder;
     private Surface surface;
     private MediaMuxer muxer;
@@ -85,11 +84,7 @@ public class Mp4Recorder {
         }
         videoBitRate = config.getRecordedVideoBitrate();
 
-        String encoderName = MediaCommon.getCodecName(codecType, true);
-        if (encoderName == null) {
-            codecType = MediaCommon.avcCodecMime;
-            encoderName = MediaCommon.getCodecName(codecType, true);
-        }
+        String encoderName = MediaCommon.getCodecName(config.getVideoRecorderCodecMime(), true);
         if (encoderName == null) {
             log("No encoder found.");
             return null;
@@ -395,7 +390,7 @@ public class Mp4Recorder {
     };
 
     private MediaFormat getEncoderFormat(){
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecType, cameraManager.getCamera().getWidth(), cameraManager.getCamera().getHeight());
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat(config.getVideoRecorderCodecMime(), cameraManager.getCamera().getWidth(), cameraManager.getCamera().getHeight());
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitRate);
         mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, cameraManager.getCamera().getTargetFps());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);

@@ -30,6 +30,7 @@
     <string name="camera_fps">Camera target FPS</string>
     <string name="bitrate_limit">Video stream bitrate limit</string>
     <string name="use_extra_encoder">Use extra codec to record video</string>
+    <string name="video_recorder_codec">Video recorder codec</string>
     <string name="use_extra_encoder_on">On - turn off if you have problems during video recording or camera doesn\'t work</string>
     <string name="use_extra_encoder_off">Off - worst recorded video quality</string>
     <string name="recorded_video_bitrate">Recorded video bitrate</string>
@@ -233,5 +234,15 @@
         <item>0</item>
         <item>1</item>
         <item>2</item>
+    </string-array>
+
+    <string-array name="videoRecorderCodecEntries">
+        <item>AVC</item>
+        <item>HEVC</item>
+    </string-array>
+
+    <string-array name="videoRecorderCodecValues">
+        <item>0</item>
+        <item>1</item>
     </string-array>
 </resources>

@@ -63,6 +63,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setListPreferenceSummary(findPreference("audioStreamBitrate"));
         setListPreferenceSummary(findPreference("recordedAudioBitrate"));
         setListPreferenceSummary(findPreference("recordedVideoBitrate"));
+        setListPreferenceSummary(findPreference("videoRecorderCodec"));
         setListPreferenceSummary(findPreference("telemetryRefreshRate"));
         setListPreferenceSummary(findPreference("rcRefreshRate"));
         setListPreferenceSummary(findPreference("serialBaudRate"));

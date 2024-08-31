@@ -43,6 +43,7 @@ public class Config {
     private int cameraFpsMax;
     private int bitrateLimit;
     private boolean useExtraEncoder;
+    private int videoRecorderCodec;
     private int recordedVideoBitrate;
     private boolean invertVideoAxisX;
     private boolean invertVideoAxisY;
@@ -99,6 +100,7 @@ public class Config {
         }
         bitrateLimit = parseInt(preferences.getString("bitrateLimit", ""), 6000000);
         useExtraEncoder = preferences.getBoolean("useExtraEncoder", true);
+        videoRecorderCodec = parseInt(preferences.getString("videoRecorderCodec", ""), 0);
         recordedVideoBitrate = parseInt(preferences.getString("recordedVideoBitrate", ""), 20000000);
         invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", false);
         invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", false);
@@ -185,6 +187,10 @@ public class Config {
 
     public boolean isUseExtraEncoder() {
         return useExtraEncoder;
+    }
+
+    public int getVideoRecorderCodec() {
+        return videoRecorderCodec;
     }
 
     public int getRecordedVideoBitrate() {

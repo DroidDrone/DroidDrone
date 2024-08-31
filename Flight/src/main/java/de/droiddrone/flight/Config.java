@@ -23,6 +23,7 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
 import de.droiddrone.common.DataReader;
+import de.droiddrone.common.MediaCommon;
 import de.droiddrone.common.UdpCommon;
 
 public class Config {
@@ -42,6 +43,7 @@ public class Config {
     private int cameraFpsMax;
     private int bitrateLimit;
     private boolean useExtraEncoder;
+    private int videoRecorderCodec;
     private int recordedVideoBitrate;
     private boolean sendAudioStream;
     private int audioStreamBitrate;
@@ -117,6 +119,16 @@ public class Config {
         return useExtraEncoder;
     }
 
+    public String getVideoRecorderCodecMime(){
+        switch (videoRecorderCodec){
+            default:
+            case 0:
+                return MediaCommon.avcCodecMime;
+            case 1:
+                return MediaCommon.hevcCodecMime;
+        }
+    }
+
     public int getRecordedVideoBitrate() {
         return recordedVideoBitrate;
     }
@@ -176,6 +188,7 @@ public class Config {
             cameraFpsMax = buffer.readShort();
             bitrateLimit = buffer.readUnsignedByteAsInt() * 1000000;
             useExtraEncoder = buffer.readBoolean();
+            videoRecorderCodec = buffer.readByte();
             recordedVideoBitrate = buffer.readUnsignedByteAsInt() * 1000000;
             sendAudioStream = buffer.readBoolean();
             audioStreamBitrate = buffer.readShort() * 1000;
@@ -214,6 +227,7 @@ public class Config {
         cameraFpsMax = preferences.getInt("cameraFpsMax", 90);
         bitrateLimit = preferences.getInt("bitrateLimit", 6000000);
         useExtraEncoder = preferences.getBoolean("useExtraEncoder", true);
+        videoRecorderCodec = preferences.getInt("videoRecorderCodec", 0);
         recordedVideoBitrate = preferences.getInt("recordedVideoBitrate", 20000000);
         sendAudioStream = preferences.getBoolean("sendAudioStream", false);
         audioStreamBitrate = preferences.getInt("audioStreamBitrate", 96000);
@@ -258,6 +272,7 @@ public class Config {
         editor.putInt("cameraFpsMax", cameraFpsMax);
         editor.putInt("bitrateLimit", bitrateLimit);
         editor.putBoolean("useExtraEncoder", useExtraEncoder);
+        editor.putInt("videoRecorderCodec", videoRecorderCodec);
         editor.putInt("recordedVideoBitrate", recordedVideoBitrate);
         editor.putBoolean("sendAudioStream", sendAudioStream);
         editor.putInt("audioStreamBitrate", audioStreamBitrate);
