@@ -607,6 +607,7 @@ public class Msp {
 
     private void checkModeFlags(){
         boolean isCamSwitch = false;
+        boolean isArmed = false;
         FcCommon.BoxMode[] activeBoxModes = null;
         switch (fcVariant){
             case FcInfo.FC_VARIANT_INAV:
@@ -622,7 +623,7 @@ public class Msp {
                 if (box.boxId == FcCommon.BoxModeIds.BOXCAMERA2) isCamSwitch = true;
             }
         }
-
+        this.isArmed = isArmed;
         if (isArmed){
             if (flyTimestamp == 0) flyTimestamp = System.currentTimeMillis();
         }else{
