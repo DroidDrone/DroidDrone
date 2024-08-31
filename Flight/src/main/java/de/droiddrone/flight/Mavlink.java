@@ -62,6 +62,7 @@ public class Mavlink {
     private final Serial serial;
     private final Config config;
     public final ArrayBlockingQueue<TelemetryData> telemetryOutputBuffer = new ArrayBlockingQueue<>(30);
+    private final ArrayBlockingQueue<byte[]> serialRawData = new ArrayBlockingQueue<>(30);
     private final int componentId = 1;
     private final short targetComponent = 1;
     private final int fcVariant;
@@ -159,6 +160,7 @@ public class Mavlink {
     public void initialize() {
         fcParams = new FcParams(this);
         telemetryOutputBuffer.clear();
+        serialRawData.clear();
         telemetryIntervalUs = 1000000 / config.getTelemetryRefreshRate();
         setRcMinPeriod();
         threadsId++;
@@ -166,6 +168,10 @@ public class Mavlink {
         mavlinkThread.setDaemon(false);
         mavlinkThread.setName("mavlinkThread");
         mavlinkThread.start();
+        Thread serialDataThread = new Thread(serialDataRun);
+        serialDataThread.setDaemon(false);
+        serialDataThread.setName("serialDataThread");
+        serialDataThread.start();
     }
 
     private final Runnable mavlinkRun = new Runnable() {
@@ -340,10 +346,29 @@ public class Mavlink {
         }
     }
 
-    public void processData(byte[] buf, int dataLength){
+    public void addData(byte[] buf, int dataLength){
         if (dataLength < MAVLinkPacket.MAVLINK1_HEADER_LEN) return;
         byte[] data = new byte[dataLength];
         System.arraycopy(buf, 0, data, 0, dataLength);
+        serialRawData.offer(data);
+    }
+
+    private final Runnable serialDataRun = new Runnable() {
+        public void run() {
+            final int id = threadsId;
+            byte[] data;
+            while (id == threadsId) {
+                try {
+                    data = serialRawData.take();
+                    processData(data);
+                } catch (Exception e) {
+                    log("Serial data thread error: " + e);
+                }
+            }
+        }
+    };
+
+    private void processData(byte[] data){
         List<MAVLinkPacket> packets = null;
         try {
             packets = parsePackets(data);
@@ -933,7 +958,7 @@ public class Mavlink {
             }
             MAVLinkPacket packet = new MAVLinkPacket(payloadLength, isMavlink2);
             if (isMavlink2) {
-                if (reader.getSize() < MAVLinkPacket.MAVLINK2_NONPAYLOAD_LEN) return packets;
+                if (reader.getRemaining() < MAVLinkPacket.MAVLINK2_NONPAYLOAD_LEN + payloadLength - 2) return packets;
                 packet.incompatFlags = reader.readUnsignedByteAsInt();
                 if (packet.incompatFlags != 0) return packets;
                 packet.compatFlags = reader.readUnsignedByteAsInt();
@@ -950,7 +975,7 @@ public class Mavlink {
                 if (!packet.generateCRC(payloadLength)) return packets;
                 if (packet.crc.getLSB() != crc1 || packet.crc.getMSB() != crc2) return packets;
             } else {
-                if (reader.getSize() < MAVLinkPacket.MAVLINK1_NONPAYLOAD_LEN) return packets;
+                if (reader.getRemaining() < MAVLinkPacket.MAVLINK1_NONPAYLOAD_LEN + payloadLength - 2) return packets;
                 packet.seq = reader.readUnsignedByteAsInt();
                 packet.sysid = reader.readUnsignedByteAsInt();
                 packet.compid = reader.readUnsignedByteAsInt();
@@ -1002,6 +1027,7 @@ public class Mavlink {
         isHeartBeatReceived = false;
         fcParams = null;
         telemetryOutputBuffer.clear();
+        serialRawData.clear();
         batteryCellCountDetected = 0;
     }
 }

@@ -48,6 +48,7 @@ public class Msp {
     private final Serial serial;
     private final Config config;
     public final ArrayBlockingQueue<TelemetryData> telemetryOutputBuffer = new ArrayBlockingQueue<>(30);
+    private final ArrayBlockingQueue<byte[]> serialRawData = new ArrayBlockingQueue<>(30);
     private int fcVariant;
     private int apiProtocolVersion;
     private int apiVersionMajor;
@@ -134,11 +135,16 @@ public class Msp {
         lastArmTime = 0;
         setRcMinPeriod();
         telemetryOutputBuffer.clear();
+        serialRawData.clear();
         threadsId++;
         Thread mspThread = new Thread(mspRun);
         mspThread.setDaemon(false);
         mspThread.setName("mspThread");
         mspThread.start();
+        Thread serialDataThread = new Thread(serialDataRun);
+        serialDataThread.setDaemon(false);
+        serialDataThread.setName("serialDataThread");
+        serialDataThread.start();
     }
 
     public void runGetBoxIds(){
@@ -162,6 +168,7 @@ public class Msp {
         isInitialized = false;
         osdConfig = null;
         telemetryOutputBuffer.clear();
+        serialRawData.clear();
     }
 
     private final Runnable mspRun = new Runnable() {
@@ -185,6 +192,21 @@ public class Msp {
                     }
 
                     if (timerDiv % 5 == 0) {
+                        switch (fcVariant){
+                            case FcInfo.FC_VARIANT_INAV:
+                                getInavStatus();
+                                break;
+                            case FcInfo.FC_VARIANT_BETAFLIGHT:
+                                getStatus();
+                                break;
+                        }
+                        checkModeFlags();
+                        processOnTimeFlyTime();
+                        getAltitude();
+                    }
+
+                    if (timerDiv % 10 == 0) {
+                        timerDiv = 0;
                         if (runGetBoxNames || runGetBoxIds) {
                             switch (fcVariant){
                                 case FcInfo.FC_VARIANT_INAV:
@@ -206,20 +228,6 @@ public class Msp {
                                 getBatteryConfig();
                             }
                         }
-                        switch (fcVariant){
-                            case FcInfo.FC_VARIANT_INAV:
-                                getInavStatus();
-                                break;
-                            case FcInfo.FC_VARIANT_BETAFLIGHT:
-                                getStatus();
-                                break;
-                        }
-                        checkModeFlags();
-                        processOnTimeFlyTime();
-                    }
-
-                    if (timerDiv % 10 == 0) {
-                        timerDiv = 0;
                         getBatteryState();
                         getRawGps();
                         getCompGps();
@@ -235,7 +243,6 @@ public class Msp {
                     }
 
                     getAttitude();
-                    getAltitude();
                     Thread.sleep(timerDelayMs);
                 } catch (Exception e) {
                     log("MSP thread error: " + e);
@@ -317,10 +324,29 @@ public class Msp {
         return packets;
     }
 
-    public void processData(byte[] buf, int dataLength){
+    public void addData(byte[] buf, int dataLength){
         if (dataLength <= MSP_V1_HEADER_SIZE) return;
         byte[] data = new byte[dataLength];
         System.arraycopy(buf, 0, data, 0, dataLength);
+        serialRawData.offer(data);
+    }
+
+    private final Runnable serialDataRun = new Runnable() {
+        public void run() {
+            final int id = threadsId;
+            byte[] data;
+            while (id == threadsId) {
+                try {
+                    data = serialRawData.take();
+                    processData(data);
+                } catch (Exception e) {
+                    log("Serial data thread error: " + e);
+                }
+            }
+        }
+    };
+
+    private void processData(byte[] data){
         List<MspPacket> packets = null;
         try {
             packets = parsePackets(data);
@@ -666,7 +692,7 @@ public class Msp {
         }
         serial.writeDataMsp(getMspRequestWithPayload(FcCommon.MSP_SET_RAW_RC, writer.getData()), true);
     }
-    
+
     private short[] processRxMap(short[] rcChannels){
         if (rxMap == null || rxMap.length < 4) return rcChannels;
         short[] mappedChannels = rcChannels.clone();

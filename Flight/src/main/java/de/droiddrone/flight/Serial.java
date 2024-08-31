@@ -49,7 +49,7 @@ public class Serial {
     public static final int STATUS_SERIAL_PORT_OPENED = 7;
     private static final int serialDataBits = 8;
     private static final int serialPortReadWriteTimeoutMs = 100;
-    private static final int serialMaxBufferSize = 4096 + 16;
+    private static final int serialMaxBufferSize = 2048;
     private int serialBaudRate;
     private int serialPortIndex;
     private final Context context;
@@ -208,6 +208,7 @@ public class Serial {
             if (readerThread == null) return;
             byte[] buf = new byte[serialMaxBufferSize];
             status = STATUS_SERIAL_PORT_OPENED;
+            readerThread.setPriority(Thread.MAX_PRIORITY);
             log("Start serial reader thread - OK");
             while (id == threadsId) {
                 try {
@@ -215,9 +216,9 @@ public class Serial {
                     if (size > 0){
                         status = STATUS_SERIAL_PORT_OPENED;
                         if (isArduPilot){
-                            mavlink.processData(buf, size);
+                            mavlink.addData(buf, size);
                         } else {
-                            msp.processData(buf, size);
+                            msp.addData(buf, size);
                         }
                     }
                 } catch (Exception e) {
