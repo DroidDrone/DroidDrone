@@ -320,7 +320,7 @@ public class Osd {
 
     private String formatDistance(int distance){
         if (Math.abs(distance) > 1000){
-            return format2Digit.format(distance / 1000) + " km";
+            return format2Digit.format(distance * 0.001f) + " km";
         }else{
             return distance + " m";
         }
