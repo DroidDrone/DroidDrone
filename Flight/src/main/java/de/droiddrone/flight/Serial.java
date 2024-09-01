@@ -61,7 +61,6 @@ public class Serial {
     private UsbDeviceConnection connection;
     private UsbSerialDriver driver;
     private int threadsId;
-    private Thread initThread, readerThread;
     private int status;
     private boolean isArduPilot;
 
@@ -82,7 +81,7 @@ public class Serial {
         serialBaudRate = config.getSerialBaudRate();
         serialPortIndex = config.getSerialPortIndex();
         threadsId++;
-        initThread = new Thread(initRun);
+        Thread initThread = new Thread(initRun);
         initThread.setDaemon(false);
         initThread.setName("serialInitThread");
         initThread.start();
@@ -95,7 +94,6 @@ public class Serial {
     private final Runnable initRun = new Runnable() {
         public void run() {
             final int id = threadsId;
-            if (initThread == null) return;
             log("Start serial init thread - OK");
             status = STATUS_DEVICE_NOT_CONNECTED;
             while (id == threadsId) {
@@ -189,7 +187,7 @@ public class Serial {
             e.printStackTrace();
             return false;
         }
-        readerThread = new Thread(readerRun);
+        Thread readerThread = new Thread(readerRun);
         readerThread.setDaemon(false);
         readerThread.setName("readerThread");
         readerThread.setPriority(Thread.MAX_PRIORITY);
@@ -205,15 +203,15 @@ public class Serial {
     private final Runnable readerRun = new Runnable() {
         public void run() {
             final int id = threadsId;
-            if (readerThread == null) return;
+            int serialErrors = 0;
             byte[] buf = new byte[serialMaxBufferSize];
             status = STATUS_SERIAL_PORT_OPENED;
-            readerThread.setPriority(Thread.MAX_PRIORITY);
             log("Start serial reader thread - OK");
             while (id == threadsId) {
                 try {
                     int size = port.read(buf, serialPortReadWriteTimeoutMs);
                     if (size > 0){
+                        serialErrors = 0;
                         status = STATUS_SERIAL_PORT_OPENED;
                         if (isArduPilot){
                             mavlink.addData(buf, size);
@@ -222,7 +220,8 @@ public class Serial {
                         }
                     }
                 } catch (Exception e) {
-                    status = STATUS_SERIAL_PORT_ERROR;
+                    serialErrors++;
+                    if (serialErrors > 10) status = STATUS_SERIAL_PORT_ERROR;
                     log("Serial reader thread error: " + e);
                     try {
                         Thread.sleep(serialPortReadWriteTimeoutMs);
@@ -235,7 +234,7 @@ public class Serial {
     };
 
     public void writeDataMsp(byte[] data, boolean checkMspCompatibility){
-        if (data == null || port == null || !port.isOpen()) return;
+        if (status != STATUS_SERIAL_PORT_OPENED || data == null || port == null || !port.isOpen()) return;
         if (checkMspCompatibility && FcCommon.getFcApiCompatibilityLevel(msp.getFcInfo()) != FcCommon.FC_API_COMPATIBILITY_OK
                 && FcCommon.getFcApiCompatibilityLevel(msp.getFcInfo()) != FcCommon.FC_API_COMPATIBILITY_WARNING) return;
         try {
@@ -246,7 +245,7 @@ public class Serial {
     }
 
     public void writeDataMavlink(byte[] data){
-        if (data == null || port == null || !port.isOpen()) return;
+        if (status != STATUS_SERIAL_PORT_OPENED || data == null || port == null || !port.isOpen()) return;
         try {
             port.write(data, serialPortReadWriteTimeoutMs);
         } catch (IOException e) {
