@@ -216,12 +216,24 @@
         <item>256000 bits/s</item>
         <item>128000 bits/s</item>
         <item>115200 bits/s</item>
+        <item>57600 bits/s</item>
+        <item>38400 bits/s</item>
+        <item>28800 bits/s</item>
+        <item>19200 bits/s</item>
+        <item>14400 bits/s</item>
+        <item>9600 bits/s</item>
     </string-array>
 
     <string-array name="serialBaudRateValues">
         <item>256000</item>
         <item>128000</item>
         <item>115200</item>
+        <item>57600</item>
+        <item>38400</item>
+        <item>28800</item>
+        <item>19200</item>
+        <item>14400</item>
+        <item>9600</item>
     </string-array>
 
     <string-array name="usbCameraFrameFormatEntries">

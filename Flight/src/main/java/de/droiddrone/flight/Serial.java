@@ -50,8 +50,6 @@ public class Serial {
     private static final int serialDataBits = 8;
     private static final int serialPortReadWriteTimeoutMs = 100;
     private static final int serialMaxBufferSize = 2048;
-    private int serialBaudRate;
-    private int serialPortIndex;
     private final Context context;
     private final Config config;
     private final UsbManager manager;
@@ -78,8 +76,6 @@ public class Serial {
         this.msp = msp;
         this.mavlink = mavlink;
         isArduPilot = false;
-        serialBaudRate = config.getSerialBaudRate();
-        serialPortIndex = config.getSerialPortIndex();
         threadsId++;
         Thread initThread = new Thread(initRun);
         initThread.setDaemon(false);
@@ -109,6 +105,10 @@ public class Serial {
                     Thread.sleep(2000);
                 } catch (Exception e) {
                     log("Serial init thread error: " + e);
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
         }
@@ -177,10 +177,10 @@ public class Serial {
             status = STATUS_USB_PERMISSION_DENIED;
             return false;
         }
-        port = driver.getPorts().get(serialPortIndex);
+        port = driver.getPorts().get(config.getSerialPortIndex());
         try {
             port.open(connection);
-            port.setParameters(serialBaudRate, serialDataBits, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+            port.setParameters(config.getSerialBaudRate(), serialDataBits, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
         } catch (IOException e) {
             status = STATUS_SERIAL_PORT_ERROR;
             log("USB Serial error: " + e);
