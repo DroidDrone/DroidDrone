@@ -138,7 +138,13 @@ public class UsbCamera implements Camera {
             if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return false;
             }
-            List<UsbDevice> usbDevices = usbMonitor.getDeviceList();
+            List<UsbDevice> usbDevices;
+            try {
+                usbDevices = usbMonitor.getDeviceList();
+            }catch (Exception e){
+                e.printStackTrace();
+                return false;
+            }
             if (usbDevices.isEmpty()) return false;
 
             boolean usbCameraFound = false;
