@@ -1066,7 +1066,7 @@ public class Osd {
         }
 
         if (config.isShowCameraFps()) {
-            text = "Cam.FPS: " + cameraFps;
+            text = "Cam.FPS: " + (cameraFps > 0 ? cameraFps : "-");
             if (cameraFps < 20) {
                 glSprites.addSprite(SpritesMapping.ALERT, xOffset, y, spriteSize);
                 xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
