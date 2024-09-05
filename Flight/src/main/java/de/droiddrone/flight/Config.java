@@ -223,8 +223,8 @@ public class Config {
         usbCameraReset = preferences.getBoolean("usbCameraReset", true);
         cameraResolutionWidth = preferences.getInt("cameraResolutionWidth", 1920);
         cameraResolutionHeight = preferences.getInt("cameraResolutionHeight", 1080);
-        cameraFpsMin = preferences.getInt("cameraFpsMin", 60);
-        cameraFpsMax = preferences.getInt("cameraFpsMax", 90);
+        cameraFpsMin = preferences.getInt("cameraFpsMin", 30);
+        cameraFpsMax = preferences.getInt("cameraFpsMax", 60);
         bitrateLimit = preferences.getInt("bitrateLimit", 6000000);
         useExtraEncoder = preferences.getBoolean("useExtraEncoder", true);
         videoRecorderCodec = preferences.getInt("videoRecorderCodec", 0);

@@ -40,7 +40,7 @@
             app:title="@string/camera_fps"
             app:entries="@array/cameraFpsEntries"
             app:entryValues="@array/cameraFpsValues"
-            app:defaultValue="60-90"/>
+            app:defaultValue="30-60"/>
         <ListPreference
             app:key="bitrateLimit"
             app:title="@string/bitrate_limit"

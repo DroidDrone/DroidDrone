@@ -92,11 +92,11 @@ public class Config {
         try{
             String cameraFps = preferences.getString("cameraFps", "");
             String[] ranges = cameraFps.split("-");
-            cameraFpsMin = parseInt(ranges[0], 60);
-            cameraFpsMax = parseInt(ranges[1], 90);
+            cameraFpsMin = parseInt(ranges[0], 30);
+            cameraFpsMax = parseInt(ranges[1], 60);
         }catch (Exception e){
-            cameraFpsMin = 60;
-            cameraFpsMax = 90;
+            cameraFpsMin = 30;
+            cameraFpsMax = 60;
         }
         bitrateLimit = parseInt(preferences.getString("bitrateLimit", ""), 6000000);
         useExtraEncoder = preferences.getBoolean("useExtraEncoder", true);
