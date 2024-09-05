@@ -120,6 +120,10 @@ public class PhoneTelemetry {
         int batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
         if (batteryLevel < 0) return;
         boolean isCharging = batteryManager.isCharging();
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            int status = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_STATUS);
+            isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING);
+        }
         DataWriter writer = new DataWriter(false);
         writer.writeByte((byte) batteryLevel);
         writer.writeBoolean(isCharging);
