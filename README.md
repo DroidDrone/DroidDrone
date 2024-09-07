@@ -14,7 +14,7 @@ Flight app controls the INAV or Betaflight drone via MSP commands, so you need t
 > In the Modes tab you can also add a Camera Control 2 Mode to start or stop video recording.
 
 ### ArduPilot setup
-ArduPilot should work with the default settings. However, you need to check these settings: Mavlink target system ID should match the parameter SYSID_THISMAV (default 1) in ArduPilot settings and Mavlink GCS system ID - the SYSID_MYGCS (default 255). Ignore MAVLink Overrides bitmask in the RC_OPTIONS parameter must be deactivated. You can set the RC_OVERRIDE_TIME parameter to one second (default is 3).
+ArduPilot should work with the defaults. However, you need to check these settings: Mavlink target system ID should match the parameter SYSID_THISMAV (default 1) in ArduPilot settings and Mavlink GCS system ID - the SYSID_MYGCS (default 255). Ignore MAVLink Overrides bitmask in the RC_OPTIONS parameter must be deactivated. You can set the RC_OVERRIDE_TIME parameter to one second (default is 3).
 
 > You can set the "Camera Record Video" RC option (166) to the free channel to start and stop video recording on Android.
 
