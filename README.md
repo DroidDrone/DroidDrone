@@ -1,16 +1,22 @@
 ## What is DroidDrone
 
-With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav) or [Betaflight](https://github.com/betaflight/betaflight) drone via the Internet. You only need two Android phones (requires min version 7, Android 11+ is recommended) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
+With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav), [ArduPilot](https://github.com/ArduPilot/ardupilot) or [Betaflight](https://github.com/betaflight/betaflight) drone via the Internet. You only need two Android phones (requires min version 7, Android 11+ is recommended) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
 
 ## Install and configure
 
 You have to install the Flight and Control apps on the phones. You can download them from the [Releases](https://github.com/DroidDrone/DroidDrone/releases) page.
 
-Flight app controls your drone via MSP commands, so you need to change your receiver type to MSP in your INAV or Betaflight configurator:
+### INAV or Betaflight setup
+Flight app controls the INAV or Betaflight drone via MSP commands, so you need to change your receiver type to MSP in your configurator:
 
 ![Receiver](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_receiver.JPG?raw=true)
 
 > In the Modes tab you can also add a Camera Control 2 Mode to start or stop video recording.
+
+### ArduPilot setup
+ArduPilot should work with the default settings. However, you need to check these settings: Mavlink target system ID should match the parameter SYSID_THISMAV (default 1) in ArduPilot settings and Mavlink GCS system ID - the SYSID_MYGCS (default 255). Ignore MAVLink Overrides bitmask in the RC_OPTIONS parameter must be deactivated. You can set the RC_OVERRIDE_TIME parameter to one second (default is 3).
+
+> You can set the "Camera Record Video" RC option (166) to the free channel to start and stop video recording on Android.
 
 ### Network connection
 
@@ -41,13 +47,13 @@ Before the first flight you also need to check in the settings of control app th
 
 ![Channels map](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_channels_map.jpg?raw=true)
 
-The channels mapping in your FC (AERT, TAER etc. in your receiver tab) is automatically recognized.
+The channels mapping in your FC is automatically recognized.
 
 **Note that every time before connect the control app you need to move all sticks and switches on your transmitter to correctly recognize all channels. Some channels can only work as two position switches via USB.**
 
-**Please only use the DroidDrone if your drone has a GPS and return to home (GPS rescue) works correctly. It's recommended to configure a switch for this in the Modes tab.**
+**Please only use the DroidDrone if your drone has a GPS and return to home/launch (GPS rescue) works correctly. It's recommended to configure a switch for this mode.**
 
-**For your first flight you should use Angle or GPS Hold mode, only when everything is running smoothly you can switch to Acro.**
+**For your first flight you should use Angle/Stabilize or position Hold mode, only when everything is running smoothly you can switch to Acro.**
 
 The Flight App can run as a service when your screen turned off.
 **The Control app must always be in the foreground. If it is not in the foreground or screen will be turned off then it causes a failsafe.**
@@ -65,6 +71,7 @@ The recorded video should be saved in the "Android/media/de.droiddrone.flight/Vi
 
 * INAV version 7+ ([MSP API](https://github.com/iNavFlight/inav/blob/master/src/main/msp/msp_protocol.h) 2.5)
 * Betaflight 4.4.2+ ([MSP API](https://github.com/betaflight/betaflight/blob/master/src/main/msp/msp_protocol.h) 1.45, 1.46)
+* ArduPilot 4.5.4+ ([Mavlink](https://mavlink.io/en/messages/common.html) 2.3)
 
 ## Contributing & Development
 
@@ -74,5 +81,4 @@ You should use the latest Android Studio to compile the app sources and the Ecli
 To create a sprites map you can use the Adobe Air ShoeBox app and the BMFont for font textures.
 
 ## Todo
-* ArduPilot support
 * Google Maps tracking
