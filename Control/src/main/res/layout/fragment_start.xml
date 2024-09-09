@@ -103,6 +103,12 @@
             android:text="@string/show_video_stream" />
 
         <Button
+            android:id="@+id/bMap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/show_map" />
+
+        <Button
             android:id="@+id/bSettings"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

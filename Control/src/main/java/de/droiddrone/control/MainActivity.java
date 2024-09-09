@@ -144,6 +144,10 @@ public class MainActivity extends AppCompatActivity {
         customFragmentFactory.showChannelsMappingFragment();
     }
 
+    public void showMapFragment(){
+        customFragmentFactory.showMapFragment();
+    }
+
     public void runConnectDisconnect(){
         if (isRunning){
             getWindow().getDecorView().setSystemUiVisibility(showNavigationFlags);

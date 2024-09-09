@@ -30,6 +30,7 @@ public class CustomFragmentFactory extends FragmentFactory {
     private final GlRenderer glRenderer;
     private final String startFragmentTag = "StartFragment";
     private final String glFragmentTag = "GlFragment";
+    private final String mapFragmentTag = "MapFragment";
     private final String settingsFragmentTag = "SettingsFragment";
     private final String channelsMappingFragmentTag = "ChannelsMappingFragment";
     private int currentFragmentId;
@@ -51,6 +52,7 @@ public class CustomFragmentFactory extends FragmentFactory {
         if (fragmentClass == ChannelsMappingFragment.class) return new ChannelsMappingFragment(activity, config, rc);
         if (fragmentClass == SettingsFragment.class) return new SettingsFragment(activity);
         if (fragmentClass == GlFragment.class) return new GlFragment(activity, glRenderer);
+        if (fragmentClass == MapFragment.class) return new MapFragment(activity);
         return super.instantiate(classLoader, className);
     }
 
@@ -68,6 +70,10 @@ public class CustomFragmentFactory extends FragmentFactory {
 
     public GlFragment getGlFragment() {
         return (GlFragment) fragmentManager.findFragmentByTag(glFragmentTag);
+    }
+
+    public MapFragment getMapFragment() {
+        return (MapFragment) fragmentManager.findFragmentByTag(mapFragmentTag);
     }
 
     public void showStartFragment() {
@@ -107,6 +113,16 @@ public class CustomFragmentFactory extends FragmentFactory {
                 .replace(R.id.fragment_container_view, ChannelsMappingFragment.class, null, channelsMappingFragmentTag)
                 .commit();
         currentFragmentId = ChannelsMappingFragment.fragmentId;
+    }
+
+    public void showMapFragment() {
+        activity.getWindow().getDecorView().setSystemUiVisibility(MainActivity.showNavigationFlags);
+        fragmentManager.beginTransaction()
+                .setReorderingAllowed(true)
+                .addToBackStack(mapFragmentTag)
+                .replace(R.id.fragment_container_view, MapFragment.class, null, mapFragmentTag)
+                .commit();
+        currentFragmentId = MapFragment.fragmentId;
     }
 
     public int getCurrentFragmentId() {

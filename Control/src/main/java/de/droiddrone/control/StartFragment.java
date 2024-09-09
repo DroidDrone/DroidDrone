@@ -35,7 +35,7 @@ public class StartFragment extends Fragment {
     private final Config config;
     EditText etIp, etPort, etKey;
     private TextView tvNetworkStatus, tvControllerStatus;
-    private Button bConnectDisconnect, bShowGl, bSettings;
+    private Button bConnectDisconnect, bShowGl, bSettings, bMap;
     CheckBox isViewer;
 
     @Override
@@ -51,6 +51,10 @@ public class StartFragment extends Fragment {
         bShowGl.setOnClickListener(v -> {
             if (!activity.isConnected()) return;
             activity.showGlFragment(false);
+        });
+        bMap = view.findViewById(R.id.bMap);
+        bMap.setOnClickListener(v -> {
+            activity.showMapFragment();
         });
         bSettings = view.findViewById(R.id.bSettings);
         bSettings.setOnClickListener(v -> {
