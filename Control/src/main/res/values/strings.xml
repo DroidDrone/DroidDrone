@@ -8,6 +8,7 @@
     <string name="channels_mapping_content_description">Tap the channel and move the stick to match it.</string>
     <string name="not_set">Not set</string>
     <string name="show_video_stream">Show video stream</string>
+    <string name="show_map">Map</string>
     <string name="status_network">Network connection status:&#160;</string>
     <string name="status_controller">Controller status:&#160;</string>
     <string name="channels_detected">Channels detected:&#160;</string>

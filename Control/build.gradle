@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
 android {
@@ -23,10 +24,23 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+}
+
+secrets {
+    // The file "secrets.properties" does not exist in Git
+    // Add the file in project root folder and write to it:
+    // MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
+    // Maps SDK for Android should be active for the key
+    propertiesFileName = "secrets.properties"
+    defaultPropertiesFileName = "local.defaults.properties"
 }
 
 dependencies {
@@ -35,6 +49,7 @@ dependencies {
     implementation 'androidx.fragment:fragment:1.8.3'
     implementation 'androidx.preference:preference:1.2.1'
     implementation 'com.github.martin-stone:hsv-alpha-color-picker-android:3.1.0'
+    implementation 'com.google.android.gms:play-services-maps:19.0.0'
     implementation 'com.google.android.material:material:1.12.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
