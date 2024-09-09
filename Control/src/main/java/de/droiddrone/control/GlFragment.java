@@ -43,7 +43,8 @@ public class GlFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        RelativeLayout rlGl = activity.findViewById(R.id.rlGl);
+        if (savedInstanceState != null) return;
+        RelativeLayout rlGl = view.findViewById(R.id.rlGl);
         RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         glView = new GLSurfaceView(activity);
         glView.setLayoutParams(lp);

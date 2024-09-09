@@ -48,8 +48,9 @@ public class ChannelsMappingFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        LinearLayout llChannelsMapping = activity.findViewById(R.id.llChannelsMapping);
-        tvControllerStatusRc = activity.findViewById(R.id.tvControllerStatusRc);
+        if (savedInstanceState != null) return;
+        LinearLayout llChannelsMapping = view.findViewById(R.id.llChannelsMapping);
+        tvControllerStatusRc = view.findViewById(R.id.tvControllerStatusRc);
         int[] channelsMap = config.getRcChannelsMap();
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
             uiChannels[i] = new RcChannelMapUiElement(activity, llChannelsMapping, i, channelsMap[i]);

@@ -331,6 +331,7 @@ public class Config {
 
     public boolean updateConfig(){
         StartFragment fragment = activity.getStartFragment();
+        if (fragment == null) return false;
         ip = fragment.etIp.getText().toString();
         if (ip.isBlank()) return false;
         try {
