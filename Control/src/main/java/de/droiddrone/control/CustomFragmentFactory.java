@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentFactory;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 public class CustomFragmentFactory extends FragmentFactory {
     private final FragmentManager fragmentManager;
@@ -76,52 +77,82 @@ public class CustomFragmentFactory extends FragmentFactory {
         return (MapFragment) fragmentManager.findFragmentByTag(mapFragmentTag);
     }
 
+    private void showExistingFragment(Fragment fragment){
+        hideAllFragments().show(fragment).commit();
+    }
+
+    private FragmentTransaction hideAllFragments(){
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.setReorderingAllowed(true);
+        for (Fragment fr : fragmentManager.getFragments()){
+            fragmentTransaction.hide(fr);
+        }
+        return fragmentTransaction;
+    }
+
     public void showStartFragment() {
         activity.getWindow().getDecorView().setSystemUiVisibility(MainActivity.showNavigationFlags);
-        fragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .replace(R.id.fragment_container_view, StartFragment.class, null, startFragmentTag)
-                .commit();
+        StartFragment startFragment = getStartFragment();
+        if (startFragment != null){
+            showExistingFragment(startFragment);
+        }else{
+            fragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .add(R.id.fragment_container_view, StartFragment.class, null, startFragmentTag)
+                    .commit();
+        }
         currentFragmentId = StartFragment.fragmentId;
     }
 
     public void showGlFragment() {
         activity.getWindow().getDecorView().setSystemUiVisibility(MainActivity.fullScreenFlags);
-        fragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .addToBackStack(glFragmentTag)
-                .replace(R.id.fragment_container_view, GlFragment.class, null, glFragmentTag)
-                .commit();
+        GlFragment glFragment = getGlFragment();
+        if (glFragment != null){
+            showExistingFragment(glFragment);
+        }else{
+            hideAllFragments()
+                    .add(R.id.fragment_container_view, GlFragment.class, null, glFragmentTag)
+                    .commit();
+        }
         currentFragmentId = GlFragment.fragmentId;
     }
 
     public void showSettingsFragment() {
         activity.getWindow().getDecorView().setSystemUiVisibility(MainActivity.showNavigationFlags);
-        fragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .addToBackStack(settingsFragmentTag)
-                .replace(R.id.fragment_container_view, SettingsFragment.class, null, settingsFragmentTag)
-                .commit();
+        SettingsFragment settingsFragment = getSettingsFragment();
+        if (settingsFragment != null){
+            showExistingFragment(settingsFragment);
+        }else {
+            hideAllFragments()
+                    .add(R.id.fragment_container_view, SettingsFragment.class, null, settingsFragmentTag)
+                    .commit();
+        }
         currentFragmentId = SettingsFragment.fragmentId;
     }
 
     public void showChannelsMappingFragment() {
         activity.getWindow().getDecorView().setSystemUiVisibility(MainActivity.showNavigationFlags);
-        fragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .addToBackStack(channelsMappingFragmentTag)
-                .replace(R.id.fragment_container_view, ChannelsMappingFragment.class, null, channelsMappingFragmentTag)
-                .commit();
+        ChannelsMappingFragment channelsMappingFragment = getChannelsMappingFragment();
+        if (channelsMappingFragment != null){
+            showExistingFragment(channelsMappingFragment);
+        }else{
+            hideAllFragments()
+                    .add(R.id.fragment_container_view, ChannelsMappingFragment.class, null, channelsMappingFragmentTag)
+                    .commit();
+        }
         currentFragmentId = ChannelsMappingFragment.fragmentId;
     }
 
     public void showMapFragment() {
         activity.getWindow().getDecorView().setSystemUiVisibility(MainActivity.showNavigationFlags);
-        fragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .addToBackStack(mapFragmentTag)
-                .replace(R.id.fragment_container_view, MapFragment.class, null, mapFragmentTag)
-                .commit();
+        MapFragment mapFragment = getMapFragment();
+        if (mapFragment != null){
+            showExistingFragment(mapFragment);
+        }else{
+            hideAllFragments()
+                    .add(R.id.fragment_container_view, MapFragment.class, null, mapFragmentTag)
+                    .commit();
+        }
         currentFragmentId = MapFragment.fragmentId;
     }
 

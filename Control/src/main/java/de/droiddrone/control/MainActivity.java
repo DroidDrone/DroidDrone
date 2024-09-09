@@ -148,6 +148,23 @@ public class MainActivity extends AppCompatActivity {
         customFragmentFactory.showMapFragment();
     }
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            int currentFragmentId = customFragmentFactory.getCurrentFragmentId();
+            if (currentFragmentId == GlFragment.fragmentId || currentFragmentId == SettingsFragment.fragmentId
+                    || currentFragmentId == MapFragment.fragmentId){
+                showStartFragment();
+                return true;
+            }
+            if (currentFragmentId == ChannelsMappingFragment.fragmentId){
+                showSettingsFragment();
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
     public void runConnectDisconnect(){
         if (isRunning){
             getWindow().getDecorView().setSystemUiVisibility(showNavigationFlags);
