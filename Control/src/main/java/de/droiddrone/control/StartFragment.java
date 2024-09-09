@@ -41,31 +41,32 @@ public class StartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        bConnectDisconnect = activity.findViewById(R.id.bConnectDisconnect);
+        if (savedInstanceState != null) return;
+        bConnectDisconnect = view.findViewById(R.id.bConnectDisconnect);
         bConnectDisconnect.setOnClickListener(v -> {
             activity.runConnectDisconnect();
             updateUi();
         });
-        bShowGl = activity.findViewById(R.id.bShowGl);
+        bShowGl = view.findViewById(R.id.bShowGl);
         bShowGl.setOnClickListener(v -> {
             if (!activity.isConnected()) return;
             activity.showGlFragment(false);
         });
-        bSettings = activity.findViewById(R.id.bSettings);
+        bSettings = view.findViewById(R.id.bSettings);
         bSettings.setOnClickListener(v -> {
             activity.showSettingsFragment();
         });
-        etIp = activity.findViewById(R.id.editText_ip);
-        etPort = activity.findViewById(R.id.editText_port);
-        etKey = activity.findViewById(R.id.editText_key);
-        isViewer = activity.findViewById(R.id.isViewer);
-        tvNetworkStatus = activity.findViewById(R.id.tvNetworkStatus);
-        tvControllerStatus = activity.findViewById(R.id.tvControllerStatus);
+        etIp = view.findViewById(R.id.editText_ip);
+        etPort = view.findViewById(R.id.editText_port);
+        etKey = view.findViewById(R.id.editText_key);
+        isViewer = view.findViewById(R.id.isViewer);
+        tvNetworkStatus = view.findViewById(R.id.tvNetworkStatus);
+        tvControllerStatus = view.findViewById(R.id.tvControllerStatus);
         etIp.setText(config.getIp());
         etPort.setText(String.valueOf(config.getPort()));
         etKey.setText(config.getKey());
         isViewer.setChecked(config.isViewer());
-        TextView tvVersion = activity.findViewById(R.id.tvVersion);
+        TextView tvVersion = view.findViewById(R.id.tvVersion);
         tvVersion.setText(getResources().getString(R.string.version, MainActivity.versionName));
     }
 

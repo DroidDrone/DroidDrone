@@ -54,31 +54,24 @@ public class MainActivity extends AppCompatActivity {
     private GlRenderer renderer;
     private Rc rc;
     boolean isRunning;
-    private StartFragment startFragment;
-    private GlFragment glFragment;
-    private SettingsFragment settingsFragment;
-    private ChannelsMappingFragment channelsMappingFragment;
     private Osd osd;
-    private FragmentManager fm;
-    private int currentFragmentId;
     private MainActivity activity;
     private BatteryManager batteryManager;
     private Config config;
     private boolean connectionThreadRunning = false;
     private TelephonyService telephonyService;
     private boolean phoneStatePermissionRequested = false;
-    private final int fullScreenFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    public static final int fullScreenFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_FULLSCREEN
             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-    private final int showNavigationFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_FULLSCREEN;
+    public static final int showNavigationFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_FULLSCREEN;
+    private CustomFragmentFactory customFragmentFactory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
         try {
             PackageInfo packageInfo = this.getPackageManager().getPackageInfo(this.getPackageName(), 0);
             versionName = packageInfo.versionName;
@@ -86,32 +79,24 @@ public class MainActivity extends AppCompatActivity {
         }catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-
         isRunning = false;
+
         activity = this;
         config = new Config(this, versionCode);
+        telephonyService = new TelephonyService(this);
+        renderer = new GlRenderer(this, config);
+        rc = new Rc(config);
+
+        FragmentManager fm = getSupportFragmentManager();
+        customFragmentFactory = new CustomFragmentFactory(fm, this, config, rc, renderer);
+        fm.setFragmentFactory(customFragmentFactory);
+        super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_main);
 
-        telephonyService = new TelephonyService(this);
-        renderer = new GlRenderer(this, config);
-        rc = new Rc(config);
-        startFragment = new StartFragment(this, config);
-        channelsMappingFragment = new ChannelsMappingFragment(this, config, rc);
-        settingsFragment = new SettingsFragment(this);
-        glFragment = new GlFragment(this, renderer);
-
-        fm = getSupportFragmentManager();
-        fm.beginTransaction()
-                .setReorderingAllowed(true)
-                .add(R.id.fragment_container_view, startFragment)
-                .add(R.id.fragment_container_view, glFragment)
-                .add(R.id.fragment_container_view, settingsFragment)
-                .add(R.id.fragment_container_view, channelsMappingFragment)
-                .commit();
         showStartFragment();
         startMainTimer();
 
@@ -140,74 +125,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showStartFragment(){
-        getWindow().getDecorView().setSystemUiVisibility(showNavigationFlags);
-        fm.beginTransaction()
-                .setReorderingAllowed(true)
-                .hide(settingsFragment)
-                .hide(glFragment)
-                .hide(channelsMappingFragment)
-                .show(startFragment)
-                .commit();
-        currentFragmentId = StartFragment.fragmentId;
+        customFragmentFactory.showStartFragment();
     }
 
     public void showGlFragment(boolean runInThread){
         if (runInThread){
-            runOnUiThread(this::showGlFragment);
+            runOnUiThread(() -> customFragmentFactory.showGlFragment());
         }else{
-            showGlFragment();
+            customFragmentFactory.showGlFragment();
         }
-    }
-
-    private void showGlFragment(){
-        getWindow().getDecorView().setSystemUiVisibility(fullScreenFlags);
-        fm.beginTransaction()
-                .setReorderingAllowed(true)
-                .hide(startFragment)
-                .hide(settingsFragment)
-                .hide(channelsMappingFragment)
-                .show(glFragment)
-                .commit();
-        currentFragmentId = GlFragment.fragmentId;
     }
 
     public void showSettingsFragment(){
-        getWindow().getDecorView().setSystemUiVisibility(showNavigationFlags);
-        fm.beginTransaction()
-                .setReorderingAllowed(true)
-                .hide(startFragment)
-                .hide(glFragment)
-                .hide(channelsMappingFragment)
-                .show(settingsFragment)
-                .commit();
-        currentFragmentId = SettingsFragment.fragmentId;
+        customFragmentFactory.showSettingsFragment();
     }
 
     public void showChannelsMappingFragment(){
-        getWindow().getDecorView().setSystemUiVisibility(showNavigationFlags);
-        fm.beginTransaction()
-                .setReorderingAllowed(true)
-                .hide(startFragment)
-                .hide(glFragment)
-                .hide(settingsFragment)
-                .show(channelsMappingFragment)
-                .commit();
-        currentFragmentId = ChannelsMappingFragment.fragmentId;
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (currentFragmentId == GlFragment.fragmentId || currentFragmentId == SettingsFragment.fragmentId){
-                showStartFragment();
-                return true;
-            }
-            if (currentFragmentId == ChannelsMappingFragment.fragmentId){
-                showSettingsFragment();
-                return true;
-            }
-        }
-        return super.onKeyDown(keyCode, event);
+        customFragmentFactory.showChannelsMappingFragment();
     }
 
     public void runConnectDisconnect(){
@@ -218,7 +152,8 @@ public class MainActivity extends AppCompatActivity {
             if (!config.updateConfig()) return;
             getWindow().getDecorView().setSystemUiVisibility(fullScreenFlags);
             isRunning = true;
-            glFragment.resume();
+            GlFragment glFragment = customFragmentFactory.getGlFragment();
+            if (glFragment != null) glFragment.resume();
             if (decoder == null) decoder = new Decoder(renderer);
             osd = new Osd(renderer, config);
             renderer.setOsd(osd);
@@ -237,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public StartFragment getStartFragment(){
-        return startFragment;
+        return customFragmentFactory.getStartFragment();
     }
 
     private void startConnectionThread(){
@@ -297,6 +232,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void updateControllerStatusUi(TextView controllerStatus){
+        if (controllerStatus == null) return;
         if (isControllerConnected()){
             int channels = getControllerChannelCount();
             String status = getResources().getString(R.string.status_connected) + ". "
@@ -364,8 +300,12 @@ public class MainActivity extends AppCompatActivity {
                     updateNetworkState();
                 }
                 runOnUiThread(() -> {
-                    startFragment.updateUi();
-                    channelsMappingFragment.updateStatus();
+                    StartFragment startFragment = customFragmentFactory.getStartFragment();
+                    if (startFragment != null) startFragment.updateUi();
+                    if (customFragmentFactory.getCurrentFragmentId() == ChannelsMappingFragment.fragmentId) {
+                        ChannelsMappingFragment channelsMappingFragment = customFragmentFactory.getChannelsMappingFragment();
+                        if (channelsMappingFragment != null) channelsMappingFragment.updateStatus();
+                    }
                 });
             }
         };
@@ -397,15 +337,19 @@ public class MainActivity extends AppCompatActivity {
         int source = event.getSource();
         int action = event.getAction();
         int code = event.getKeyCode();
+        ChannelsMappingFragment channelsMappingFragment = null;
         if ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK){
+            if (customFragmentFactory.getCurrentFragmentId() == ChannelsMappingFragment.fragmentId) {
+                channelsMappingFragment = customFragmentFactory.getChannelsMappingFragment();
+            }
             switch (action){
                 case KeyEvent.ACTION_DOWN:
                     rc.setKeyValue(code, true);
-                    channelsMappingFragment.updateChannelsLevels();
+                    if (channelsMappingFragment != null) channelsMappingFragment.updateChannelsLevels();
                     break;
                 case KeyEvent.ACTION_UP:
                     rc.setKeyValue(code, false);
-                    channelsMappingFragment.updateChannelsLevels();
+                    if (channelsMappingFragment != null) channelsMappingFragment.updateChannelsLevels();
                     break;
             }
             return true;
@@ -418,8 +362,12 @@ public class MainActivity extends AppCompatActivity {
     public boolean onGenericMotionEvent(MotionEvent event) {
         int source = event.getSource();
         int action = event.getAction();
+        ChannelsMappingFragment channelsMappingFragment = null;
         if ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
             if (action == MotionEvent.ACTION_MOVE) {
+                if (customFragmentFactory.getCurrentFragmentId() == ChannelsMappingFragment.fragmentId) {
+                    channelsMappingFragment = customFragmentFactory.getChannelsMappingFragment();
+                }
                 HashMap<Integer, Float> axisValues = new HashMap<>();
                 float axisX = event.getAxisValue(MotionEvent.AXIS_X);
                 axisValues.put(MotionEvent.AXIS_X, axisX);
@@ -452,7 +400,7 @@ public class MainActivity extends AppCompatActivity {
                 float axisThrottle = event.getAxisValue(MotionEvent.AXIS_THROTTLE);
                 axisValues.put(MotionEvent.AXIS_THROTTLE, axisThrottle);
                 rc.setAxisValues(axisValues);
-                channelsMappingFragment.updateChannelsLevels();
+                if (channelsMappingFragment != null) channelsMappingFragment.updateChannelsLevels();
             }else{
                 if (action == MotionEvent.ACTION_CANCEL) rc.setState(false);
             }
@@ -469,7 +417,8 @@ public class MainActivity extends AppCompatActivity {
         }
         if (decoder != null) decoder.close();
         if (renderer != null) renderer.close();
-        glFragment.close();
+        GlFragment glFragment = customFragmentFactory.getGlFragment();
+        if (glFragment != null) glFragment.close();
         System.gc();
     }
 }
