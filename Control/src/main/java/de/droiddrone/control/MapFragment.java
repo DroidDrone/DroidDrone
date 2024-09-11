@@ -57,7 +57,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (savedInstanceState != null) return;
         SupportMapFragment mapFragment = SupportMapFragment.newInstance();
         getChildFragmentManager().beginTransaction()
                 .add(R.id.mapFragment, mapFragment)
