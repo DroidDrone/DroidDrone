@@ -48,7 +48,6 @@ public class ChannelsMappingFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (savedInstanceState != null) return;
         LinearLayout llChannelsMapping = view.findViewById(R.id.llChannelsMapping);
         tvControllerStatusRc = view.findViewById(R.id.tvControllerStatusRc);
         int[] channelsMap = config.getRcChannelsMap();

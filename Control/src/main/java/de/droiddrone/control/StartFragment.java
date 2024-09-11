@@ -41,7 +41,6 @@ public class StartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (savedInstanceState != null) return;
         bConnectDisconnect = view.findViewById(R.id.bConnectDisconnect);
         bConnectDisconnect.setOnClickListener(v -> {
             activity.runConnectDisconnect();
