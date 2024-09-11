@@ -29,6 +29,7 @@ public class CustomFragmentFactory extends FragmentFactory {
     private final Config config;
     private final Rc rc;
     private final GlRenderer glRenderer;
+    private final MapData mapData;
     private final String startFragmentTag = "StartFragment";
     private final String glFragmentTag = "GlFragment";
     private final String mapFragmentTag = "MapFragment";
@@ -36,13 +37,14 @@ public class CustomFragmentFactory extends FragmentFactory {
     private final String channelsMappingFragmentTag = "ChannelsMappingFragment";
     private int currentFragmentId;
 
-    public CustomFragmentFactory(FragmentManager fragmentManager, MainActivity activity, Config config, Rc rc, GlRenderer glRenderer) {
+    public CustomFragmentFactory(FragmentManager fragmentManager, MainActivity activity, Config config, Rc rc, GlRenderer glRenderer, MapData mapData) {
         super();
         this.fragmentManager = fragmentManager;
         this.activity = activity;
         this.config = config;
         this.rc = rc;
         this.glRenderer = glRenderer;
+        this.mapData = mapData;
     }
 
     @NonNull
@@ -53,7 +55,7 @@ public class CustomFragmentFactory extends FragmentFactory {
         if (fragmentClass == ChannelsMappingFragment.class) return new ChannelsMappingFragment(activity, config, rc);
         if (fragmentClass == SettingsFragment.class) return new SettingsFragment(activity);
         if (fragmentClass == GlFragment.class) return new GlFragment(activity, glRenderer);
-        if (fragmentClass == MapFragment.class) return new MapFragment(activity);
+        if (fragmentClass == MapFragment.class) return new MapFragment(activity, mapData);
         return super.instantiate(classLoader, className);
     }
 

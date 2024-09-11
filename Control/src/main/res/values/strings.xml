@@ -64,6 +64,7 @@
     <string name="use_usb_camera">Use external USB camera (UVC)</string>
     <string name="usb_camera_frame_format">USB camera frame format</string>
     <string name="usb_camera_reset_to_defaults">USB camera - reset to defaults on connecting</string>
+    <string name="permission_rationale_location">Access to the location service is required to display your current location on the map.</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3840x2160</item>

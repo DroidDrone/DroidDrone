@@ -37,6 +37,7 @@ public class Osd {
     public static final int rawRecButtonOffset = 270;
     private final int phoneBatteryIconSteps = 6;
     private final Config config;
+    private final MapData mapData;
     private FcInfo fcInfo = null;
     private OsdItem[] activeItems = null;
     private String[] boxNames = null;
@@ -135,10 +136,12 @@ public class Osd {
     private int apCustomMode = -1;
     private long apBatteryFaultBitmask;
     private final List<ArduPilotStatusText> arduPilotMessages = new ArrayList<>();
+    private boolean setInavAndBfHomePos;
 
-    public Osd(GlRenderer renderer, Config config) {
+    public Osd(GlRenderer renderer, Config config, MapData mapData) {
         this.renderer = renderer;
         this.config = config;
+        this.mapData = mapData;
         screenWidth = 1920;
         screenHeight = 1080;
         canvasCols = OsdCommon.canvasSizes.PAL_COLS;
@@ -465,7 +468,7 @@ public class Osd {
         }
     }
 
-    private boolean isArmed(){
+    private boolean isArmedBoxModes(){
         boolean isArmed = false;
         FcCommon.BoxMode[] activeBoxModes = Osd.this.activeBoxModes;
         if (activeBoxModes != null) {
@@ -1264,7 +1267,7 @@ public class Osd {
         configStateRebootRequired = ((configStateFlags & 1) == 1);
         this.coreTemperatureCelsius = coreTemperatureCelsius;
         activeBoxModes = FcCommon.getActiveBoxesBtfl(modeFlags, boxIds);
-        isArmed = isArmed();
+        isArmed = isArmedBoxModes();
         if (isArmed) wasArmed = true;
     }
 
@@ -1329,7 +1332,7 @@ public class Osd {
         this.armingFlags.armingDisabledDshotBeeper = ((armingFlags >> 29 & 1) == 1);
         this.armingFlags.armingDisabledLandingDetected = ((armingFlags >> 30 & 1) == 1);
         activeBoxModes = FcCommon.getActiveBoxesInav(modeFlags, boxIds);
-        isArmed = isArmed();
+        isArmed = isArmedBoxModes();
         if (isArmed) wasArmed = true;
     }
 
@@ -1441,6 +1444,18 @@ public class Osd {
         osdStats.setSpeed(this.groundSpeed);
         osdStats.setTraveledDistance(traveledDistance);
         calculateMahPerKm(this.amperage, this.groundSpeed);
+        if (lat == 0 && lon == 0) return;
+        mapData.setDronePosition(latDeg, lonDeg, isArmed);
+        if (isArmed){
+            if (setInavAndBfHomePos){
+                homeLatDeg = latDeg;
+                homeLonDeg = lonDeg;
+                mapData.setHomePosition(homeLatDeg, homeLonDeg);
+                setInavAndBfHomePos = false;
+            }
+        }else{
+            setInavAndBfHomePos = true;
+        }
     }
 
     public void setCompGps(short distanceToHome, short directionToHome, byte gpsHeartbeat) {//MSP_COMP_GPS
@@ -1519,6 +1534,7 @@ public class Osd {
         this.directionToHome = directionToHome;
         osdStats.setTraveledDistance(traveledDistance);
         osdStats.setHomeDistance(distanceToHome);
+        mapData.setDronePosition(latDeg, lonDeg, isArmed);
     }
 
     public void setArduPilotHomePosition(int lat, int lon){
@@ -1527,6 +1543,7 @@ public class Osd {
         float lonDeg = lon / 10000000f;
         this.homeLatDeg = latDeg;
         this.homeLonDeg = lonDeg;
+        mapData.setHomePosition(homeLatDeg, homeLonDeg);
     }
 
     public void setArduPilotSystemTime(long timeBootMs, long flightTime, long armingTime){

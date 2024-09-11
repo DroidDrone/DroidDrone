@@ -17,7 +17,10 @@
 
 package de.droiddrone.control;
 
+import android.Manifest;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -38,14 +41,18 @@ import java.util.TimerTask;
 
 import static de.droiddrone.common.Logcat.log;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
 import de.droiddrone.common.TelephonyService;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     public static String versionName;
     public static int versionCode;
     private Timer mainTimer;
@@ -58,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     private MainActivity activity;
     private BatteryManager batteryManager;
     private Config config;
+    private MapData mapData;
     private boolean connectionThreadRunning = false;
     private TelephonyService telephonyService;
     private boolean phoneStatePermissionRequested = false;
@@ -86,9 +94,10 @@ public class MainActivity extends AppCompatActivity {
         telephonyService = new TelephonyService(this);
         renderer = new GlRenderer(this, config);
         rc = new Rc(config);
+        mapData = new MapData();
 
         FragmentManager fm = getSupportFragmentManager();
-        customFragmentFactory = new CustomFragmentFactory(fm, this, config, rc, renderer);
+        customFragmentFactory = new CustomFragmentFactory(fm, this, config, rc, renderer, mapData);
         fm.setFragmentFactory(customFragmentFactory);
         super.onCreate(savedInstanceState);
 
@@ -145,7 +154,101 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showMapFragment(){
+        if (!isLocationPermissionGranted() && !isRunning) requestLocationPermissions();
         customFragmentFactory.showMapFragment();
+    }
+
+    public boolean isLocationPermissionGranted(){
+        return this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestLocationPermissions() {
+        if (activity.shouldShowRequestPermissionRationale(android.Manifest.permission.ACCESS_FINE_LOCATION) ||
+                activity.shouldShowRequestPermissionRationale(android.Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            // Display a dialog with rationale.
+            RationaleDialog.newInstance(LOCATION_PERMISSION_REQUEST_CODE, false).show(activity.getSupportFragmentManager(), "dialog");
+        }else{
+            // Location permission has not been granted yet, request it.
+            activity.requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    public static class RationaleDialog extends DialogFragment {
+
+        private static final String ARGUMENT_PERMISSION_REQUEST_CODE = "requestCode";
+        private static final String ARGUMENT_FINISH_ACTIVITY = "finish";
+        private boolean finishActivity = false;
+
+        /**
+         * Creates a new instance of a dialog displaying the rationale for the use of the location
+         * permission.
+         * <p>
+         * The permission is requested after clicking 'ok'.
+         *
+         * @param requestCode Id of the request that is used to request the permission. It is
+         * returned to the {@link androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback}.
+         * @param finishActivity Whether the calling Activity should be finished if the dialog is
+         * cancelled.
+         */
+        public static RationaleDialog newInstance(int requestCode, boolean finishActivity) {
+            Bundle arguments = new Bundle();
+            arguments.putInt(ARGUMENT_PERMISSION_REQUEST_CODE, requestCode);
+            arguments.putBoolean(ARGUMENT_FINISH_ACTIVITY, finishActivity);
+            RationaleDialog dialog = new RationaleDialog();
+            dialog.setArguments(arguments);
+            return dialog;
+        }
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            Bundle arguments = getArguments();
+            final int requestCode = arguments.getInt(ARGUMENT_PERMISSION_REQUEST_CODE);
+            finishActivity = arguments.getBoolean(ARGUMENT_FINISH_ACTIVITY);
+
+            return new AlertDialog.Builder(requireActivity())
+                    .setMessage(R.string.permission_rationale_location)
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                        ActivityCompat.requestPermissions(requireActivity(),
+                                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                requestCode);
+                        finishActivity = false;
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .create();
+        }
+
+        @Override
+        public void onDismiss(@NonNull DialogInterface dialog) {
+            super.onDismiss(dialog);
+            if (finishActivity) {
+                requireActivity().finish();
+            }
+        }
+    }
+
+    private boolean isPermissionGranted(String[] grantPermissions, int[] grantResults, String permission) {
+        for (int i = 0; i < grantPermissions.length; i++) {
+            if (permission.equals(grantPermissions[i])) {
+                return grantResults[i] == PackageManager.PERMISSION_GRANTED;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+        if (isPermissionGranted(permissions, grantResults, Manifest.permission.ACCESS_FINE_LOCATION)
+                || isPermissionGranted(permissions, grantResults, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            MapFragment mapFragment = customFragmentFactory.getMapFragment();
+            if (mapFragment != null) mapFragment.setMyLocationEnabled();
+        }
     }
 
     @Override
@@ -171,12 +274,13 @@ public class MainActivity extends AppCompatActivity {
             closeAll();
         }else{
             if (!config.updateConfig()) return;
+            if (!isLocationPermissionGranted()) requestLocationPermissions();
             getWindow().getDecorView().setSystemUiVisibility(fullScreenFlags);
             isRunning = true;
             GlFragment glFragment = customFragmentFactory.getGlFragment();
             if (glFragment != null) glFragment.resume();
             if (decoder == null) decoder = new Decoder(renderer);
-            osd = new Osd(renderer, config);
+            osd = new Osd(renderer, config, mapData);
             renderer.setOsd(osd);
             if (udp != null) udp.close();
             udp = new Udp(config, decoder, osd, rc, activity);
