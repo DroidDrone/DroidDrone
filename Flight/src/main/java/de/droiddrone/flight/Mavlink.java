@@ -301,10 +301,7 @@ public class Mavlink {
         if (channels == null || fcParams == null) return;
         int rcCount = channels.length;
         long current = System.currentTimeMillis();
-        if (current - rcLastFrame < rcMinPeriod){
-            rcLastFrame = current;
-            return;
-        }
+        if (current - rcLastFrame < rcMinPeriod) return;
         rcLastFrame = current;
         checkRcOptionsChannels(channels);
         short roll = channels[0];

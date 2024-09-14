@@ -680,10 +680,7 @@ public class Msp {
     public void setRawRc(short[] rcChannels){
         if (rcChannels == null || rcChannels.length > FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT) return;
         long current = System.currentTimeMillis();
-        if (current - rcLastFrame < rcMinPeriod){
-            rcLastFrame = current;
-            return;
-        }
+        if (current - rcLastFrame < rcMinPeriod) return;
         rcLastFrame = current;
         DataWriter writer = new DataWriter(false);
         short[] mappedChannels = processRxMap(rcChannels);
