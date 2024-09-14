@@ -162,12 +162,13 @@ public class DDService extends Service {
                 if (!isConnected && connectionMode == 0) udp.sendConnect();
                 serialPortStatus = serial.getStatus();
                 if (serialPortStatus == Serial.STATUS_SERIAL_PORT_ERROR){
-                    if (serial != null && (msp != null || mavlink != null)) {
+                    if (serial != null && (msp != null && mavlink != null)) {
+                        fcInfo = null;
                         serial.initialize(msp, mavlink);
                     }
                 }
                 if (serial != null && fcInfo == null) {
-                    if (serial.isArduPilot()){
+                    if (serial.isMavlink()){
                         if (mavlink != null) fcInfo = mavlink.getFcInfo();
                     } else {
                         if (msp != null) fcInfo = msp.getFcInfo();

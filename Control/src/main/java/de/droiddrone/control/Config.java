@@ -64,6 +64,7 @@ public class Config {
     private int rcRefreshRate;
     private int serialBaudRate;
     private int serialPortIndex;
+    private int fcProtocol;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -121,6 +122,7 @@ public class Config {
         rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), 20);
         serialBaudRate = parseInt(preferences.getString("serialBaudRate", ""), 115200);
         serialPortIndex = parseInt(preferences.getString("serialPortIndex", ""), 0);
+        fcProtocol = parseInt(preferences.getString("fcProtocol", ""), FcCommon.FC_PROTOCOL_AUTO);
         mavlinkTargetSysId = parseInt(preferences.getString("mavlinkTargetSysId", ""), 1);
         mavlinkGcsSysId = parseInt(preferences.getString("mavlinkGcsSysId", ""), 255);
         ip = preferences.getString("ip", "");
@@ -271,6 +273,10 @@ public class Config {
 
     public int getSerialPortIndex() {
         return serialPortIndex;
+    }
+
+    public int getFcProtocol() {
+        return fcProtocol;
     }
 
     public int getMavlinkTargetSysId(){

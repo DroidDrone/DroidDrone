@@ -23,6 +23,7 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
 import de.droiddrone.common.DataReader;
+import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.MediaCommon;
 import de.droiddrone.common.UdpCommon;
 
@@ -53,6 +54,7 @@ public class Config {
     private int rcRefreshRate;
     private int serialBaudRate;
     private int serialPortIndex;
+    private int fcProtocol;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
     private boolean connectOnStartup;
@@ -165,6 +167,10 @@ public class Config {
         return serialPortIndex;
     }
 
+    public int getFcProtocol() {
+        return fcProtocol;
+    }
+
     public short getMavlinkTargetSysId() {
         return (short)mavlinkTargetSysId;
     }
@@ -201,6 +207,7 @@ public class Config {
             useUsbCamera = buffer.readBoolean();
             usbCameraFrameFormat = buffer.readByte();
             usbCameraReset = buffer.readBoolean();
+            fcProtocol = buffer.readByte();
             mavlinkTargetSysId = buffer.readUnsignedByteAsInt();
             mavlinkGcsSysId = buffer.readUnsignedByteAsInt();
             if (!updateConfig()) return -2;
@@ -237,6 +244,7 @@ public class Config {
         rcRefreshRate = preferences.getInt("rcRefreshRate", 20);
         serialBaudRate = preferences.getInt("serialBaudRate", 115200);
         serialPortIndex = preferences.getInt("serialPortIndex", 0);
+        fcProtocol = preferences.getInt("fcProtocol", FcCommon.FC_PROTOCOL_AUTO);
         mavlinkTargetSysId = preferences.getInt("mavlinkTargetSysId", 1);
         mavlinkGcsSysId = preferences.getInt("mavlinkGcsSysId", 255);
         connectOnStartup = preferences.getBoolean("connectOnStartup", false);
@@ -282,6 +290,7 @@ public class Config {
         editor.putInt("rcRefreshRate", rcRefreshRate);
         editor.putInt("serialBaudRate", serialBaudRate);
         editor.putInt("serialPortIndex", serialPortIndex);
+        editor.putInt("fcProtocol", fcProtocol);
         editor.putInt("mavlinkTargetSysId", mavlinkTargetSysId);
         editor.putInt("mavlinkGcsSysId", mavlinkGcsSysId);
         connectOnStartup = activity.cbConnectOnStartup.isChecked();

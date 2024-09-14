@@ -169,6 +169,15 @@ public class Msp {
         osdConfig = null;
         telemetryOutputBuffer.clear();
         serialRawData.clear();
+        fcVariant = FcInfo.FC_VARIANT_UNKNOWN;
+        apiProtocolVersion = -1;
+        apiVersionMajor = -1;
+        apiVersionMinor = -1;
+        fcVersionMajor = -1;
+        fcVersionMinor = -1;
+        fcVersionPatchLevel = -1;
+        platformType = -1;
+        fcInfo = null;
     }
 
     private final Runnable mspRun = new Runnable() {

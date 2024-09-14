@@ -1014,7 +1014,7 @@ public class Mavlink {
 
     public void close(){
         threadsId++;
-        disableIntervalMessages();
+        if (isInitialized()) disableIntervalMessages();
         apiVersionMajor = -1;
         apiVersionMinor = -1;
         fcVersionMajor = -1;
@@ -1026,5 +1026,6 @@ public class Mavlink {
         telemetryOutputBuffer.clear();
         serialRawData.clear();
         batteryCellCountDetected = 0;
+        fcInfo = null;
     }
 }

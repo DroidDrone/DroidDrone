@@ -29,6 +29,10 @@ public class FcCommon {
     public static final byte FC_API_COMPATIBILITY_WARNING = 2;
     public static final byte FC_API_COMPATIBILITY_OK = 3;
 
+    public static final byte FC_PROTOCOL_AUTO = 0;
+    public static final byte FC_PROTOCOL_MSP = 1;
+    public static final byte FC_PROTOCOL_MAVLINK = 2;
+
     // MSP commands
     public static final short MSP_API_VERSION = 1;
     public static final short MSP_FC_VARIANT = 2;

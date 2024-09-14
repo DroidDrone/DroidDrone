@@ -60,7 +60,7 @@ public class Serial {
     private UsbSerialDriver driver;
     private int threadsId;
     private int status;
-    private boolean isArduPilot;
+    private boolean isMavlink;
 
     public Serial(Context context, Config config){
         this.context = context;
@@ -75,7 +75,9 @@ public class Serial {
     public void initialize(Msp msp, Mavlink mavlink) {
         this.msp = msp;
         this.mavlink = mavlink;
-        isArduPilot = false;
+        isMavlink = false;
+        msp.close();
+        mavlink.close();
         threadsId++;
         Thread initThread = new Thread(initRun);
         initThread.setDaemon(false);
@@ -128,7 +130,18 @@ public class Serial {
                     || FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name)) {
                 driver = availableDrivers.get(i);
                 status = STATUS_DEVICE_FOUND;
-                isArduPilot = FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name);
+                switch (config.getFcProtocol()){
+                    case FcCommon.FC_PROTOCOL_AUTO:
+                    default:
+                        isMavlink = FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name);
+                        break;
+                    case FcCommon.FC_PROTOCOL_MSP:
+                        isMavlink = false;
+                        break;
+                    case FcCommon.FC_PROTOCOL_MAVLINK:
+                        isMavlink = true;
+                        break;
+                }
                 log("Serial device manufacturer name: " + name);
                 log("Serial device driver version: " + driver.getDevice().getVersion());
                 log("Serial device driver vendorId: " + driver.getDevice().getVendorId());
@@ -192,7 +205,7 @@ public class Serial {
         readerThread.setName("readerThread");
         readerThread.setPriority(Thread.MAX_PRIORITY);
         readerThread.start();
-        if (isArduPilot){
+        if (isMavlink){
             if (!mavlink.isInitialized()) mavlink.initialize();
         } else {
             if (!msp.isInitialized()) msp.initialize();
@@ -210,10 +223,21 @@ public class Serial {
             while (id == threadsId) {
                 try {
                     int size = port.read(buf, serialPortReadWriteTimeoutMs);
+                    if (isMavlink){
+                        if (config.getFcProtocol() == FcCommon.FC_PROTOCOL_MSP){
+                            status = STATUS_SERIAL_PORT_ERROR;
+                            continue;
+                        }
+                    }else{
+                        if (config.getFcProtocol() == FcCommon.FC_PROTOCOL_MAVLINK){
+                            status = STATUS_SERIAL_PORT_ERROR;
+                            continue;
+                        }
+                    }
                     if (size > 0){
                         serialErrors = 0;
                         status = STATUS_SERIAL_PORT_OPENED;
-                        if (isArduPilot){
+                        if (isMavlink){
                             mavlink.addData(buf, size);
                         } else {
                             msp.addData(buf, size);
@@ -253,8 +277,8 @@ public class Serial {
         }
     }
 
-    public boolean isArduPilot(){
-        return isArduPilot;
+    public boolean isMavlink(){
+        return isMavlink;
     }
 
     public void close(){

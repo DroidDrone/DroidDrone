@@ -194,6 +194,12 @@
             app:key="serialPortIndex"
             app:defaultValue="0"
             app:title="@string/serial_port_index" />
+        <ListPreference
+            app:key="fcProtocol"
+            app:title="@string/fc_protocol"
+            app:entries="@array/fcProtocolEntries"
+            app:entryValues="@array/fcProtocolValues"
+            app:defaultValue="0"/>
         <EditTextPreference
             app:key="mavlinkTargetSysId"
             app:defaultValue="1"

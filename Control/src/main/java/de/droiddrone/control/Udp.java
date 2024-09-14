@@ -959,6 +959,7 @@ public class Udp {
             packetData.daos.writeBoolean(config.isUseUsbCamera());
             packetData.daos.writeByte(config.getUsbCameraFrameFormat());
             packetData.daos.writeBoolean(config.isUsbCameraReset());
+            packetData.daos.writeByte(config.getFcProtocol());
             packetData.daos.writeByte(config.getMavlinkTargetSysId());
             packetData.daos.writeByte(config.getMavlinkGcsSysId());
             udpSender.sendPacket(packetData.getData());

@@ -58,6 +58,7 @@
     <string name="rc_refresh_rate">RC refresh rate</string>
     <string name="serial_baud_rate">Serial port baud rate</string>
     <string name="serial_port_index">Serial port index</string>
+    <string name="fc_protocol">FC protocol</string>
     <string name="mavlink_target_sysid">Mavlink target system ID</string>
     <string name="mavlink_gcs_sysid">Mavlink GCS system ID</string>
     <string name="version_mismatch">Control/Flight version mismatch!</string>
@@ -258,5 +259,17 @@
     <string-array name="videoRecorderCodecValues">
         <item>0</item>
         <item>1</item>
+    </string-array>
+
+    <string-array name="fcProtocolEntries">
+        <item>Auto</item>
+        <item>MSP</item>
+        <item>Mavlink</item>
+    </string-array>
+
+    <string-array name="fcProtocolValues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
     </string-array>
 </resources>

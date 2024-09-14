@@ -30,6 +30,8 @@ import androidx.preference.SwitchPreferenceCompat;
 
 import com.rarepebble.colorpicker.ColorPreference;
 
+import de.droiddrone.common.FcCommon;
+
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final int fragmentId = 3;
     private final MainActivity activity;
@@ -54,8 +56,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
         }
         setNumericEditTextPreferenceSummary(findPreference("serialPortIndex"));
-        setNumericEditTextPreferenceSummary(findPreference("mavlinkTargetSysId"));
-        setNumericEditTextPreferenceSummary(findPreference("mavlinkGcsSysId"));
+        EditTextPreference mavlinkTargetSysId = findPreference("mavlinkTargetSysId");
+        EditTextPreference mavlinkGcsSysId = findPreference("mavlinkGcsSysId");
+        setNumericEditTextPreferenceSummary(mavlinkTargetSysId);
+        setNumericEditTextPreferenceSummary(mavlinkGcsSysId);
         setListPreferenceSummary(findPreference("usbCameraFrameFormat"));
         setListPreferenceSummary(findPreference("cameraResolution"));
         setListPreferenceSummary(findPreference("cameraFps"));
@@ -67,6 +71,15 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setListPreferenceSummary(findPreference("telemetryRefreshRate"));
         setListPreferenceSummary(findPreference("rcRefreshRate"));
         setListPreferenceSummary(findPreference("serialBaudRate"));
+        ListPreference fcProtocol = findPreference("fcProtocol");
+        if (fcProtocol != null){
+            setListPreferenceSummary(fcProtocol);
+            fcProtocol.setOnPreferenceChangeListener((preference, newValue) -> {
+                fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, (String) newValue);
+                return true;
+            });
+            fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, fcProtocol.getValue());
+        }
         Preference channelsMapping = findPreference("channelsMapping");
         if (channelsMapping != null) {
             channelsMapping.setOnPreferenceClickListener(preference -> {
@@ -74,6 +87,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
+    }
+
+    private void fcProtocolChanged(EditTextPreference mavlinkTargetSysId, EditTextPreference mavlinkGcsSysId, String value){
+        boolean isMsp = false;
+        try {
+            isMsp = Integer.parseInt(value) == FcCommon.FC_PROTOCOL_MSP;
+        }catch (Exception ignored){
+        }
+        if (mavlinkTargetSysId != null) mavlinkTargetSysId.setEnabled(!isMsp);
+        if (mavlinkGcsSysId != null) mavlinkGcsSysId.setEnabled(!isMsp);
     }
 
     @Override
