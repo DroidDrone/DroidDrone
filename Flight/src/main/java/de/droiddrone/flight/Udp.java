@@ -186,9 +186,9 @@ public class Udp {
         public void run() {
             final int id = udpThreadsId;
             log("Start buffer thread - OK");
+            SavedPacket packet = null;
             while (socket != null && !socket.isClosed() && id == udpThreadsId) {
                 try {
-                    SavedPacket packet;
                     do{
                         packet = receiverBuffer.getNextPacket();
                         if (packet != null) processData(packet);
@@ -196,7 +196,11 @@ public class Udp {
                     receiverBuffer.processTimer();
                     Thread.sleep(1);
                 } catch (Exception e) {
-                    log("Receiver buffer error: " + e);
+                    if (packet != null) {
+                        log("Receiver buffer error: " + e + ", packetName: " + packet.packetName);
+                    }else{
+                        log("Receiver buffer error: " + e);
+                    }
                 }
             }
         }
