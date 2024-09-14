@@ -174,7 +174,6 @@ public class Msp {
     private final Runnable mspRun = new Runnable() {
         public void run() {
             final int id = threadsId;
-            final int timerDelayMs = 1000 / config.getTelemetryRefreshRate();
             int timerDiv = 0;
             log("Start MSP thread - OK");
             while (id == threadsId) {
@@ -187,7 +186,7 @@ public class Msp {
                         if (apiVersionMajor == -1) getMspApiVersion();
                         if (fcVersionMajor == -1) getFcVersion();
                         if (platformType == -1 && fcVariant != 0) getMixerConfig();
-                        Thread.sleep(timerDelayMs);
+                        Thread.sleep(1000 / config.getTelemetryRefreshRate());
                         continue;
                     }
 
@@ -243,7 +242,7 @@ public class Msp {
                     }
 
                     getAttitude();
-                    Thread.sleep(timerDelayMs);
+                    Thread.sleep(1000 / config.getTelemetryRefreshRate());
                 } catch (Exception e) {
                     log("MSP thread error: " + e);
                 }
