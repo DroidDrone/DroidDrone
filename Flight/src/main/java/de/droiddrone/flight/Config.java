@@ -53,7 +53,9 @@ public class Config {
     private int telemetryRefreshRate;
     private int rcRefreshRate;
     private int serialBaudRate;
-    private int serialPortIndex;
+    private int usbSerialPortIndex;
+    private boolean useNativeSerialPort;
+    private String nativeSerialPort;
     private int fcProtocol;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
@@ -163,8 +165,16 @@ public class Config {
         return serialBaudRate;
     }
 
-    public int getSerialPortIndex() {
-        return serialPortIndex;
+    public int getUsbSerialPortIndex() {
+        return usbSerialPortIndex;
+    }
+
+    public boolean isUseNativeSerialPort() {
+        return useNativeSerialPort;
+    }
+
+    public String getNativeSerialPort(){
+        return nativeSerialPort;
     }
 
     public int getFcProtocol() {
@@ -203,11 +213,13 @@ public class Config {
             telemetryRefreshRate = buffer.readUnsignedByteAsInt();
             rcRefreshRate = buffer.readUnsignedByteAsInt();
             serialBaudRate = buffer.readInt();
-            serialPortIndex = buffer.readByte();
+            usbSerialPortIndex = buffer.readByte();
+            useNativeSerialPort = buffer.readBoolean();
+            nativeSerialPort = buffer.readUTF();
+            fcProtocol = buffer.readByte();
             useUsbCamera = buffer.readBoolean();
             usbCameraFrameFormat = buffer.readByte();
             usbCameraReset = buffer.readBoolean();
-            fcProtocol = buffer.readByte();
             mavlinkTargetSysId = buffer.readUnsignedByteAsInt();
             mavlinkGcsSysId = buffer.readUnsignedByteAsInt();
             if (!updateConfig()) return -2;
@@ -243,7 +255,9 @@ public class Config {
         telemetryRefreshRate = preferences.getInt("telemetryRefreshRate", 10);
         rcRefreshRate = preferences.getInt("rcRefreshRate", 20);
         serialBaudRate = preferences.getInt("serialBaudRate", 115200);
-        serialPortIndex = preferences.getInt("serialPortIndex", 0);
+        usbSerialPortIndex = preferences.getInt("usbSerialPortIndex", 0);
+        useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", false);
+        nativeSerialPort = preferences.getString("nativeSerialPort", "/dev/ttyS0");
         fcProtocol = preferences.getInt("fcProtocol", FcCommon.FC_PROTOCOL_AUTO);
         mavlinkTargetSysId = preferences.getInt("mavlinkTargetSysId", 1);
         mavlinkGcsSysId = preferences.getInt("mavlinkGcsSysId", 255);
@@ -289,7 +303,9 @@ public class Config {
         editor.putInt("telemetryRefreshRate", telemetryRefreshRate);
         editor.putInt("rcRefreshRate", rcRefreshRate);
         editor.putInt("serialBaudRate", serialBaudRate);
-        editor.putInt("serialPortIndex", serialPortIndex);
+        editor.putInt("usbSerialPortIndex", usbSerialPortIndex);
+        editor.putBoolean("useNativeSerialPort", useNativeSerialPort);
+        editor.putString("nativeSerialPort", nativeSerialPort);
         editor.putInt("fcProtocol", fcProtocol);
         editor.putInt("mavlinkTargetSysId", mavlinkTargetSysId);
         editor.putInt("mavlinkGcsSysId", mavlinkGcsSysId);

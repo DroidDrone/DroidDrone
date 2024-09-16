@@ -19,6 +19,7 @@ package de.droiddrone.control;
 
 import android.os.Bundle;
 import android.text.InputType;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -55,9 +56,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
-        setNumericEditTextPreferenceSummary(findPreference("serialPortIndex"));
+        EditTextPreference usbSerialPortIndex = findPreference("usbSerialPortIndex");
         EditTextPreference mavlinkTargetSysId = findPreference("mavlinkTargetSysId");
         EditTextPreference mavlinkGcsSysId = findPreference("mavlinkGcsSysId");
+        setNumericEditTextPreferenceSummary(usbSerialPortIndex);
         setNumericEditTextPreferenceSummary(mavlinkTargetSysId);
         setNumericEditTextPreferenceSummary(mavlinkGcsSysId);
         setListPreferenceSummary(findPreference("usbCameraFrameFormat"));
@@ -71,6 +73,24 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setListPreferenceSummary(findPreference("telemetryRefreshRate"));
         setListPreferenceSummary(findPreference("rcRefreshRate"));
         setListPreferenceSummary(findPreference("serialBaudRate"));
+        EditTextPreference nativeSerialPort = findPreference("nativeSerialPort");
+        if (nativeSerialPort != null){
+            nativeSerialPort.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
+            nativeSerialPort.setOnBindEditTextListener(editText -> {
+                editText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+                editText.setMaxLines(1);
+            });
+        }
+        SwitchPreferenceCompat useNativeSerialPort = findPreference("useNativeSerialPort");
+        if (usbSerialPortIndex != null) {
+            usbSerialPortIndex.setEnabled(useNativeSerialPort == null || !useNativeSerialPort.isChecked());
+        }
+        if (useNativeSerialPort != null) {
+            useNativeSerialPort.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (usbSerialPortIndex != null) usbSerialPortIndex.setEnabled(Boolean.FALSE.equals(newValue));
+                return true;
+            });
+        }
         ListPreference fcProtocol = findPreference("fcProtocol");
         if (fcProtocol != null){
             setListPreferenceSummary(fcProtocol);
