@@ -121,7 +121,7 @@ public class Config {
         showVideoRecordIndication = preferences.getBoolean("showVideoRecordIndication", true);
         osdTextColor = preferences.getInt("osdTextColor", 0xFFFFFFFF);
         telemetryRefreshRate = parseInt(preferences.getString("telemetryRefreshRate", ""), 10);
-        rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), 20);
+        rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), 25);
         serialBaudRate = parseInt(preferences.getString("serialBaudRate", ""), 115200);
         usbSerialPortIndex = parseInt(preferences.getString("usbSerialPortIndex", ""), 0);
         useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", false);

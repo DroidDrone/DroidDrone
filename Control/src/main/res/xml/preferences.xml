@@ -183,7 +183,7 @@
             app:title="@string/rc_refresh_rate"
             app:entries="@array/rcRefreshRateEntries"
             app:entryValues="@array/rcRefreshRateValues"
-            app:defaultValue="20"/>
+            app:defaultValue="25"/>
         <ListPreference
             app:key="serialBaudRate"
             app:title="@string/serial_baud_rate"

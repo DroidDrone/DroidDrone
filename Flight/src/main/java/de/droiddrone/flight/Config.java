@@ -253,7 +253,7 @@ public class Config {
         recordAudio = preferences.getBoolean("recordAudio", true);
         recordedAudioBitrate = preferences.getInt("recordedAudioBitrate", 192000);
         telemetryRefreshRate = preferences.getInt("telemetryRefreshRate", 10);
-        rcRefreshRate = preferences.getInt("rcRefreshRate", 20);
+        rcRefreshRate = preferences.getInt("rcRefreshRate", 25);
         serialBaudRate = preferences.getInt("serialBaudRate", 115200);
         usbSerialPortIndex = preferences.getInt("usbSerialPortIndex", 0);
         useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", false);
