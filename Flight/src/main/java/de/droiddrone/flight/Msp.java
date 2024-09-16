@@ -169,12 +169,20 @@ public class Msp {
         osdConfig = null;
         telemetryOutputBuffer.clear();
         serialRawData.clear();
+        fcVariant = FcInfo.FC_VARIANT_UNKNOWN;
+        apiProtocolVersion = -1;
+        apiVersionMajor = -1;
+        apiVersionMinor = -1;
+        fcVersionMajor = -1;
+        fcVersionMinor = -1;
+        fcVersionPatchLevel = -1;
+        platformType = -1;
+        fcInfo = null;
     }
 
     private final Runnable mspRun = new Runnable() {
         public void run() {
             final int id = threadsId;
-            final int timerDelayMs = 1000 / config.getTelemetryRefreshRate();
             int timerDiv = 0;
             log("Start MSP thread - OK");
             while (id == threadsId) {
@@ -187,7 +195,7 @@ public class Msp {
                         if (apiVersionMajor == -1) getMspApiVersion();
                         if (fcVersionMajor == -1) getFcVersion();
                         if (platformType == -1 && fcVariant != 0) getMixerConfig();
-                        Thread.sleep(timerDelayMs);
+                        Thread.sleep(1000 / config.getTelemetryRefreshRate());
                         continue;
                     }
 
@@ -243,7 +251,7 @@ public class Msp {
                     }
 
                     getAttitude();
-                    Thread.sleep(timerDelayMs);
+                    Thread.sleep(1000 / config.getTelemetryRefreshRate());
                 } catch (Exception e) {
                     log("MSP thread error: " + e);
                 }
@@ -680,10 +688,7 @@ public class Msp {
     public void setRawRc(short[] rcChannels){
         if (rcChannels == null || rcChannels.length > FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT) return;
         long current = System.currentTimeMillis();
-        if (current - rcLastFrame < rcMinPeriod){
-            rcLastFrame = current;
-            return;
-        }
+        if (current - rcLastFrame < rcMinPeriod) return;
         rcLastFrame = current;
         DataWriter writer = new DataWriter(false);
         short[] mappedChannels = processRxMap(rcChannels);

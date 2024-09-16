@@ -190,10 +190,27 @@
             app:entries="@array/serialBaudRateEntries"
             app:entryValues="@array/serialBaudRateValues"
             app:defaultValue="115200"/>
+        <SwitchPreferenceCompat
+            app:key="useNativeSerialPort"
+            app:summaryOn="@string/native_serial_on"
+            app:summaryOff="@string/native_serial_off"
+            app:defaultValue="false"
+            app:title="@string/use_native_serial"/>
         <EditTextPreference
-            app:key="serialPortIndex"
+            app:key="usbSerialPortIndex"
             app:defaultValue="0"
-            app:title="@string/serial_port_index" />
+            app:title="@string/usb_serial_port_index" />
+        <EditTextPreference
+            app:key="nativeSerialPort"
+            app:defaultValue="/dev/ttyS0"
+            app:dependency="useNativeSerialPort"
+            app:title="@string/native_serial_port_address" />
+        <ListPreference
+            app:key="fcProtocol"
+            app:title="@string/fc_protocol"
+            app:entries="@array/fcProtocolEntries"
+            app:entryValues="@array/fcProtocolValues"
+            app:defaultValue="0"/>
         <EditTextPreference
             app:key="mavlinkTargetSysId"
             app:defaultValue="1"

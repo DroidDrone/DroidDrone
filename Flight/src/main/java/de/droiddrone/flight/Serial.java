@@ -34,8 +34,11 @@ import com.hoho.android.usbserial.driver.UsbSerialProber;
 import java.io.IOException;
 import java.util.List;
 
+import android_serialport_api.SerialPortFinder;
 import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.FcCommon;
+import tp.xmaihh.serialport.SerialHelper;
+import tp.xmaihh.serialport.bean.ComBean;
 
 public class Serial {
     public static final String ACTION_USB_PERMISSION = "de.droiddrone.flight.USB_PERMISSION";
@@ -50,6 +53,15 @@ public class Serial {
     private static final int serialDataBits = 8;
     private static final int serialPortReadWriteTimeoutMs = 100;
     private static final int serialMaxBufferSize = 2048;
+    // native serial
+    private static final int nativeSerialParityNone = 0;
+    private static final int nativeSerialParityOdd = 1;
+    private static final int nativeSerialParityEven = 2;
+    private static final int nativeSerialParitySpace = 3;
+    private static final int nativeSerialParityMark = 4;
+    private static final int nativeSerialFlowControlNone = 0;
+    private static final int nativeSerialFlowControlRtsCts = 1;
+    private static final int nativeSerialFlowControlXonXoff = 2;
     private final Context context;
     private final Config config;
     private final UsbManager manager;
@@ -60,7 +72,8 @@ public class Serial {
     private UsbSerialDriver driver;
     private int threadsId;
     private int status;
-    private boolean isArduPilot;
+    private boolean isMavlink;
+    private SerialHelper serialHelper;
 
     public Serial(Context context, Config config){
         this.context = context;
@@ -75,7 +88,9 @@ public class Serial {
     public void initialize(Msp msp, Mavlink mavlink) {
         this.msp = msp;
         this.mavlink = mavlink;
-        isArduPilot = false;
+        isMavlink = false;
+        msp.close();
+        mavlink.close();
         threadsId++;
         Thread initThread = new Thread(initRun);
         initThread.setDaemon(false);
@@ -94,11 +109,18 @@ public class Serial {
             status = STATUS_DEVICE_NOT_CONNECTED;
             while (id == threadsId) {
                 try {
-                    if (findDevice()) {
-                        if (checkPermission()) {
-                            if (openPort()) {
-                                log("Serial port is opened");
-                                return;
+                    if (config.isUseNativeSerialPort()){
+                        if (openNativeSerialPort()) {
+                            log("Native serial port is opened");
+                            return;
+                        }
+                    }else {
+                        if (findDevice()) {
+                            if (checkPermission()) {
+                                if (openUsbSerialPort()) {
+                                    log("USB Serial port is opened");
+                                    return;
+                                }
                             }
                         }
                     }
@@ -128,7 +150,7 @@ public class Serial {
                     || FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name)) {
                 driver = availableDrivers.get(i);
                 status = STATUS_DEVICE_FOUND;
-                isArduPilot = FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name);
+                setFcProtocol(name);
                 log("Serial device manufacturer name: " + name);
                 log("Serial device driver version: " + driver.getDevice().getVersion());
                 log("Serial device driver vendorId: " + driver.getDevice().getVendorId());
@@ -138,6 +160,36 @@ public class Serial {
         }
         status = STATUS_DEVICE_NOT_CONNECTED;
         return false;
+    }
+
+    private void setFcProtocol(String UsbDeviceManufacturerName){
+        switch (config.getFcProtocol()){
+            case FcCommon.FC_PROTOCOL_AUTO:
+            default:
+                isMavlink = FcInfo.ARDUPILOT_ID.equals(UsbDeviceManufacturerName) || FcInfo.ARDUPILOT_NAME.equals(UsbDeviceManufacturerName);
+                break;
+            case FcCommon.FC_PROTOCOL_MSP:
+                isMavlink = false;
+                break;
+            case FcCommon.FC_PROTOCOL_MAVLINK:
+                isMavlink = true;
+                break;
+        }
+    }
+
+    private boolean checkFcProtocol(){
+        if (isMavlink){
+            if (config.getFcProtocol() == FcCommon.FC_PROTOCOL_MSP){
+                status = STATUS_SERIAL_PORT_ERROR;
+                return false;
+            }
+        }else{
+            if (config.getFcProtocol() == FcCommon.FC_PROTOCOL_MAVLINK){
+                status = STATUS_SERIAL_PORT_ERROR;
+                return false;
+            }
+        }
+        return true;
     }
 
     @SuppressLint("UnspecifiedImmutableFlag")
@@ -161,7 +213,58 @@ public class Serial {
         return false;
     }
 
-    private boolean openPort(){
+    private boolean openNativeSerialPort(){
+        if (status == STATUS_SERIAL_PORT_OPENED) return true;
+        setFcProtocol(null);
+        if (serialHelper != null) serialHelper.close();
+        try {
+            SerialPortFinder serialPortFinder = new SerialPortFinder();
+            String[] ports = serialPortFinder.getAllDevicesPath();
+            if (ports != null) {
+                for (String port : ports) {
+                    log("Native serial port found: " + port);
+                }
+            }
+            serialHelper = new SerialHelper(config.getNativeSerialPort(), config.getSerialBaudRate()) {
+                @Override
+                protected void onDataReceived(ComBean comBean) {
+                    try {
+                        byte[] buf = comBean.bRec;
+                        int size = buf.length;
+                        if (!checkFcProtocol()) return;
+                        if (size > 0){
+                            status = STATUS_SERIAL_PORT_OPENED;
+                            if (isMavlink){
+                                mavlink.addData(buf, size);
+                            } else {
+                                msp.addData(buf, size);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log("Native serial reader error: " + e);
+                    }
+                }
+            };
+            serialHelper.setStopBits(1);
+            serialHelper.setDataBits(serialDataBits);
+            serialHelper.setParity(nativeSerialParityNone);
+            serialHelper.setFlowCon(nativeSerialFlowControlNone);
+            serialHelper.open();
+            if (isMavlink){
+                if (!mavlink.isInitialized()) mavlink.initialize();
+            } else {
+                if (!msp.isInitialized()) msp.initialize();
+            }
+        }catch (Exception e){
+            status = STATUS_SERIAL_PORT_ERROR;
+            log("Native serial port error: " + e);
+            return false;
+        }
+        status = STATUS_SERIAL_PORT_OPENED;
+        return true;
+    }
+
+    private boolean openUsbSerialPort(){
         if (status == STATUS_SERIAL_PORT_OPENED) return true;
         if (driver == null){
             status = STATUS_DEVICE_NOT_CONNECTED;
@@ -177,7 +280,7 @@ public class Serial {
             status = STATUS_USB_PERMISSION_DENIED;
             return false;
         }
-        port = driver.getPorts().get(config.getSerialPortIndex());
+        port = driver.getPorts().get(config.getUsbSerialPortIndex());
         try {
             port.open(connection);
             port.setParameters(config.getSerialBaudRate(), serialDataBits, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
@@ -192,7 +295,7 @@ public class Serial {
         readerThread.setName("readerThread");
         readerThread.setPriority(Thread.MAX_PRIORITY);
         readerThread.start();
-        if (isArduPilot){
+        if (isMavlink){
             if (!mavlink.isInitialized()) mavlink.initialize();
         } else {
             if (!msp.isInitialized()) msp.initialize();
@@ -206,14 +309,15 @@ public class Serial {
             int serialErrors = 0;
             byte[] buf = new byte[serialMaxBufferSize];
             status = STATUS_SERIAL_PORT_OPENED;
-            log("Start serial reader thread - OK");
+            log("Start USB serial reader thread - OK");
             while (id == threadsId) {
                 try {
                     int size = port.read(buf, serialPortReadWriteTimeoutMs);
+                    if (!checkFcProtocol()) continue;
                     if (size > 0){
                         serialErrors = 0;
                         status = STATUS_SERIAL_PORT_OPENED;
-                        if (isArduPilot){
+                        if (isMavlink){
                             mavlink.addData(buf, size);
                         } else {
                             msp.addData(buf, size);
@@ -234,27 +338,35 @@ public class Serial {
     };
 
     public void writeDataMsp(byte[] data, boolean checkMspCompatibility){
-        if (status != STATUS_SERIAL_PORT_OPENED || data == null || port == null || !port.isOpen()) return;
+        if (status != STATUS_SERIAL_PORT_OPENED || data == null) return;
         if (checkMspCompatibility && FcCommon.getFcApiCompatibilityLevel(msp.getFcInfo()) != FcCommon.FC_API_COMPATIBILITY_OK
                 && FcCommon.getFcApiCompatibilityLevel(msp.getFcInfo()) != FcCommon.FC_API_COMPATIBILITY_WARNING) return;
         try {
-            port.write(data, serialPortReadWriteTimeoutMs);
+            if (config.isUseNativeSerialPort()){
+                if (serialHelper != null && serialHelper.isOpen()) serialHelper.send(data);
+            }else{
+                if (port != null && port.isOpen()) port.write(data, serialPortReadWriteTimeoutMs);
+            }
         } catch (IOException e) {
             log("Serial writeDataMsp error: " + e);
         }
     }
 
     public void writeDataMavlink(byte[] data){
-        if (status != STATUS_SERIAL_PORT_OPENED || data == null || port == null || !port.isOpen()) return;
+        if (status != STATUS_SERIAL_PORT_OPENED || data == null) return;
         try {
-            port.write(data, serialPortReadWriteTimeoutMs);
+            if (config.isUseNativeSerialPort()){
+                if (serialHelper != null && serialHelper.isOpen()) serialHelper.send(data);
+            }else{
+                if (port != null && port.isOpen()) port.write(data, serialPortReadWriteTimeoutMs);
+            }
         } catch (IOException e) {
             log("Serial writeDataMavlink error: " + e);
         }
     }
 
-    public boolean isArduPilot(){
-        return isArduPilot;
+    public boolean isMavlink(){
+        return isMavlink;
     }
 
     public void close(){
@@ -264,6 +376,11 @@ public class Serial {
         try {
             if (port != null) port.close();
         } catch (IOException e) {
+            //
+        }
+        try {
+            if (serialHelper != null) serialHelper.close();
+        } catch (Exception e) {
             //
         }
         if (connection != null) connection.close();

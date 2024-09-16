@@ -57,7 +57,8 @@
     <string name="telemetry_refresh_rate">Telemetry refresh rate</string>
     <string name="rc_refresh_rate">RC refresh rate</string>
     <string name="serial_baud_rate">Serial port baud rate</string>
-    <string name="serial_port_index">Serial port index</string>
+    <string name="usb_serial_port_index">USB Serial port index</string>
+    <string name="fc_protocol">FC protocol</string>
     <string name="mavlink_target_sysid">Mavlink target system ID</string>
     <string name="mavlink_gcs_sysid">Mavlink GCS system ID</string>
     <string name="version_mismatch">Control/Flight version mismatch!</string>
@@ -65,6 +66,10 @@
     <string name="usb_camera_frame_format">USB camera frame format</string>
     <string name="usb_camera_reset_to_defaults">USB camera - reset to defaults on connecting</string>
     <string name="permission_rationale_location">Access to the location service is required to display your current location on the map.</string>
+    <string name="use_native_serial">Use native serial port</string>
+    <string name="native_serial_on">On - use native serial port connected to the UART</string>
+    <string name="native_serial_off">Off - use USB serial</string>
+    <string name="native_serial_port_address">Native serial port address</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3840x2160</item>
@@ -258,5 +263,17 @@
     <string-array name="videoRecorderCodecValues">
         <item>0</item>
         <item>1</item>
+    </string-array>
+
+    <string-array name="fcProtocolEntries">
+        <item>Auto</item>
+        <item>MSP</item>
+        <item>Mavlink</item>
+    </string-array>
+
+    <string-array name="fcProtocolValues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
     </string-array>
 </resources>

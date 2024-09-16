@@ -63,7 +63,10 @@ public class Config {
     private int telemetryRefreshRate;
     private int rcRefreshRate;
     private int serialBaudRate;
-    private int serialPortIndex;
+    private int usbSerialPortIndex;
+    private boolean useNativeSerialPort;
+    private String nativeSerialPort;
+    private int fcProtocol;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -120,7 +123,10 @@ public class Config {
         telemetryRefreshRate = parseInt(preferences.getString("telemetryRefreshRate", ""), 10);
         rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), 20);
         serialBaudRate = parseInt(preferences.getString("serialBaudRate", ""), 115200);
-        serialPortIndex = parseInt(preferences.getString("serialPortIndex", ""), 0);
+        usbSerialPortIndex = parseInt(preferences.getString("usbSerialPortIndex", ""), 0);
+        useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", false);
+        nativeSerialPort = preferences.getString("nativeSerialPort", "/dev/ttyS0");
+        fcProtocol = parseInt(preferences.getString("fcProtocol", ""), FcCommon.FC_PROTOCOL_AUTO);
         mavlinkTargetSysId = parseInt(preferences.getString("mavlinkTargetSysId", ""), 1);
         mavlinkGcsSysId = parseInt(preferences.getString("mavlinkGcsSysId", ""), 255);
         ip = preferences.getString("ip", "");
@@ -269,8 +275,20 @@ public class Config {
         return serialBaudRate;
     }
 
-    public int getSerialPortIndex() {
-        return serialPortIndex;
+    public int getUsbSerialPortIndex() {
+        return usbSerialPortIndex;
+    }
+
+    public boolean isUseNativeSerialPort() {
+        return useNativeSerialPort;
+    }
+
+    public String getNativeSerialPort(){
+        return nativeSerialPort;
+    }
+
+    public int getFcProtocol() {
+        return fcProtocol;
     }
 
     public int getMavlinkTargetSysId(){

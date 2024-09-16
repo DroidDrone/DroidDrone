@@ -955,7 +955,10 @@ public class Udp {
             packetData.daos.writeByte(config.getTelemetryRefreshRate());
             packetData.daos.writeByte(config.getRcRefreshRate());
             packetData.daos.writeInt(config.getSerialBaudRate());
-            packetData.daos.writeByte(config.getSerialPortIndex());
+            packetData.daos.writeByte(config.getUsbSerialPortIndex());
+            packetData.daos.writeBoolean(config.isUseNativeSerialPort());
+            packetData.daos.writeUTF(config.getNativeSerialPort());
+            packetData.daos.writeByte(config.getFcProtocol());
             packetData.daos.writeBoolean(config.isUseUsbCamera());
             packetData.daos.writeByte(config.getUsbCameraFrameFormat());
             packetData.daos.writeBoolean(config.isUsbCameraReset());

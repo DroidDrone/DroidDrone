@@ -19,6 +19,7 @@ package de.droiddrone.control;
 
 import android.os.Bundle;
 import android.text.InputType;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,6 +30,8 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
 import com.rarepebble.colorpicker.ColorPreference;
+
+import de.droiddrone.common.FcCommon;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final int fragmentId = 3;
@@ -53,9 +56,12 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
-        setNumericEditTextPreferenceSummary(findPreference("serialPortIndex"));
-        setNumericEditTextPreferenceSummary(findPreference("mavlinkTargetSysId"));
-        setNumericEditTextPreferenceSummary(findPreference("mavlinkGcsSysId"));
+        EditTextPreference usbSerialPortIndex = findPreference("usbSerialPortIndex");
+        EditTextPreference mavlinkTargetSysId = findPreference("mavlinkTargetSysId");
+        EditTextPreference mavlinkGcsSysId = findPreference("mavlinkGcsSysId");
+        setNumericEditTextPreferenceSummary(usbSerialPortIndex);
+        setNumericEditTextPreferenceSummary(mavlinkTargetSysId);
+        setNumericEditTextPreferenceSummary(mavlinkGcsSysId);
         setListPreferenceSummary(findPreference("usbCameraFrameFormat"));
         setListPreferenceSummary(findPreference("cameraResolution"));
         setListPreferenceSummary(findPreference("cameraFps"));
@@ -67,6 +73,33 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setListPreferenceSummary(findPreference("telemetryRefreshRate"));
         setListPreferenceSummary(findPreference("rcRefreshRate"));
         setListPreferenceSummary(findPreference("serialBaudRate"));
+        EditTextPreference nativeSerialPort = findPreference("nativeSerialPort");
+        if (nativeSerialPort != null){
+            nativeSerialPort.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
+            nativeSerialPort.setOnBindEditTextListener(editText -> {
+                editText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+                editText.setMaxLines(1);
+            });
+        }
+        SwitchPreferenceCompat useNativeSerialPort = findPreference("useNativeSerialPort");
+        if (usbSerialPortIndex != null) {
+            usbSerialPortIndex.setEnabled(useNativeSerialPort == null || !useNativeSerialPort.isChecked());
+        }
+        if (useNativeSerialPort != null) {
+            useNativeSerialPort.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (usbSerialPortIndex != null) usbSerialPortIndex.setEnabled(Boolean.FALSE.equals(newValue));
+                return true;
+            });
+        }
+        ListPreference fcProtocol = findPreference("fcProtocol");
+        if (fcProtocol != null){
+            setListPreferenceSummary(fcProtocol);
+            fcProtocol.setOnPreferenceChangeListener((preference, newValue) -> {
+                fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, (String) newValue);
+                return true;
+            });
+            fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, fcProtocol.getValue());
+        }
         Preference channelsMapping = findPreference("channelsMapping");
         if (channelsMapping != null) {
             channelsMapping.setOnPreferenceClickListener(preference -> {
@@ -74,6 +107,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
+    }
+
+    private void fcProtocolChanged(EditTextPreference mavlinkTargetSysId, EditTextPreference mavlinkGcsSysId, String value){
+        boolean isMsp = false;
+        try {
+            isMsp = Integer.parseInt(value) == FcCommon.FC_PROTOCOL_MSP;
+        }catch (Exception ignored){
+        }
+        if (mavlinkTargetSysId != null) mavlinkTargetSysId.setEnabled(!isMsp);
+        if (mavlinkGcsSysId != null) mavlinkGcsSysId.setEnabled(!isMsp);
     }
 
     @Override

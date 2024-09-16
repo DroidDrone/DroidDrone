@@ -1534,6 +1534,7 @@ public class Osd {
         this.directionToHome = directionToHome;
         osdStats.setTraveledDistance(traveledDistance);
         osdStats.setHomeDistance(distanceToHome);
+        if (lat == 0 && lon == 0) return;
         mapData.setDronePosition(latDeg, lonDeg, isArmed);
     }
 
