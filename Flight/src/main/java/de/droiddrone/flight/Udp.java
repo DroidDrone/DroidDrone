@@ -32,6 +32,7 @@ import de.droiddrone.common.MediaCodecBuffer;
 import de.droiddrone.common.MediaCommon;
 import de.droiddrone.common.ReceiverBuffer;
 import de.droiddrone.common.SavedPacket;
+import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.TelemetryData;
 import de.droiddrone.common.UdpCommon;
 import de.droiddrone.common.UdpPacketData;
@@ -85,7 +86,7 @@ public class Udp {
     }
 
     public boolean initialize(){
-        if (connectionMode == 0) {
+        if (connectionMode == SettingsCommon.ConnectionMode.overServer) {
             try {
                 destIp = InetAddress.getByName(destIpStr);
             } catch (UnknownHostException e) {
@@ -100,10 +101,10 @@ public class Udp {
             socket.setSendBufferSize(UdpCommon.packetLength * 30);
             socket.setTrafficClass(0x10);
             udpSender = new UdpSender(socket);
-            if (connectionMode == 0) {
+            if (connectionMode == SettingsCommon.ConnectionMode.overServer) {
                 udpSender.connect(destIp, port);
             }
-            receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != 0), key, null);
+            receiverBuffer = new ReceiverBuffer(udpSender, (connectionMode != SettingsCommon.ConnectionMode.overServer), key, null);
             receiverPacket = new DatagramPacket(receiverBuf, receiverBuf.length);
             receiverThread = new Thread(receiverRun);
             receiverThread.setDaemon(false);
@@ -152,7 +153,7 @@ public class Udp {
                 try {
                     socket.receive(receiverPacket);
                     // check IP & port
-                    if (connectionMode == 0){// connect over server
+                    if (connectionMode == SettingsCommon.ConnectionMode.overServer){
                         if (!receiverPacket.getAddress().equals(destIp)
                                 || receiverPacket.getPort() != port) continue;
                     }else if (receiverBuffer.isConnected()){
