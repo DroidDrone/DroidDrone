@@ -23,6 +23,7 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
 import de.droiddrone.common.DataReader;
+import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.MediaCommon;
 import de.droiddrone.common.UdpCommon;
@@ -126,9 +127,9 @@ public class Config {
     public String getVideoRecorderCodecMime(){
         switch (videoRecorderCodec){
             default:
-            case 0:
+            case SettingsCommon.VideoRecorderCodec.AVC:
                 return MediaCommon.avcCodecMime;
-            case 1:
+            case SettingsCommon.VideoRecorderCodec.HEVC:
                 return MediaCommon.hevcCodecMime;
         }
     }
@@ -232,36 +233,36 @@ public class Config {
 
     private void loadConfig() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
-        ip = preferences.getString("ip", "");
-        port = preferences.getInt("port", UdpCommon.defaultPort);
-        key = preferences.getString("key", "DD");
-        connectionMode = preferences.getInt("connectionMode", 0);
-        cameraId = preferences.getString("cameraId", "0");
-        useUsbCamera = preferences.getBoolean("useUsbCamera", false);
-        usbCameraFrameFormat = preferences.getInt("usbCameraFrameFormat", 1);
-        usbCameraReset = preferences.getBoolean("usbCameraReset", true);
-        cameraResolutionWidth = preferences.getInt("cameraResolutionWidth", 1920);
-        cameraResolutionHeight = preferences.getInt("cameraResolutionHeight", 1080);
-        cameraFpsMin = preferences.getInt("cameraFpsMin", 30);
-        cameraFpsMax = preferences.getInt("cameraFpsMax", 60);
-        bitrateLimit = preferences.getInt("bitrateLimit", 6000000);
-        useExtraEncoder = preferences.getBoolean("useExtraEncoder", true);
-        videoRecorderCodec = preferences.getInt("videoRecorderCodec", 0);
-        recordedVideoBitrate = preferences.getInt("recordedVideoBitrate", 20000000);
-        sendAudioStream = preferences.getBoolean("sendAudioStream", false);
-        audioStreamBitrate = preferences.getInt("audioStreamBitrate", 96000);
-        recordAudio = preferences.getBoolean("recordAudio", true);
-        recordedAudioBitrate = preferences.getInt("recordedAudioBitrate", 192000);
-        telemetryRefreshRate = preferences.getInt("telemetryRefreshRate", 10);
-        rcRefreshRate = preferences.getInt("rcRefreshRate", 20);
-        serialBaudRate = preferences.getInt("serialBaudRate", 115200);
-        usbSerialPortIndex = preferences.getInt("usbSerialPortIndex", 0);
-        useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", false);
-        nativeSerialPort = preferences.getString("nativeSerialPort", "/dev/ttyS0");
-        fcProtocol = preferences.getInt("fcProtocol", FcCommon.FC_PROTOCOL_AUTO);
-        mavlinkTargetSysId = preferences.getInt("mavlinkTargetSysId", 1);
-        mavlinkGcsSysId = preferences.getInt("mavlinkGcsSysId", 255);
-        connectOnStartup = preferences.getBoolean("connectOnStartup", false);
+        ip = preferences.getString("ip", SettingsCommon.ip);
+        port = preferences.getInt("port", SettingsCommon.port);
+        key = preferences.getString("key", SettingsCommon.key);
+        connectionMode = preferences.getInt("connectionMode", SettingsCommon.connectionMode);
+        cameraId = preferences.getString("cameraId", SettingsCommon.cameraId);
+        useUsbCamera = preferences.getBoolean("useUsbCamera", SettingsCommon.useUsbCamera);
+        usbCameraFrameFormat = preferences.getInt("usbCameraFrameFormat", SettingsCommon.usbCameraFrameFormat);
+        usbCameraReset = preferences.getBoolean("usbCameraReset", SettingsCommon.usbCameraReset);
+        cameraResolutionWidth = preferences.getInt("cameraResolutionWidth", SettingsCommon.cameraResolutionWidth);
+        cameraResolutionHeight = preferences.getInt("cameraResolutionHeight", SettingsCommon.cameraResolutionHeight);
+        cameraFpsMin = preferences.getInt("cameraFpsMin", SettingsCommon.cameraFpsMin);
+        cameraFpsMax = preferences.getInt("cameraFpsMax", SettingsCommon.cameraFpsMax);
+        bitrateLimit = preferences.getInt("bitrateLimit", SettingsCommon.bitrateLimit);
+        useExtraEncoder = preferences.getBoolean("useExtraEncoder", SettingsCommon.useExtraEncoder);
+        videoRecorderCodec = preferences.getInt("videoRecorderCodec", SettingsCommon.videoRecorderCodec);
+        recordedVideoBitrate = preferences.getInt("recordedVideoBitrate", SettingsCommon.recordedVideoBitrate);
+        sendAudioStream = preferences.getBoolean("sendAudioStream", SettingsCommon.sendAudioStream);
+        audioStreamBitrate = preferences.getInt("audioStreamBitrate", SettingsCommon.audioStreamBitrate);
+        recordAudio = preferences.getBoolean("recordAudio", SettingsCommon.recordAudio);
+        recordedAudioBitrate = preferences.getInt("recordedAudioBitrate", SettingsCommon.recordedAudioBitrate);
+        telemetryRefreshRate = preferences.getInt("telemetryRefreshRate", SettingsCommon.telemetryRefreshRate);
+        rcRefreshRate = preferences.getInt("rcRefreshRate", SettingsCommon.rcRefreshRate);
+        serialBaudRate = preferences.getInt("serialBaudRate", SettingsCommon.serialBaudRate);
+        usbSerialPortIndex = preferences.getInt("usbSerialPortIndex", SettingsCommon.usbSerialPortIndex);
+        useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", SettingsCommon.useNativeSerialPort);
+        nativeSerialPort = preferences.getString("nativeSerialPort", SettingsCommon.nativeSerialPort);
+        fcProtocol = preferences.getInt("fcProtocol", SettingsCommon.fcProtocol);
+        mavlinkTargetSysId = preferences.getInt("mavlinkTargetSysId", SettingsCommon.mavlinkTargetSysId);
+        mavlinkGcsSysId = preferences.getInt("mavlinkGcsSysId", SettingsCommon.mavlinkGcsSysId);
+        connectOnStartup = preferences.getBoolean("connectOnStartup", SettingsCommon.connectOnStartup);
     }
 
     public boolean updateConfig(){
@@ -277,7 +278,7 @@ public class Config {
         }
         key = activity.etKey.getText().toString();
         connectionMode = activity.connectionMode.getSelectedItemPosition();
-        if (connectionMode < 0) connectionMode = 0;
+        if (connectionMode < 0) connectionMode = SettingsCommon.connectionMode;
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString("ip", ip);

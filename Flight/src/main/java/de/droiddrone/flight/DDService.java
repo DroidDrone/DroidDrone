@@ -37,6 +37,7 @@ import java.util.TimerTask;
 import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.MediaCommon;
 import de.droiddrone.common.FcCommon;
+import de.droiddrone.common.SettingsCommon;
 
 public class DDService extends Service {
     public static final String CHANNEL_ID = "DDServiceChannel";
@@ -159,7 +160,7 @@ public class DDService extends Service {
                     return;
                 }
                 isConnected = udp.isConnected();
-                if (!isConnected && connectionMode == 0) udp.sendConnect();
+                if (!isConnected && connectionMode == SettingsCommon.ConnectionMode.overServer) udp.sendConnect();
                 serialPortStatus = serial.getStatus();
                 if (serialPortStatus == Serial.STATUS_SERIAL_PORT_ERROR){
                     if (serial != null && (msp != null && mavlink != null)) {

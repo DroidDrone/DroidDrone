@@ -46,6 +46,7 @@ import java.util.TimerTask;
 
 import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.FcCommon;
+import de.droiddrone.common.SettingsCommon;
 
 public class MainActivity extends Activity {
     public static String versionName;
@@ -96,11 +97,11 @@ public class MainActivity extends Activity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 switch (position){
-                    case 0:
+                    case SettingsCommon.ConnectionMode.overServer:
                         etIp.setVisibility(View.VISIBLE);
                         tvConnectionModeHint.setText(R.string.connection_mode_server);
                         break;
-                    case 1:
+                    case SettingsCommon.ConnectionMode.direct:
                         etIp.setVisibility(View.GONE);
                         tvConnectionModeHint.setText(R.string.connection_mode_vpn);
                         break;
@@ -140,10 +141,10 @@ public class MainActivity extends Activity {
                 tvNetworkStatus.setTextColor(Color.GREEN);
             }else{
                 switch (config.getConnectionMode()){
-                    case 0:
+                    case SettingsCommon.ConnectionMode.overServer:
                         tvNetworkStatus.setText(getResources().getString(R.string.status_connecting));
                         break;
-                    case 1:
+                    case SettingsCommon.ConnectionMode.direct:
                         tvNetworkStatus.setText(getResources().getString(R.string.status_awaiting_connection));
                         break;
                 }

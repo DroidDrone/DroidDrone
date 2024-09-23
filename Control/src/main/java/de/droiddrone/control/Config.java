@@ -23,6 +23,7 @@ import android.view.MotionEvent;
 
 import androidx.preference.PreferenceManager;
 
+import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.UdpCommon;
 
@@ -79,60 +80,60 @@ public class Config {
 
     private void loadConfig(){
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
-        cameraId = preferences.getString("cameraId", "");
-        useUsbCamera = preferences.getBoolean("useUsbCamera", false);
-        usbCameraFrameFormat = parseInt(preferences.getString("usbCameraFrameFormat", ""), 1);
-        usbCameraReset = preferences.getBoolean("usbCameraReset", true);
+        ip = preferences.getString("ip", SettingsCommon.ip);
+        port = preferences.getInt("port", SettingsCommon.port);
+        key = preferences.getString("key", SettingsCommon.key);
+        isViewer = preferences.getBoolean("isViewer", SettingsCommon.isViewer);
+        cameraId = preferences.getString("cameraId", SettingsCommon.cameraId);
+        useUsbCamera = preferences.getBoolean("useUsbCamera", SettingsCommon.useUsbCamera);
+        usbCameraFrameFormat = parseInt(preferences.getString("usbCameraFrameFormat", ""), SettingsCommon.usbCameraFrameFormat);
+        usbCameraReset = preferences.getBoolean("usbCameraReset", SettingsCommon.usbCameraReset);
         try{
             String cameraResolution = preferences.getString("cameraResolution", "");
             String[] sizes = cameraResolution.split("x");
-            cameraResolutionWidth = parseInt(sizes[0], 1920);
-            cameraResolutionHeight = parseInt(sizes[1], 1080);
+            cameraResolutionWidth = parseInt(sizes[0], SettingsCommon.cameraResolutionWidth);
+            cameraResolutionHeight = parseInt(sizes[1], SettingsCommon.cameraResolutionHeight);
         }catch (Exception e){
-            cameraResolutionWidth = 1920;
-            cameraResolutionHeight = 1080;
+            cameraResolutionWidth = SettingsCommon.cameraResolutionWidth;
+            cameraResolutionHeight = SettingsCommon.cameraResolutionHeight;
         }
         try{
             String cameraFps = preferences.getString("cameraFps", "");
             String[] ranges = cameraFps.split("-");
-            cameraFpsMin = parseInt(ranges[0], 30);
-            cameraFpsMax = parseInt(ranges[1], 60);
+            cameraFpsMin = parseInt(ranges[0], SettingsCommon.cameraFpsMin);
+            cameraFpsMax = parseInt(ranges[1], SettingsCommon.cameraFpsMax);
         }catch (Exception e){
-            cameraFpsMin = 30;
-            cameraFpsMax = 60;
+            cameraFpsMin = SettingsCommon.cameraFpsMin;
+            cameraFpsMax = SettingsCommon.cameraFpsMax;
         }
-        bitrateLimit = parseInt(preferences.getString("bitrateLimit", ""), 6000000);
-        useExtraEncoder = preferences.getBoolean("useExtraEncoder", true);
-        videoRecorderCodec = parseInt(preferences.getString("videoRecorderCodec", ""), 0);
-        recordedVideoBitrate = parseInt(preferences.getString("recordedVideoBitrate", ""), 20000000);
-        invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", false);
-        invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", false);
-        sendAudioStream = preferences.getBoolean("sendAudioStream", false);
-        audioStreamBitrate = parseInt(preferences.getString("audioStreamBitrate", ""), 96000);
-        recordAudio = preferences.getBoolean("recordAudio", true);
-        recordedAudioBitrate = parseInt(preferences.getString("recordedAudioBitrate", ""), 192000);
-        showPhoneBattery = preferences.getBoolean("showPhoneBattery", true);
-        showNetworkState = preferences.getBoolean("showNetworkState", true);
-        showCameraFps = preferences.getBoolean("showCameraFps", true);
-        showScreenFps = preferences.getBoolean("showScreenFps", false);
-        showVideoBitrate = preferences.getBoolean("showVideoBitrate", true);
-        showPing = preferences.getBoolean("showPing", true);
-        showVideoRecordButton = preferences.getBoolean("showVideoRecordButton", true);
-        showVideoRecordIndication = preferences.getBoolean("showVideoRecordIndication", true);
-        osdTextColor = preferences.getInt("osdTextColor", 0xFFFFFFFF);
-        telemetryRefreshRate = parseInt(preferences.getString("telemetryRefreshRate", ""), 10);
-        rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), 20);
-        serialBaudRate = parseInt(preferences.getString("serialBaudRate", ""), 115200);
-        usbSerialPortIndex = parseInt(preferences.getString("usbSerialPortIndex", ""), 0);
-        useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", false);
-        nativeSerialPort = preferences.getString("nativeSerialPort", "/dev/ttyS0");
-        fcProtocol = parseInt(preferences.getString("fcProtocol", ""), FcCommon.FC_PROTOCOL_AUTO);
-        mavlinkTargetSysId = parseInt(preferences.getString("mavlinkTargetSysId", ""), 1);
-        mavlinkGcsSysId = parseInt(preferences.getString("mavlinkGcsSysId", ""), 255);
-        ip = preferences.getString("ip", "");
-        port = preferences.getInt("port", UdpCommon.defaultPort);
-        key = preferences.getString("key", "DD");
-        isViewer = preferences.getBoolean("isViewer", false);
+        bitrateLimit = parseInt(preferences.getString("bitrateLimit", ""), SettingsCommon.bitrateLimit);
+        useExtraEncoder = preferences.getBoolean("useExtraEncoder", SettingsCommon.useExtraEncoder);
+        videoRecorderCodec = parseInt(preferences.getString("videoRecorderCodec", ""), SettingsCommon.videoRecorderCodec);
+        recordedVideoBitrate = parseInt(preferences.getString("recordedVideoBitrate", ""), SettingsCommon.recordedVideoBitrate);
+        sendAudioStream = preferences.getBoolean("sendAudioStream", SettingsCommon.sendAudioStream);
+        audioStreamBitrate = parseInt(preferences.getString("audioStreamBitrate", ""), SettingsCommon.audioStreamBitrate);
+        recordAudio = preferences.getBoolean("recordAudio", SettingsCommon.recordAudio);
+        recordedAudioBitrate = parseInt(preferences.getString("recordedAudioBitrate", ""), SettingsCommon.recordedAudioBitrate);
+        telemetryRefreshRate = parseInt(preferences.getString("telemetryRefreshRate", ""), SettingsCommon.telemetryRefreshRate);
+        rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), SettingsCommon.rcRefreshRate);
+        serialBaudRate = parseInt(preferences.getString("serialBaudRate", ""), SettingsCommon.serialBaudRate);
+        usbSerialPortIndex = parseInt(preferences.getString("usbSerialPortIndex", ""), SettingsCommon.usbSerialPortIndex);
+        useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", SettingsCommon.useNativeSerialPort);
+        nativeSerialPort = preferences.getString("nativeSerialPort", SettingsCommon.nativeSerialPort);
+        fcProtocol = parseInt(preferences.getString("fcProtocol", ""), SettingsCommon.fcProtocol);
+        mavlinkTargetSysId = parseInt(preferences.getString("mavlinkTargetSysId", ""), SettingsCommon.mavlinkTargetSysId);
+        mavlinkGcsSysId = parseInt(preferences.getString("mavlinkGcsSysId", ""), SettingsCommon.mavlinkGcsSysId);
+        invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
+        invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
+        showPhoneBattery = preferences.getBoolean("showPhoneBattery", SettingsCommon.showPhoneBattery);
+        showNetworkState = preferences.getBoolean("showNetworkState", SettingsCommon.showNetworkState);
+        showCameraFps = preferences.getBoolean("showCameraFps", SettingsCommon.showCameraFps);
+        showScreenFps = preferences.getBoolean("showScreenFps", SettingsCommon.showScreenFps);
+        showVideoBitrate = preferences.getBoolean("showVideoBitrate", SettingsCommon.showVideoBitrate);
+        showPing = preferences.getBoolean("showPing", SettingsCommon.showPing);
+        showVideoRecordButton = preferences.getBoolean("showVideoRecordButton", SettingsCommon.showVideoRecordButton);
+        showVideoRecordIndication = preferences.getBoolean("showVideoRecordIndication", SettingsCommon.showVideoRecordIndication);
+        osdTextColor = preferences.getInt("osdTextColor", SettingsCommon.osdTextColor);
         // RC channels map
         boolean setDefaultRcMap = true;
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
@@ -142,6 +143,7 @@ public class Config {
         if (setDefaultRcMap) setDefaultRcMap();
     }
 
+    // Taranis Q X7 defaults
     private void setDefaultRcMap(){
         rcChannelsMap[0] = MotionEvent.AXIS_Y;// A
         rcChannelsMap[1] = MotionEvent.AXIS_Z;// E
