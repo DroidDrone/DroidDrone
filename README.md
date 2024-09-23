@@ -23,10 +23,12 @@ ArduPilot should work with the defaults. However, you need to check these settin
 The mobile phones usually do not have a public IP address and you have two options to connect both together:
 1. Use **Direct connection mode** - if both phones are in the same VPN network (or Wi-Fi network for testing).
 
-   You should connect the control app to another phone's IP.
+   You should connect the control app to another phone's local IP.
+
+   You can use the [ZeroTier](https://github.com/zerotier/ZeroTierOne) as a free VPN server (however, bandwidth may be limited on the free plan) - register an account and create your network. Then you can download the ZeroTier One app and connect your phones.
    > Note that the VPN connection has a little more delay due to encryption.
    
-2. **Connect over server** - you start a Server app (Java) on your PC or virtual server and connect both phones to its public IP address.
+3. **Connect over server** - you start a Server app (Java) on your PC or virtual server and connect both phones to its public IP address.
    
    ![Server](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_server.JPG?raw=true)
 
