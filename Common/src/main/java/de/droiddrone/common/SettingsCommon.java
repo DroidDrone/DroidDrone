@@ -24,6 +24,7 @@ public class SettingsCommon {
     public static final String key = "DD";
     public static final int connectionMode = ConnectionMode.overServer;
     public static final boolean isViewer = false;
+    public static final int viewersCount = 2;
     public static final String cameraId = "0";
     public static final boolean useUsbCamera = false;
     public static final int usbCameraFrameFormat = UsbCameraFrameFormat.MJPEG;
