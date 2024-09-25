@@ -20,7 +20,7 @@ package de.droiddrone.server;
 import java.io.File;
 import java.io.IOException;
 
-import de.droiddrone.common.UdpCommon;
+import de.droiddrone.common.SettingsCommon;
 
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
@@ -32,10 +32,10 @@ import static de.droiddrone.common.Log.*;
 public class Config {
 	public static int maxViewersCount = 8;
 	private File file;
-	private String key = "DD";
-	private String viewerKey = "DD";
-	private int viewersCount = 2;
-	private int port = UdpCommon.defaultPort;
+	private String key = SettingsCommon.key;
+	private String viewerKey = SettingsCommon.key;
+	private int viewersCount = SettingsCommon.viewersCount;
+	private int port = SettingsCommon.port;
 	
 	public Config() {
 		file = new File("config.cfg");

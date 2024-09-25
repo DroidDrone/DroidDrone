@@ -64,6 +64,8 @@ public class Udp {
     private UdpSender udpSender;
     private ReceiverBuffer receiverBuffer;
     private boolean isVideoStarting, isAudioStarting;
+    private final Object rcSync = new Object();
+    private short[] rcChannels = null;
 
     public Udp(String destIpStr, int port, String key, int connectionMode, StreamEncoder streamEncoder,
                Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry, Config config){
@@ -118,6 +120,10 @@ public class Udp {
             telemetrySenderThread.setDaemon(false);
             telemetrySenderThread.setName("telemetrySenderThread");
             telemetrySenderThread.start();
+            Thread rcThread = new Thread(rcRun);
+            rcThread.setDaemon(false);
+            rcThread.setName("rcThread");
+            rcThread.start();
             return true;
         } catch (Exception e) {
             log("socketInit error: " + e);
@@ -381,8 +387,7 @@ public class Udp {
                 for (int i = 0; i < channelsCount; i++) {
                     rcChannels[i] = buffer.readShort();
                 }
-                if (msp.isInitialized()) msp.setRawRc(rcChannels);
-                if (mavlink.isInitialized()) mavlink.setRcChannelsOverride(rcChannels);
+                setRcChannels(rcChannels);
                 break;
             }
             case UdpCommon.Disconnect:
@@ -393,6 +398,37 @@ public class Udp {
             }
         }
     }
+
+    public void setRcChannels(short[] rcChannels){
+        synchronized (rcSync) {
+            this.rcChannels = rcChannels;
+            rcSync.notify();
+        }
+    }
+
+    private final Runnable rcRun = new Runnable() {
+        public void run() {
+            final int id = udpThreadsId;
+            while (id == udpThreadsId) {
+                try {
+                    short[] rc;
+                    synchronized (rcSync) {
+                        rc = rcChannels;
+                        rcChannels = null;
+                    }
+                    if (rc != null) {
+                        if (msp.isInitialized()) msp.setRawRc(rc);
+                        if (mavlink.isInitialized()) mavlink.setRcChannelsOverride(rc);
+                    }
+                    synchronized (rcSync) {
+                        if (rcChannels == null) rcSync.wait(100);
+                    }
+                } catch (Exception e) {
+                    log("RC thread error: " + e);
+                }
+            }
+        }
+    };
 
     private void startStopRecording() {
         if (mp4Recorder.isRecording()) {
