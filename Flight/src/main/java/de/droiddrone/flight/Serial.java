@@ -74,6 +74,7 @@ public class Serial {
     private int status;
     private boolean isMavlink;
     private SerialHelper serialHelper;
+    private boolean restart;
 
     public Serial(Context context, Config config){
         this.context = context;
@@ -109,6 +110,7 @@ public class Serial {
             status = STATUS_DEVICE_NOT_CONNECTED;
             while (id == threadsId) {
                 try {
+                    restart = false;
                     if (config.isUseNativeSerialPort()){
                         if (openNativeSerialPort()) {
                             log("Native serial port is opened");
@@ -177,19 +179,9 @@ public class Serial {
         }
     }
 
-    private boolean checkFcProtocol(){
-        if (isMavlink){
-            if (config.getFcProtocol() == FcCommon.FC_PROTOCOL_MSP){
-                status = STATUS_SERIAL_PORT_ERROR;
-                return false;
-            }
-        }else{
-            if (config.getFcProtocol() == FcCommon.FC_PROTOCOL_MAVLINK){
-                status = STATUS_SERIAL_PORT_ERROR;
-                return false;
-            }
-        }
-        return true;
+    public void restart(){
+        status = STATUS_SERIAL_PORT_ERROR;
+        restart = true;
     }
 
     @SuppressLint("UnspecifiedImmutableFlag")
@@ -231,7 +223,7 @@ public class Serial {
                     try {
                         byte[] buf = comBean.bRec;
                         int size = buf.length;
-                        if (!checkFcProtocol()) return;
+                        if (restart) return;
                         if (size > 0){
                             status = STATUS_SERIAL_PORT_OPENED;
                             if (isMavlink){
@@ -313,7 +305,7 @@ public class Serial {
             while (id == threadsId) {
                 try {
                     int size = port.read(buf, serialPortReadWriteTimeoutMs);
-                    if (!checkFcProtocol()) continue;
+                    if (restart) continue;
                     if (size > 0){
                         serialErrors = 0;
                         status = STATUS_SERIAL_PORT_OPENED;

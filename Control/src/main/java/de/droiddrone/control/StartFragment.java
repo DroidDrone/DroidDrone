@@ -82,7 +82,6 @@ public class StartFragment extends Fragment {
     public void updateUi(){
         if (activity.isRunning){
             bConnectDisconnect.setText(getResources().getString(R.string.disconnect));
-            bSettings.setEnabled(false);
             if (activity.isConnected()) {
                 bShowGl.setEnabled(true);
                 if (activity.isConfigReceived() || config.isViewer()) {
@@ -114,7 +113,6 @@ public class StartFragment extends Fragment {
             etPort.setEnabled(true);
             etKey.setEnabled(true);
             bShowGl.setEnabled(false);
-            bSettings.setEnabled(true);
             isViewer.setEnabled(true);
         }
         activity.updateControllerStatusUi(tvControllerStatus);

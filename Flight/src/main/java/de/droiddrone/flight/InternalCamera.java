@@ -71,6 +71,7 @@ public class InternalCamera implements Camera{
     private HandlerThread handlerThread;
     private CaptureRequest.Builder mCaptureRequest;
     private CameraCaptureSession mCameraCaptureSession;
+    private boolean isStarted;
 
     public InternalCamera(Context context, Config config) {
         this.context = context;
@@ -81,6 +82,7 @@ public class InternalCamera implements Camera{
     public boolean initialize(StreamEncoder streamEncoder, Mp4Recorder mp4Recorder){
         this.streamEncoder = streamEncoder;
         this.mp4Recorder = mp4Recorder;
+        isStarted = false;
         targetResolution = new Size(config.getCameraResolutionWidth(), config.getCameraResolutionHeight());
         targetFrameRange = new Range<>(config.getCameraFpsMin(), config.getCameraFpsMax());
         frameRate = targetFrameRange;
@@ -203,6 +205,11 @@ public class InternalCamera implements Camera{
     }
 
     @Override
+    public boolean isStarted(){
+        return isStarted;
+    }
+
+    @Override
     public void startCapture(){
         if (recorderSurface != null){
             mCaptureRequest.addTarget(recorderSurface);
@@ -219,7 +226,7 @@ public class InternalCamera implements Camera{
         if (recorderSurface != null) mCaptureRequest.removeTarget(recorderSurface);
         try{
             mCameraCaptureSession.setRepeatingRequest(mCaptureRequest.build(), captureCallback, new Handler(handlerThread.getLooper()));
-        }catch (CameraAccessException e){
+        }catch (Exception e){
             log("removeRecorderSurface CameraAccessException: "+ e);
         }
     }
@@ -423,6 +430,7 @@ public class InternalCamera implements Camera{
         @Override
         public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber){
             super.onCaptureStarted(session, request, timestamp, frameNumber);
+            isStarted = true;
         }
 
         @Override
@@ -461,6 +469,7 @@ public class InternalCamera implements Camera{
     @Override
     public void close(){
         isOpened = false;
+        isStarted = false;
         if (camera != null){
             camera.close();
             log("Camera device closed.");

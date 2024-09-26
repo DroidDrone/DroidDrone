@@ -284,10 +284,14 @@ public class Mp4Recorder {
     }
 
     public void stopRecording(){
+        stopRecording(cameraManager.getCamera());
+    }
+
+    public void stopRecording(Camera camera){
         if (!isRecording) return;
         log("stopRecording");
         if (streamEncoder == null){
-            cameraManager.getCamera().stopCapture();
+            camera.stopCapture();
         }else{
             streamEncoder.setWriteToRecorder(false);
         }

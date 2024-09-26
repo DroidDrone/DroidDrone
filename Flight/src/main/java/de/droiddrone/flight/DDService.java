@@ -108,7 +108,7 @@ public class DDService extends Service {
         phoneTelemetry = new PhoneTelemetry(this, streamEncoder, cameraManager, mp4Recorder);
         phoneTelemetry.initialize();
         if (udp != null) udp.close();
-        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, cameraManager, msp, mavlink, phoneTelemetry, MainActivity.config);
+        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, cameraManager, msp, mavlink, phoneTelemetry, MainActivity.config, serial);
         Thread t1 = new Thread(() -> {
             if (!udp.initialize()){
                 log("UDP initialize error.");

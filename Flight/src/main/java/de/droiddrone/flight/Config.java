@@ -24,7 +24,6 @@ import androidx.preference.PreferenceManager;
 
 import de.droiddrone.common.DataReader;
 import de.droiddrone.common.SettingsCommon;
-import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.MediaCommon;
 import de.droiddrone.common.UdpCommon;
 
@@ -61,11 +60,56 @@ public class Config {
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
     private boolean connectOnStartup;
+    private boolean cameraConfigChanged;
+    private boolean recorderConfigChanged;
+    private boolean audioStreamConfigChanged;
+    private boolean fcConfigChanged;
+    private boolean rcConfigChanged;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
         this.versionCode = versionCode;
         loadConfig();
+    }
+
+    public boolean isAudioStreamConfigChanged() {
+        return audioStreamConfigChanged;
+    }
+
+    public void audioStreamConfigUpdated(){
+        audioStreamConfigChanged = false;
+    }
+
+    public boolean isFcConfigChanged() {
+        return fcConfigChanged;
+    }
+
+    public void fcConfigUpdated(){
+        fcConfigChanged = false;
+    }
+
+    public boolean isRcConfigChanged() {
+        return rcConfigChanged;
+    }
+
+    public void rcConfigUpdated(){
+        rcConfigChanged = false;
+    }
+
+    public boolean isCameraConfigChanged() {
+        return cameraConfigChanged;
+    }
+
+    public void cameraConfigUpdated(){
+        cameraConfigChanged = false;
+    }
+
+    public boolean isRecorderConfigChanged() {
+        return recorderConfigChanged;
+    }
+
+    public void recorderConfigUpdated(){
+        recorderConfigChanged = false;
     }
 
     public String getIp(){
@@ -198,31 +242,83 @@ public class Config {
         try {
             int version = buffer.readShort();
             if (version != versionCode) return -1;
-            cameraId = buffer.readUTF();
-            cameraResolutionWidth = buffer.readShort();
-            cameraResolutionHeight = buffer.readShort();
-            cameraFpsMin = buffer.readShort();
-            cameraFpsMax = buffer.readShort();
+            String cameraId = buffer.readUTF();
+            if (cameraId != null && !cameraId.equals(this.cameraId)) cameraConfigChanged = true;
+            this.cameraId = cameraId;
+            int cameraResolutionWidth = buffer.readShort();
+            int cameraResolutionHeight = buffer.readShort();
+            if (cameraResolutionWidth != this.cameraResolutionWidth || cameraResolutionHeight != this.cameraResolutionHeight) cameraConfigChanged = true;
+            this.cameraResolutionWidth = cameraResolutionWidth;
+            this.cameraResolutionHeight = cameraResolutionHeight;
+            int cameraFpsMin = buffer.readShort();
+            int cameraFpsMax = buffer.readShort();
+            if (cameraFpsMin != this.cameraFpsMin || cameraFpsMax != this.cameraFpsMax) cameraConfigChanged = true;
+            this.cameraFpsMin = cameraFpsMin;
+            this.cameraFpsMax = cameraFpsMax;
             bitrateLimit = buffer.readUnsignedByteAsInt() * 1000000;
-            useExtraEncoder = buffer.readBoolean();
-            videoRecorderCodec = buffer.readByte();
-            recordedVideoBitrate = buffer.readUnsignedByteAsInt() * 1000000;
-            sendAudioStream = buffer.readBoolean();
-            audioStreamBitrate = buffer.readShort() * 1000;
-            recordAudio = buffer.readBoolean();
-            recordedAudioBitrate = buffer.readShort() * 1000;
-            telemetryRefreshRate = buffer.readUnsignedByteAsInt();
-            rcRefreshRate = buffer.readUnsignedByteAsInt();
-            serialBaudRate = buffer.readInt();
-            usbSerialPortIndex = buffer.readByte();
-            useNativeSerialPort = buffer.readBoolean();
-            nativeSerialPort = buffer.readUTF();
-            fcProtocol = buffer.readByte();
-            useUsbCamera = buffer.readBoolean();
-            usbCameraFrameFormat = buffer.readByte();
-            usbCameraReset = buffer.readBoolean();
-            mavlinkTargetSysId = buffer.readUnsignedByteAsInt();
-            mavlinkGcsSysId = buffer.readUnsignedByteAsInt();
+            boolean useExtraEncoder = buffer.readBoolean();
+            if (useExtraEncoder != this.useExtraEncoder){
+                cameraConfigChanged = true;
+                recorderConfigChanged = true;
+            }
+            this.useExtraEncoder = useExtraEncoder;
+            int videoRecorderCodec = buffer.readByte();
+            if (videoRecorderCodec != this.videoRecorderCodec){
+                cameraConfigChanged = true;
+                recorderConfigChanged = true;
+            }
+            this.videoRecorderCodec = videoRecorderCodec;
+            int recordedVideoBitrate = buffer.readUnsignedByteAsInt() * 1000000;
+            if (recordedVideoBitrate != this.recordedVideoBitrate){
+                cameraConfigChanged = true;
+                recorderConfigChanged = true;
+            }
+            this.recordedVideoBitrate = recordedVideoBitrate;
+            boolean sendAudioStream = buffer.readBoolean();
+            if (sendAudioStream != this.sendAudioStream) audioStreamConfigChanged = true;
+            this.sendAudioStream = sendAudioStream;
+            int audioStreamBitrate = buffer.readShort() * 1000;
+            if (audioStreamBitrate != this.audioStreamBitrate) audioStreamConfigChanged = true;
+            this.audioStreamBitrate = audioStreamBitrate;
+            boolean recordAudio = buffer.readBoolean();
+            if (recordAudio != this.recordAudio) recorderConfigChanged = true;
+            this.recordAudio = recordAudio;
+            int recordedAudioBitrate = buffer.readShort() * 1000;
+            if (recordedAudioBitrate != this.recordedAudioBitrate) recorderConfigChanged = true;
+            this.recordedAudioBitrate = recordedAudioBitrate;
+            int telemetryRefreshRate = buffer.readUnsignedByteAsInt();
+            if (telemetryRefreshRate != this.telemetryRefreshRate) fcConfigChanged = true;
+            this.telemetryRefreshRate = telemetryRefreshRate;
+            int rcRefreshRate = buffer.readUnsignedByteAsInt();
+            if (rcRefreshRate != this.rcRefreshRate) rcConfigChanged = true;
+            this.rcRefreshRate = rcRefreshRate;
+            int serialBaudRate = buffer.readInt();
+            int usbSerialPortIndex = buffer.readByte();
+            boolean useNativeSerialPort = buffer.readBoolean();
+            if (serialBaudRate != this.serialBaudRate || usbSerialPortIndex != this.usbSerialPortIndex
+                    || useNativeSerialPort != this.useNativeSerialPort) fcConfigChanged = true;
+            this.serialBaudRate = serialBaudRate;
+            this.usbSerialPortIndex = usbSerialPortIndex;
+            this.useNativeSerialPort = useNativeSerialPort;
+            String nativeSerialPort = buffer.readUTF();
+            if (nativeSerialPort != null && !nativeSerialPort.equals(this.nativeSerialPort)) fcConfigChanged = true;
+            this.nativeSerialPort = nativeSerialPort;
+            int fcProtocol = buffer.readByte();
+            if (fcProtocol != this.fcProtocol) fcConfigChanged = true;
+            this.fcProtocol = fcProtocol;
+            boolean useUsbCamera = buffer.readBoolean();
+            int usbCameraFrameFormat = buffer.readByte();
+            boolean usbCameraReset = buffer.readBoolean();
+            if (useUsbCamera != this.useUsbCamera || usbCameraFrameFormat != this.usbCameraFrameFormat
+                    || usbCameraReset != this.usbCameraReset) cameraConfigChanged = true;
+            this.useUsbCamera = useUsbCamera;
+            this.usbCameraFrameFormat = usbCameraFrameFormat;
+            this.usbCameraReset = usbCameraReset;
+            int mavlinkTargetSysId = buffer.readUnsignedByteAsInt();
+            int mavlinkGcsSysId = buffer.readUnsignedByteAsInt();
+            if (mavlinkTargetSysId != this.mavlinkTargetSysId || mavlinkGcsSysId != this.mavlinkGcsSysId) fcConfigChanged = true;
+            this.mavlinkTargetSysId = mavlinkTargetSysId;
+            this.mavlinkGcsSysId = mavlinkGcsSysId;
             if (!updateConfig()) return -2;
             return 0;
         }catch (Exception e){

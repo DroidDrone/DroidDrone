@@ -47,7 +47,6 @@ public class StreamEncoder {
     public final ConcurrentLinkedQueue<MediaCodecBuffer> videoRecorderOutputBuffer = new ConcurrentLinkedQueue<>();
     public final ConcurrentLinkedQueue<MediaCodecBuffer> audioOutputBuffer = new ConcurrentLinkedQueue<>();
     private int audioBitRate;
-    private int maxBitRate;
     private long bitRateCounter = 0;
     private long bitRateTimestamp = 0;
     private float lastBitRateMbs = 0;
@@ -74,8 +73,6 @@ public class StreamEncoder {
     }
 
     public Surface initializeVideo() {
-        maxBitRate = config.getBitrateLimit();
-
         if (videoEncoder != null) {
             try {
                 videoEncoder.stop();
@@ -123,8 +120,8 @@ public class StreamEncoder {
         bitRateCounter = 0;
         bitRateTimestamp = System.currentTimeMillis();
         lastBitRateMbs = 0;
-        if (maxBitRate != 0){
-            while (getTargetBitRate() > maxBitRate && bitRateIndex > 0){
+        if (config.getBitrateLimit() != 0){
+            while (getTargetBitRate() > config.getBitrateLimit() && bitRateIndex > 0){
                 bitRateIndex--;
             }
         }
@@ -261,7 +258,7 @@ public class StreamEncoder {
         if (increase) {
             if (lockIncreaseBitrate) return;
             if (bitRateIndex < baseBitRates.length-1){
-                if (baseBitRates[bitRateIndex+1] <= maxBitRate || maxBitRate == 0) {
+                if (baseBitRates[bitRateIndex+1] <= config.getBitrateLimit() || config.getBitrateLimit() == 0) {
                     bitRateIndex++;
                     encoderBitrateChange = true;
                 }

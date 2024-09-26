@@ -819,13 +819,12 @@ public class Udp {
     private final Runnable rcRun = new Runnable() {
         public void run() {
             final int id = threadsId;
-            int periodMs = 1000 / config.getRcRefreshRate();
             while (id == threadsId) {
                 try {
                     if (isConnected() && configReceived){
                         sendRcFrame(rc.getRcChannels());
                     }
-                    Thread.sleep(periodMs);
+                    Thread.sleep(1000 / config.getRcRefreshRate());
                 } catch (Exception e) {
                     log("RC thread error: " + e);
                 }
