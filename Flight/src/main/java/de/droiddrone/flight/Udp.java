@@ -53,6 +53,7 @@ public class Udp {
     private final Mavlink mavlink;
     private final PhoneTelemetry phoneTelemetry;
     private final Config config;
+    private final Serial serial;
     private DatagramSocket socket;
     private InetAddress destIp;
     private DatagramPacket receiverPacket;
@@ -68,7 +69,7 @@ public class Udp {
     private short[] rcChannels = null;
 
     public Udp(String destIpStr, int port, String key, int connectionMode, StreamEncoder streamEncoder,
-               Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry, Config config){
+               Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry, Config config, Serial serial){
         this.destIpStr = destIpStr;
         this.port = port;
         this.key = key;
@@ -80,6 +81,7 @@ public class Udp {
         this.mavlink = mavlink;
         this.phoneTelemetry = phoneTelemetry;
         this.config = config;
+        this.serial = serial;
         videoSenderThreadId = 0;
         audioSenderThreadId = 0;
         udpThreadsId = 0;
@@ -252,6 +254,11 @@ public class Udp {
         cameraManager.getCamera().close();
     }
 
+    private void stopAudioStream(){
+        audioSenderThreadId++;
+        streamEncoder.stopAudioEncoder();
+    }
+
     private void startAudioStream(){
         if (isAudioStarting) return;
         isAudioStarting = true;
@@ -368,11 +375,14 @@ public class Udp {
             }
             case UdpCommon.Config:
             {
+                final Camera oldCamera = cameraManager.getCamera();
                 int resCode = config.processReceivedConfig(buffer);
                 if (resCode == 0) {
                     sendConfigReceived();
-                    msp.setRcMinPeriod();
-                    mavlink.setRcMinPeriod();
+                    Thread t1 = new Thread(() -> {
+                        checkConfigUpdate(oldCamera);
+                    });
+                    t1.start();
                 }else if (resCode == -1){
                     sendVersionMismatch();
                 }
@@ -396,6 +406,65 @@ public class Udp {
                 stopAudioVideo();
                 break;
             }
+        }
+    }
+
+    private void checkConfigUpdate(Camera camera){
+        if (config.isRcConfigChanged()) {
+            msp.setRcMinPeriod();
+            mavlink.setRcMinPeriod();
+            config.rcConfigUpdated();
+        }
+        if (config.isFcConfigChanged()) {
+            serial.restart();
+            config.fcConfigUpdated();
+        }
+        if (config.isCameraConfigChanged()) {
+            if (camera.isStarted() || videoInitialFrame != null){
+                boolean isRecording = mp4Recorder.isRecording();
+                boolean isHevc = MediaCommon.hevcCodecMime.equals(streamEncoder.getCurrentCodecType());
+                if (isRecording) mp4Recorder.stopRecording(camera);
+                stopAudioVideo();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {
+                }
+                startVideoStream(isHevc);
+                if (config.isSendAudioStream()) {
+                    startAudioStream();
+                    config.audioStreamConfigUpdated();
+                }
+                if (isRecording) {
+                    Thread t1 = new Thread(() -> {
+                        for (int i = 0; i < 5; i++) {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException ignored) {
+                            }
+                            if (cameraManager.getCamera().isStarted()) {
+                                startStopRecording();
+                                break;
+                            }
+                        }
+                    });
+                    t1.start();
+                    config.recorderConfigUpdated();
+                }
+            }
+            config.cameraConfigUpdated();
+        }
+        if (config.isRecorderConfigChanged()) {
+            boolean isRecording = mp4Recorder.isRecording();
+            if (isRecording) {
+                mp4Recorder.stopRecording();
+                startStopRecording();
+            }
+            config.recorderConfigUpdated();
+        }
+        if (config.isAudioStreamConfigChanged()){
+            stopAudioStream();
+            if (config.isSendAudioStream()) startAudioStream();
+            config.audioStreamConfigUpdated();
         }
     }
 
@@ -921,6 +990,9 @@ public class Udp {
             long nextTime = timeMs * nextBr / currentBr;
             streamEncoder.setLockIncreaseBitrate(nextTime >= frameTimeMs);
         }
+        if (config.getBitrateLimit() != 0 && streamEncoder.getTargetBitRate() > config.getBitrateLimit()){
+            streamEncoder.changeBitRate(false);
+        }
     }
 
     private void sendVideoFrame(byte[] buf) {
@@ -1020,5 +1092,7 @@ public class Udp {
             udpSender = null;
         }
         if (socket != null) socket.close();
+        videoInitialFrame = null;
+        audioInitialFrame = null;
     }
 }

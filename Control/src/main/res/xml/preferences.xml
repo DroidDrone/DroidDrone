@@ -2,6 +2,12 @@
 <PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <Preference
+        app:title="@string/settings_fs_warning"
+        app:key="fsWarning"
+        app:isPreferenceVisible="false"
+        app:layout="@layout/fs_warning" />
+
     <PreferenceCategory
         app:key="video"
         app:title="@string/video">

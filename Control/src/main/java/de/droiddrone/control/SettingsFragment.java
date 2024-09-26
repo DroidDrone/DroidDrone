@@ -43,6 +43,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
+        checkFsWarning();
         EditTextPreference cameraId = findPreference("cameraId");
         SwitchPreferenceCompat useUsbCamera = findPreference("useUsbCamera");
         if (cameraId != null) {
@@ -136,5 +137,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             preference.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
             preference.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
         }
+    }
+
+    private void checkFsWarning(){
+        Preference fsWarning = findPreference("fsWarning");
+        if (fsWarning != null) fsWarning.setVisible(activity.isRunning);
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) checkFsWarning();
     }
 }

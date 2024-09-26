@@ -71,11 +71,21 @@ public class Config {
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    private boolean decoderConfigChanged;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
         this.versionCode = versionCode;
         loadConfig();
+        decoderConfigChanged = false;
+    }
+
+    public boolean isDecoderConfigChanged() {
+        return decoderConfigChanged;
+    }
+
+    public void decoderConfigUpdated(){
+        decoderConfigChanged = false;
     }
 
     private void loadConfig(){
@@ -88,6 +98,8 @@ public class Config {
         useUsbCamera = preferences.getBoolean("useUsbCamera", SettingsCommon.useUsbCamera);
         usbCameraFrameFormat = parseInt(preferences.getString("usbCameraFrameFormat", ""), SettingsCommon.usbCameraFrameFormat);
         usbCameraReset = preferences.getBoolean("usbCameraReset", SettingsCommon.usbCameraReset);
+        int cameraResolutionWidth;
+        int cameraResolutionHeight;
         try{
             String cameraResolution = preferences.getString("cameraResolution", "");
             String[] sizes = cameraResolution.split("x");
@@ -97,6 +109,9 @@ public class Config {
             cameraResolutionWidth = SettingsCommon.cameraResolutionWidth;
             cameraResolutionHeight = SettingsCommon.cameraResolutionHeight;
         }
+        if (cameraResolutionWidth != this.cameraResolutionWidth || cameraResolutionHeight != this.cameraResolutionHeight) decoderConfigChanged = true;
+        this.cameraResolutionWidth = cameraResolutionWidth;
+        this.cameraResolutionHeight = cameraResolutionHeight;
         try{
             String cameraFps = preferences.getString("cameraFps", "");
             String[] ranges = cameraFps.split("-");

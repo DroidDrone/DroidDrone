@@ -267,6 +267,11 @@ public class UsbCamera implements Camera {
     }
 
     @Override
+    public boolean isStarted(){
+        return uvcCamera != null && isOpened && uvcCamera.isRunning();
+    }
+
+    @Override
     public void close(){
         isOpened = false;
         synchronized (mSync) {

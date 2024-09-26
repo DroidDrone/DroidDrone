@@ -137,8 +137,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         customFragmentFactory.showStartFragment();
     }
 
-    public void showGlFragment(boolean runInThread){
-        if (runInThread){
+    public void showGlFragment(boolean runInUiThread){
+        if (runInUiThread){
             runOnUiThread(() -> customFragmentFactory.showGlFragment());
         }else{
             customFragmentFactory.showGlFragment();
@@ -255,9 +255,25 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             int currentFragmentId = customFragmentFactory.getCurrentFragmentId();
-            if (currentFragmentId == GlFragment.fragmentId || currentFragmentId == SettingsFragment.fragmentId
-                    || currentFragmentId == MapFragment.fragmentId){
+            if (currentFragmentId == GlFragment.fragmentId
+                    || currentFragmentId == SettingsFragment.fragmentId && !isRunning
+                    || currentFragmentId == MapFragment.fragmentId && !isRunning){
                 showStartFragment();
+                return true;
+            }
+            if (currentFragmentId == SettingsFragment.fragmentId){//isRunning
+                if (config.updateConfig()){
+                    Thread t1 = new Thread(() -> {
+                        checkConfigUpdate();
+                        udp.sendConfig();
+                        showGlFragment(true);
+                    });
+                    t1.start();
+                }
+                return true;
+            }
+            if (currentFragmentId == MapFragment.fragmentId){//isRunning
+                showGlFragment(false);
                 return true;
             }
             if (currentFragmentId == ChannelsMappingFragment.fragmentId){
@@ -266,6 +282,16 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void checkConfigUpdate(){
+        if (config.isDecoderConfigChanged()){
+            if (isVideoStreamStarted()){
+                decoder.close();
+                renderer.close();
+            }
+            config.decoderConfigUpdated();
+        }
     }
 
     public void runConnectDisconnect(){

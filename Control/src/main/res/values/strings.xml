@@ -70,6 +70,7 @@
     <string name="native_serial_on">On - use native serial port connected to the UART</string>
     <string name="native_serial_off">Off - use USB serial</string>
     <string name="native_serial_port_address">Native serial port address</string>
+    <string name="settings_fs_warning">Changing some settings may cause a failsafe!</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3840x2160</item>

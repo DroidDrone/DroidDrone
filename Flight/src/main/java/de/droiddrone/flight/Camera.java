@@ -26,6 +26,7 @@ public interface Camera {
     void startCapture();
     void stopCapture();
     void startPreview();
+    boolean isStarted();
     int getWidth();
     int getHeight();
     boolean isFrontFacing();
