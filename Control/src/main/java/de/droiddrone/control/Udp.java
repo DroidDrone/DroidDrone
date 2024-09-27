@@ -54,6 +54,7 @@ public class Udp {
     private FcInfo fcInfo = null;
     private int wrongFramesCount;
     private long lastFrameReceivedTs;
+    private long lastKeyFrameReceivedTs;
     private long processBitRateChangeTs;
     private long wrongFramesTs;
     private long changeBitRatePauseTs;
@@ -220,7 +221,7 @@ public class Udp {
                 int read = buffer.read(buf, 0, dataSize);
                 if (read == dataSize) {
                     if (dataSize == frameSize) {
-                        processBitRateChange();
+                        processBitRateChange(isKeyFrame);
                         if (isKeyFrame){
                             decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_KEY_FRAME, buf));
                         }else{
@@ -243,7 +244,7 @@ public class Udp {
                         }
                         byte[] frameData = frame.getFrame();
                         if (frameData != null && frameData.length > 0) {
-                            processBitRateChange();
+                            processBitRateChange(isKeyFrame);
                             if (frame.isKeyFrame){
                                 decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_KEY_FRAME, frameData));
                             }else{
@@ -296,6 +297,7 @@ public class Udp {
                         videoInitialFrameReceived = true;
                         activity.showGlFragment(true);
                         lastFrameReceivedTs = System.currentTimeMillis() + 500;
+                        lastKeyFrameReceivedTs = lastFrameReceivedTs;
                         decoder.videoInputBuffer.clear();
                         decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_CODEC_CONFIG, buf));
                         Thread t1 = new Thread(() -> decoder.initializeVideo(isHevc, width, height, isFrontCamera));
@@ -371,12 +373,14 @@ public class Udp {
         }
     }
 
-    private void processBitRateChange() {
+    private void processBitRateChange(boolean isKeyFrame) {
         if (config.isViewer()) return;
         long current = System.currentTimeMillis();
         if (current - changeBitRatePauseTs > 2000) {
             if (wrongFramesCount > Math.round(getCameraFps() / 30f)
-                    || current > lastFrameReceivedTs + 150 || getPing() == -1 || getPing() > 300) {
+                    || current > lastFrameReceivedTs + 150
+                    || current > lastKeyFrameReceivedTs + 1500
+                    || getPing() == -1 || getPing() > 300) {
                 wrongFramesTs = current;
                 wrongFramesCount = 0;
                 changeBitRatePauseTs = current;
@@ -388,6 +392,7 @@ public class Udp {
             }
         }
         lastFrameReceivedTs = current;
+        if (isKeyFrame) lastKeyFrameReceivedTs = current;
         if (current - processBitRateChangeTs >= 1000) {
             wrongFramesCount = 0;
             processBitRateChangeTs = current;
