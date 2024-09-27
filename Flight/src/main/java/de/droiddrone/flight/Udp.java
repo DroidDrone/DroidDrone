@@ -227,7 +227,6 @@ public class Udp {
         streamEncoder.close();
         streamEncoder.setDefaultHevc(isHevc);
         mp4Recorder.close();
-        videoInitialFrame = null;
         videoFrameNum = 0;
         if (cameraManager.getCamera().isOpened(config.getCameraId())) {
             cameraManager.getCamera().startPreview();
@@ -404,6 +403,7 @@ public class Udp {
             {
                 // stop stream when controller disconnected
                 stopAudioVideo();
+                videoInitialFrame = null;
                 break;
             }
         }

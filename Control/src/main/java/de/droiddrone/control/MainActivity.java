@@ -553,7 +553,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 rc.setAxisValues(axisValues);
                 if (channelsMappingFragment != null) channelsMappingFragment.updateChannelsLevels();
             }else{
-                if (action == MotionEvent.ACTION_CANCEL) rc.setState(false);
+                if (action == MotionEvent.ACTION_CANCEL && customFragmentFactory.getCurrentFragmentId() != SettingsFragment.fragmentId) {
+                    rc.setState(false);
+                }
             }
             return true;
         }else{
