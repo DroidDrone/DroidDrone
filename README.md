@@ -41,7 +41,7 @@ If you use the server app, you can also connect other phones as viewers. You nee
 
 In the Control app you can configure various settings, such as Camera ID (for internal phone cameras). If your phone has a wide-angle camera, it's best to use it. A wide-angle camera usually has ID 2 or 3, but on some phones, it can be different (my old Redmi has ID 21...).
 
-You can also connect an external USB camera (UVC) using the USB OTG splitter.
+You can also connect an external USB camera (UVC) using the USB OTG splitter (however, some power-hungry cameras may not work stably via phone OTG splitter, please check before flying).
 
 > Cameras with high frame rates have lower internal latency.
 
