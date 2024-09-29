@@ -267,7 +267,7 @@ public class InternalCamera implements Camera{
         CameraCharacteristics characteristics;
         try{
             characteristics = cameraManager.getCameraCharacteristics(cameraId);
-        }catch (CameraAccessException e){
+        }catch (Exception e){
             log("getCameraCharacteristics CameraAccessException: "+ e);
             return false;
         }

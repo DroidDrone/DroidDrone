@@ -67,6 +67,7 @@ public class Udp {
     private boolean isVideoStarting, isAudioStarting;
     private final Object rcSync = new Object();
     private short[] rcChannels = null;
+    private final Object udpSync = new Object();
 
     public Udp(String destIpStr, int port, String key, int connectionMode, StreamEncoder streamEncoder,
                Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry, Config config, Serial serial){
@@ -951,23 +952,26 @@ public class Udp {
         long start = System.nanoTime();
         while (offset < size && udpSender != null) {
             try {
-                UdpPacketData packetData = new UdpPacketData(UdpCommon.KeyFrame);
-                packetData.daos.writeShort(videoFrameNum);
-                packetData.daos.writeInt(offset);
-                int headerSize = 9;
-                if (offset == 0) {
-                    packetData.daos.writeInt(size);
-                    headerSize += 4;
+                synchronized (udpSync) {
+                    UdpPacketData packetData = new UdpPacketData(UdpCommon.KeyFrame);
+                    packetData.daos.writeShort(videoFrameNum);
+                    packetData.daos.writeInt(offset);
+                    int headerSize = 9;
+                    if (offset == 0) {
+                        packetData.daos.writeInt(size);
+                        headerSize += 4;
+                    }
+                    int dataSize = UdpCommon.packetLength - headerSize;
+                    if (size - offset <= dataSize) {
+                        packetData.daos.write(buf, offset, size - offset);
+                        offset = size;
+                    } else {
+                        packetData.daos.write(buf, offset, dataSize);
+                        offset += dataSize;
+                    }
+                    udpSender.sendPacket(packetData.getData());
+                    udpSync.wait(0, 200000);
                 }
-                int dataSize = UdpCommon.packetLength - headerSize;
-                if (size - offset <= dataSize) {
-                    packetData.daos.write(buf, offset, size - offset);
-                    offset = size;
-                } else {
-                    packetData.daos.write(buf, offset, dataSize);
-                    offset += dataSize;
-                }
-                udpSender.sendPacket(packetData.getData());
             } catch (Exception e) {
                 e.printStackTrace();
                 log("sendKeyFrame error: " + e);
@@ -1003,23 +1007,26 @@ public class Udp {
         int offset = 0;
         while (offset < size && udpSender != null) {
             try {
-                UdpPacketData packetData = new UdpPacketData(UdpCommon.VideoFrame);
-                packetData.daos.writeShort(videoFrameNum);
-                packetData.daos.writeInt(offset);
-                int headerSize = 9;
-                if (offset == 0) {
-                    packetData.daos.writeInt(size);
-                    headerSize += 4;
+                synchronized (udpSync) {
+                    UdpPacketData packetData = new UdpPacketData(UdpCommon.VideoFrame);
+                    packetData.daos.writeShort(videoFrameNum);
+                    packetData.daos.writeInt(offset);
+                    int headerSize = 9;
+                    if (offset == 0) {
+                        packetData.daos.writeInt(size);
+                        headerSize += 4;
+                    }
+                    int dataSize = UdpCommon.packetLength - headerSize;
+                    if (size - offset <= dataSize) {
+                        packetData.daos.write(buf, offset, size - offset);
+                        offset = size;
+                    } else {
+                        packetData.daos.write(buf, offset, dataSize);
+                        offset += dataSize;
+                    }
+                    udpSender.sendPacket(packetData.getData());
+                    udpSync.wait(0, 200000);
                 }
-                int dataSize = UdpCommon.packetLength - headerSize;
-                if (size - offset <= dataSize) {
-                    packetData.daos.write(buf, offset, size - offset);
-                    offset = size;
-                } else {
-                    packetData.daos.write(buf, offset, dataSize);
-                    offset += dataSize;
-                }
-                udpSender.sendPacket(packetData.getData());
             } catch (Exception e) {
                 e.printStackTrace();
                 log("sendVideoFrame error: " + e);
