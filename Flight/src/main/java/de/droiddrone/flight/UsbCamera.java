@@ -36,6 +36,7 @@ import java.util.List;
 public class UsbCamera implements Camera {
     private final int usbDeviceClass = 239;
     private final int usbDeviceSubClass = 2;
+    private final int[] excludeVendorIds = {11388/*Quectel LTE Module*/};
     private final Context context;
     private final Config config;
     private final Object mSync = new Object();
@@ -49,6 +50,7 @@ public class UsbCamera implements Camera {
     private boolean isOpened;
     private int currentFps;
     private long currentFpsTs;
+    private UsbDevice usbDevice;
 
     public UsbCamera(Context context, Config config){
         this.context = context;
@@ -69,11 +71,21 @@ public class UsbCamera implements Camera {
         return true;
     }
 
+    private boolean checkUsbDevice(UsbDevice device){
+        if (device == null) return false;
+        int vendorId = device.getVendorId();
+        for (int id : excludeVendorIds){
+            if (id == vendorId) return false;
+        }
+        return device.getDeviceClass() == usbDeviceClass && device.getDeviceSubclass() == usbDeviceSubClass;
+    }
+
     private final LibUVCCameraUSBMonitor.OnDeviceConnectListener onDeviceConnectListener = new LibUVCCameraUSBMonitor.OnDeviceConnectListener() {
         @Override
         public void onAttach(final UsbDevice device) {
             if (!isOpened && device != null) {
-                if (device.getDeviceClass() == usbDeviceClass && device.getDeviceSubclass() == usbDeviceSubClass) {
+                if (checkUsbDevice(device)) {
+                    usbDevice = device;
                     openCamera();
                 }
             }
@@ -132,49 +144,48 @@ public class UsbCamera implements Camera {
         uvcCamera.stopCapture();
     }
 
+    private UsbDevice findUsbCameraDevice(){
+        List<UsbDevice> usbDevices;
+        try {
+            usbDevices = usbMonitor.getDeviceList();
+        }catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        if (usbDevices.isEmpty()) return null;
+        for (UsbDevice usbDevice : usbDevices) {
+            if (checkUsbDevice(usbDevice)) return usbDevice;
+        }
+        return null;
+    }
+
     @Override
     public boolean openCamera(){
         synchronized (mSync) {
             if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return false;
             }
-            List<UsbDevice> usbDevices;
-            try {
-                usbDevices = usbMonitor.getDeviceList();
-            }catch (Exception e){
-                e.printStackTrace();
+
+            if (usbDevice == null) usbDevice = findUsbCameraDevice();
+            if (usbDevice == null) return false;
+
+            if (!usbMonitor.hasPermission(usbDevice)) {
+                usbMonitor.requestPermission(usbDevice);
                 return false;
             }
-            if (usbDevices.isEmpty()) return false;
 
-            boolean usbCameraFound = false;
-
-            for (UsbDevice usbDevice : usbDevices) {
-                if (usbDevice.getDeviceClass() != usbDeviceClass
-                        || usbDevice.getDeviceSubclass() != usbDeviceSubClass) continue;
-
-                usbCameraFound = true;
-
-                if (!usbMonitor.hasPermission(usbDevice)) {
-                    usbMonitor.requestPermission(usbDevice);
-                    return false;
-                }
-
-                if (uvcCamera != null) {
-                    uvcCamera.destroy();
-                    uvcCamera = null;
-                }
-                uvcCamera = new UVCCamera();
-                try {
-                    LibUVCCameraUSBMonitor.UsbControlBlock ctrlBlock = new LibUVCCameraUSBMonitor.UsbControlBlock(usbMonitor, usbDevice);
-                    uvcCamera.open(ctrlBlock);
-                } catch (UnsupportedOperationException e) {
-                    log("Camera open error: " + e);
-                }
-                log("openCamera. SupportedSizes:" + uvcCamera.getSupportedSize());
+            if (uvcCamera != null) {
+                uvcCamera.destroy();
+                uvcCamera = null;
             }
-
-            if (!usbCameraFound) return false;
+            uvcCamera = new UVCCamera();
+            try {
+                LibUVCCameraUSBMonitor.UsbControlBlock ctrlBlock = new LibUVCCameraUSBMonitor.UsbControlBlock(usbMonitor, usbDevice);
+                uvcCamera.open(ctrlBlock);
+            } catch (UnsupportedOperationException e) {
+                log("Camera open error: " + e);
+            }
+            log("openCamera. SupportedSizes:" + uvcCamera.getSupportedSize());
 
             int frameFormat = config.getUsbCameraFrameFormat();
 
@@ -202,6 +213,7 @@ public class UsbCamera implements Camera {
                 close();
                 return false;
             }
+
             recorderSurface = mp4Recorder.initialize();
             uvcCamera.setPreviewDisplay(streamEncoderSurface);
             isOpened = true;
@@ -284,6 +296,7 @@ public class UsbCamera implements Camera {
                 uvcCamera = null;
                 log("Camera device closed.");
             }
+            usbDevice = null;
         }
     }
 }
