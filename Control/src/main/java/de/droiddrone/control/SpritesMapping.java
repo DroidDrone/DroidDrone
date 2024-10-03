@@ -55,4 +55,10 @@ public class SpritesMapping {
     public static final int HEADING_CENTER_ARROW = 3005;
     public static final int BATT_ALERT = 3006;
     public static final int BATT_CHARGING = 3007;
+    public static final int LEFT_SIDEBAR_1 = 3010;
+    public static final int LEFT_SIDEBAR_2 = 3011;
+    public static final int BUTTON_MAP_1 = 3020;
+    public static final int BUTTON_MAP_2 = 3021;
+    public static final int BUTTON_SETTINGS_1 = 3022;
+    public static final int BUTTON_SETTINGS_2 = 3023;
 }

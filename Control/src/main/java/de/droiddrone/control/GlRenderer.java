@@ -35,6 +35,8 @@ import javax.microedition.khronos.opengles.GL10;
 
 import static de.droiddrone.common.Logcat.log;
 
+import java.util.ArrayList;
+
 public class GlRenderer implements GLSurfaceView.Renderer {
     private GlBuffer videoFramePositionBuffer;
     private GlBuffer videoFrameTexCoordBuffer;
@@ -60,6 +62,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     private float osdCanvasFactor;
     private float screenFactor;
     private final Config config;
+    private LeftSidebar leftSidebar;
 
     public GlRenderer(MainActivity activity, Config config){
         this.activity = activity;
@@ -290,8 +293,46 @@ public class GlRenderer implements GLSurfaceView.Renderer {
                 recButton = glButtons.registerButton(width - Osd.rawRecButtonOffset * screenFactor,
                         height, Osd.rawPhoneOsdHeight * screenFactor, Osd.rawPhoneOsdHeight * screenFactor,
                         SpritesMapping.BUTTON_REC, SpritesMapping.BUTTON_REC_DOWN, SpritesMapping.BUTTON_STOP, SpritesMapping.BUTTON_STOP_DOWN, false);
-                recButton.setOnClickListener(recClick);
+                recButton.setOnClickListener(new GlButtons.OnClickListener() {
+                    @Override
+                    void onClick(GlButtons.Button button) {
+                        boolean startRecording = (button.getCurrentState() == 0);
+                        if (udp != null) udp.sendStartStopRecording(startRecording);
+                    }
+                });
             }
+
+            // left sidebar buttons
+            float buttonsPadding = 5 * screenFactor;
+            float buttonsSize = 70 * screenFactor;
+            float buttonsY = height - Osd.rawPhoneOsdHeight * screenFactor - buttonsPadding - 100 * screenFactor;
+            boolean isHidden = true;
+
+            if (leftSidebar != null) isHidden = leftSidebar.isHidden();
+            leftSidebar = new LeftSidebar(0, buttonsPadding + buttonsSize, SpritesMapping.LEFT_SIDEBAR_1, SpritesMapping.LEFT_SIDEBAR_2, isHidden);
+
+            GlButtons.Button mapButton = glButtons.registerButton(buttonsPadding, buttonsY,
+                    buttonsSize, buttonsSize,
+                    SpritesMapping.BUTTON_MAP_1, SpritesMapping.BUTTON_MAP_2, 0, 0, false);
+            leftSidebar.addButton(mapButton);
+            mapButton.setOnClickListener(new GlButtons.OnClickListener() {
+                @Override
+                void onClick(GlButtons.Button button) {
+                    activity.showMapFragment();
+                }
+            });
+
+            buttonsY -= buttonsSize + buttonsPadding;
+            GlButtons.Button settingsButton = glButtons.registerButton(buttonsPadding, buttonsY,
+                    buttonsSize, buttonsSize,
+                    SpritesMapping.BUTTON_SETTINGS_1, SpritesMapping.BUTTON_SETTINGS_2, 0, 0, false);
+            leftSidebar.addButton(settingsButton);
+            settingsButton.setOnClickListener(new GlButtons.OnClickListener() {
+                @Override
+                void onClick(GlButtons.Button button) {
+                    activity.showSettingsFragment();
+                }
+            });
         }
 
         if (glText != null){
@@ -311,6 +352,100 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         videoFrameTexCoordBuffer.update(true);
     }
 
+    private class LeftSidebar{
+        private final float moveSpeed = 1 * screenFactor;
+        private final float sidebarSpriteWidth = 14 * screenFactor;
+        private final float sidebarSpriteHeight = 60 * screenFactor;
+        private final float spriteOffsetX = 2 * screenFactor;
+        private final float xMin;
+        private final float xMax;
+        private final float xTouchMax;
+        private final int spriteMin;
+        private final int spriteMax;
+        private final float spriteY;
+        private float xCurrent;
+        private float xTouch;
+        private boolean isHidden;
+        private boolean isTouch;
+        private int touchPointerId;
+        private final ArrayList<GlButtons.Button> buttons = new ArrayList<>();
+
+        public LeftSidebar(float xMin, float xMax, int spriteMin, int spriteMax, boolean isHidden) {
+            this.xMin = xMin;
+            this.xMax = xMax;
+            this.spriteMin = spriteMin;
+            this.spriteMax = spriteMax;
+            this.isHidden = isHidden;
+            if (isHidden) {
+                xCurrent = xMin;
+            }else{
+                xCurrent = xMax;
+            }
+            isTouch = false;
+            spriteY = screenHeight / 2f + sidebarSpriteHeight / 2f;
+            xTouchMax = xMax + sidebarSpriteWidth + spriteOffsetX;
+        }
+
+        public boolean isHidden() {
+            return isHidden;
+        }
+
+        public void addButton(GlButtons.Button button){
+            if (button != null) buttons.add(button);
+        }
+
+        public void processSidebar() {
+            int spriteId;
+            if (isHidden) {
+                spriteId = spriteMin;
+                if (!isTouch && xCurrent > xMin) xCurrent -= moveSpeed;
+            } else {
+                spriteId = spriteMax;
+                if (!isTouch && xCurrent < xMax) xCurrent += moveSpeed;
+            }
+            for (GlButtons.Button button : buttons) {
+                button.moveTo(xCurrent - button.getWidth(), button.getY());
+            }
+            if (glSprites != null) {
+                glSprites.addSpriteSizeOverride(spriteId, xCurrent + spriteOffsetX, spriteY, sidebarSpriteWidth, sidebarSpriteHeight);
+            }
+        }
+
+        public void touchDown(float xTouch, int pointerId){
+            if (xTouch > xTouchMax || isTouch && pointerId != touchPointerId) return;
+            this.xTouch = xTouch;
+            this.touchPointerId = pointerId;
+            isTouch = true;
+        }
+
+        public void move(float xTouch, int pointerId){
+            if (!isTouch || pointerId != touchPointerId) return;
+            float offset = xTouch - this.xTouch;
+            this.xTouch = xTouch;
+            if (offset > 0){
+                if (xCurrent + offset < xMax){
+                    xCurrent += offset;
+                }else{
+                    xCurrent = xMax;
+                }
+            }else{
+                if (xCurrent + offset > xMin){
+                    xCurrent += offset;
+                }else{
+                    xCurrent = xMin;
+                }
+            }
+        }
+
+        public void touchUp(int pointerId){
+            if (!isTouch || pointerId != touchPointerId) return;
+            isTouch = false;
+            float min = xMin > 0 ? xMin : 0;
+            float middle = (min + xMax) / 2;
+            isHidden = !(xCurrent >= middle);
+        }
+    }
+
     @Override
     public void onDrawFrame(GL10 gl) {
         try {
@@ -318,20 +453,13 @@ public class GlRenderer implements GLSurfaceView.Renderer {
             GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT);
             drawVideoFrame();
             prepareOsdFrame();
+            if (leftSidebar != null) leftSidebar.processSidebar();
             if (glButtons != null) glButtons.prepareFrame();
             drawOsdFrame();
         }catch (Exception e){
             //
         }
     }
-
-    private final GlButtons.OnClickListener recClick = new GlButtons.OnClickListener() {
-        @Override
-        void onClick(GlButtons.Button button) {
-            boolean startRecording = (button.getCurrentState() == 0);
-            if (udp != null) udp.sendStartStopRecording(startRecording);
-        }
-    };
 
     public void setRecButtonState(boolean isRecording){
         if (recButton == null) return;
@@ -372,16 +500,19 @@ public class GlRenderer implements GLSurfaceView.Renderer {
                 case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_POINTER_DOWN:
                     if (glButtons != null) glButtons.processTouchDown(x, y, pointerId);
+                    if (leftSidebar != null) leftSidebar.touchDown(x, pointerId);
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_POINTER_UP:
                     if (glButtons != null) glButtons.processTouchUp(x, y, pointerId);
+                    if (leftSidebar != null) leftSidebar.touchUp(pointerId);
                     break;
                 case MotionEvent.ACTION_MOVE:
                     for (int i = 0; i < pc; i++) {
                         float mX = event.getX(i);
                         float mY = screenHeight - event.getY(i);
                         int mPointerId = event.getPointerId(i);
+                        if (leftSidebar != null) leftSidebar.move(mX, mPointerId);
                     }
                     break;
                 case MotionEvent.ACTION_CANCEL:
