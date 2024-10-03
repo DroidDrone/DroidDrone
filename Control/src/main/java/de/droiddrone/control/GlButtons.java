@@ -59,7 +59,7 @@ public class GlButtons {
     }
 
     private boolean isTouch(float touchX, float touchY, Button button){
-        if (button == null) return false;
+        if (button == null || touchX < 0) return false;
         return (touchX >= button.x && touchX <= button.x + button.width && touchY <= button.y && touchY >= button.y - button.height);
     }
 
@@ -81,8 +81,8 @@ public class GlButtons {
 
     public static final class Button{
         private final int stateCount = 2;
-        private final float x;
-        private final float y;
+        private float x;
+        private float y;
         private final float width;
         private final float height;
         private final int[] sprite = new int[stateCount];
@@ -119,6 +119,27 @@ public class GlButtons {
 
         public void setOnClickListener(OnClickListener onClickListener){
             this.onClickListener = onClickListener;
+        }
+
+        public void moveTo(float x, float y){
+            this.x = x;
+            this.y = y;
+        }
+
+        public float getX(){
+            return x;
+        }
+
+        public float getY(){
+            return y;
+        }
+
+        public float getWidth(){
+            return width;
+        }
+
+        public float getHeight(){
+            return height;
         }
     }
 }
