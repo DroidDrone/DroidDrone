@@ -18,8 +18,12 @@ ArduPilot should work with the defaults. However, you need to check these settin
 
 > You can set the "Camera Record Video" RC option (166) to the free channel to start and stop video recording on Android.
 
-### Network connection
+### Connect to the FC
+You can use a USB to UART/TTL converter and connect it to the MSP/Mavlink enabled UART or simply connect the phone to the FC's USB port. If you are using an Android mini PC with GPIO and native serial port, you can connect it directly to the UART. In the control app settings, you should then enable the native serial port, set the port address and the FC protocol (MSP or Mavlink). The settings are sent to the flight app when the connection is established.
 
+> If you want to use an Android mini PC, make sure it supports a hardware accelerated H265 (HEVC) encoder.
+
+### Network connection
 The mobile phones usually do not have a public IP address and you have two options to connect both together:
 1. Use **Direct connection mode** - if both phones are in the same VPN network (or Wi-Fi network for testing).
 
@@ -81,6 +85,3 @@ You can create a fork and contribute your pull requests to this project or creat
 
 You should use the latest Android Studio to compile the app sources and the Eclipse IDE for Server.
 To create a sprites map you can use the Adobe Air ShoeBox app and the BMFont for font textures.
-
-## Todo
-* Google Maps tracking
