@@ -1,3 +1,6 @@
 [submodule "libuvccamera"]
 	path = libuvccamera
 	url = https://github.com/IvanSchulz/libuvccamera.git
+[submodule "AndroidNativeSerialPort"]
+	path = AndroidNativeSerialPort
+	url = https://github.com/IvanSchulz/AndroidNativeSerialPort.git
