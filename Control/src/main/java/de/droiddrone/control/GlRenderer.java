@@ -63,6 +63,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     private float screenFactor;
     private final Config config;
     private LeftSidebar leftSidebar;
+    private boolean isFrontCamera;
 
     public GlRenderer(MainActivity activity, Config config){
         this.activity = activity;
@@ -639,6 +640,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
 
     public void setVideoFrameSize(int width, int height, boolean isFront) {
         mSurfaceTexture.setDefaultBufferSize(width, height);
+        int screenWidth = this.screenWidth;
         float videoRatio = (float) width / height;
         float screenRatio = (float) screenWidth / screenHeight;
         int wOffset = 0;
@@ -662,9 +664,13 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         buf8[6] = width + wOffset;
         buf8[7] = height + hOffset;
         videoFramePositionBuffer.putArray(0, buf8);
+        isFrontCamera = isFront;
+        updateVideoFrameOrientation();
+    }
 
+    public void updateVideoFrameOrientation(){
         float[] textureBufferArray = {0, 1, 1, 1, 0, 0, 1, 0};
-        if (isFront != config.isInvertVideoAxisX()) {
+        if (isFrontCamera != config.isInvertVideoAxisX()) {
             textureBufferArray[0] = 1;
             textureBufferArray[2] = 0;
             textureBufferArray[4] = 1;

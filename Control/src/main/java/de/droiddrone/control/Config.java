@@ -72,6 +72,7 @@ public class Config {
     private int mavlinkGcsSysId;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
     private boolean decoderConfigChanged;
+    private boolean videoFrameOrientationChanged;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
@@ -86,6 +87,14 @@ public class Config {
 
     public void decoderConfigUpdated(){
         decoderConfigChanged = false;
+    }
+
+    public boolean isVideoFrameOrientationChanged() {
+        return videoFrameOrientationChanged;
+    }
+
+    public void videoFrameOrientationUpdated(){
+        videoFrameOrientationChanged = false;
     }
 
     private void loadConfig(){
@@ -138,8 +147,11 @@ public class Config {
         fcProtocol = parseInt(preferences.getString("fcProtocol", ""), SettingsCommon.fcProtocol);
         mavlinkTargetSysId = parseInt(preferences.getString("mavlinkTargetSysId", ""), SettingsCommon.mavlinkTargetSysId);
         mavlinkGcsSysId = parseInt(preferences.getString("mavlinkGcsSysId", ""), SettingsCommon.mavlinkGcsSysId);
-        invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
-        invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
+        boolean invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
+        boolean invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
+        if (invertVideoAxisX != this.invertVideoAxisX || invertVideoAxisY != this.invertVideoAxisY) videoFrameOrientationChanged = true;
+        this.invertVideoAxisX = invertVideoAxisX;
+        this.invertVideoAxisY = invertVideoAxisY;
         showPhoneBattery = preferences.getBoolean("showPhoneBattery", SettingsCommon.showPhoneBattery);
         showNetworkState = preferences.getBoolean("showNetworkState", SettingsCommon.showNetworkState);
         showCameraFps = preferences.getBoolean("showCameraFps", SettingsCommon.showCameraFps);
