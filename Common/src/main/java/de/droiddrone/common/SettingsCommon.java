@@ -18,6 +18,9 @@
 package de.droiddrone.common;
 
 public class SettingsCommon {
+    // increase when the Control/Flight app is not compatible with the previous version (UDP packets changed, new added etc.)
+    public static final int versionCompatibleCode = 7;
+
     // default settings
     public static final String ip = "";
     public static final int port = UdpCommon.defaultPort;

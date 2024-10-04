@@ -136,7 +136,7 @@ public class Udp {
     }
 
     public void sendConnect(){
-        udpSender.sendConnect(0, key, MainActivity.versionCode);
+        udpSender.sendConnect(0, key, SettingsCommon.versionCompatibleCode);
     }
 
     public void disconnect(){
@@ -670,7 +670,7 @@ public class Udp {
                     break;
                 }
                 case FcCommon.MSP_OSD_CONFIG: {
-                    packetData.daos.writeShort(MainActivity.versionCode);
+                    packetData.daos.writeShort(SettingsCommon.versionCompatibleCode);
                     switch (fcInfo.getFcVariant()){
                         case FcInfo.FC_VARIANT_INAV:{
                             byte driver = buffer.readByte();

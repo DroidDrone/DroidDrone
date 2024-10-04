@@ -50,7 +50,6 @@ import de.droiddrone.common.SettingsCommon;
 
 public class MainActivity extends Activity {
     public static String versionName;
-    public static int versionCode;
     private MainActivity activity;
     private Button bStartStopService;
     private LinearLayout main;
@@ -69,7 +68,6 @@ public class MainActivity extends Activity {
         try {
             PackageInfo packageInfo = this.getPackageManager().getPackageInfo(this.getPackageName(), 0);
             versionName = packageInfo.versionName;
-            versionCode = packageInfo.versionCode;
         }catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
@@ -113,7 +111,7 @@ public class MainActivity extends Activity {
 
             }
         });
-        config = new Config(activity, versionCode);
+        config = new Config(activity, SettingsCommon.versionCompatibleCode);
         etIp.setText(config.getIp());
         etPort.setText(String.valueOf(config.getPort()));
         etKey.setText(config.getKey());
