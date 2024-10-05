@@ -286,6 +286,9 @@ public class GlText {
         GLES31.glUniform4f(colorUniformHandle, colorR, colorG, colorB, colorA);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textureId);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLES, 0, charOnScreenIndex * 6);
+    }
+
+    public void clear(){
         charOnScreenIndex = 0;
     }
 

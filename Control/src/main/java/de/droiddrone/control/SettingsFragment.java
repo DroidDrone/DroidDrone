@@ -19,6 +19,8 @@ package de.droiddrone.control;
 
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,6 +33,7 @@ import androidx.preference.SwitchPreferenceCompat;
 import com.rarepebble.colorpicker.ColorPreference;
 
 import de.droiddrone.common.FcCommon;
+import de.droiddrone.common.SettingsCommon;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final int fragmentId = 3;
@@ -91,6 +94,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
+
         ListPreference fcProtocol = findPreference("fcProtocol");
         if (fcProtocol != null){
             setListPreferenceSummary(fcProtocol);
@@ -100,6 +104,24 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
             fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, fcProtocol.getValue());
         }
+
+        EditTextPreference vrFrameScale = findPreference("vrFrameScale");
+        EditTextPreference vrCenterOffset = findPreference("vrCenterOffset");
+        EditTextPreference vrOsdOffset = findPreference("vrOsdOffset");
+        setNumericEditTextPreferenceSummary(vrFrameScale, SettingsCommon.vrFrameScaleMin, SettingsCommon.vrFrameScaleMax);
+        setNumericEditTextPreferenceSummary(vrCenterOffset, SettingsCommon.vrCenterOffsetMin, SettingsCommon.vrCenterOffsetMax);
+        setNumericEditTextPreferenceSummary(vrOsdOffset, SettingsCommon.vrOsdOffsetMin, SettingsCommon.vrOsdOffsetMax);
+
+        ListPreference vrMode = findPreference("vrMode");
+        if (vrMode != null){
+            setListPreferenceSummary(vrMode);
+            vrMode.setOnPreferenceChangeListener((preference, newValue) -> {
+                vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, (String) newValue);
+                return true;
+            });
+            vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrMode.getValue());
+        }
+
         Preference channelsMapping = findPreference("channelsMapping");
         if (channelsMapping != null) {
             channelsMapping.setOnPreferenceClickListener(preference -> {
@@ -119,6 +141,17 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (mavlinkGcsSysId != null) mavlinkGcsSysId.setEnabled(!isMsp);
     }
 
+    private void vrModeChanged(EditTextPreference vrFrameScale, EditTextPreference vrCenterOffset, EditTextPreference vrOsdOffset, String value){
+        boolean isVrEnabled = false;
+        try {
+            isVrEnabled = Integer.parseInt(value) != SettingsCommon.VrMode.off;
+        }catch (Exception ignored){
+        }
+        if (vrFrameScale != null) vrFrameScale.setEnabled(isVrEnabled);
+        if (vrCenterOffset != null) vrCenterOffset.setEnabled(isVrEnabled);
+        if (vrOsdOffset != null) vrOsdOffset.setEnabled(isVrEnabled);
+    }
+
     @Override
     public void onDisplayPreferenceDialog(@NonNull Preference preference) {
         if (preference instanceof ColorPreference) {
@@ -136,6 +169,34 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (preference != null) {
             preference.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
             preference.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+        }
+    }
+
+    private void setNumericEditTextPreferenceSummary(EditTextPreference preference, final int min, final int max){
+        if (preference != null) {
+            preference.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
+            preference.setOnBindEditTextListener(editText -> {
+                editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+                editText.setOnEditorActionListener((v, actionId, event) -> {
+                    if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE ||
+                            event != null && event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                        if (event == null || !event.isShiftPressed()) {
+                            int value = parseInt(v.getText().toString(), min);
+                            if (value < min) v.setText(String.valueOf(min));
+                            if (value > max) v.setText(String.valueOf(max));
+                        }
+                    }
+                    return false;
+                });
+            });
+        }
+    }
+
+    private int parseInt(String str, int defaultValue){
+        try{
+            return Integer.parseInt(str);
+        }catch (Exception e){
+            return defaultValue;
         }
     }
 

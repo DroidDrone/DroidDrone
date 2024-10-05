@@ -37,10 +37,14 @@ import static de.droiddrone.common.Logcat.log;
 
 import java.util.ArrayList;
 
+import de.droiddrone.common.SettingsCommon;
+
 public class GlRenderer implements GLSurfaceView.Renderer {
     private GlBuffer videoFramePositionBuffer;
     private GlBuffer videoFrameTexCoordBuffer;
     private final float[] mvpMatrix = new float[16];
+    private final float[] mViewMatrix = new float[16];
+    private final float[] mModelMatrix = new float[16];
     private final MainActivity activity;
     private int screenWidth, screenHeight;
     private int videoFrameShader, textShader, spritesShader;
@@ -63,6 +67,14 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     private float screenFactor;
     private final Config config;
     private LeftSidebar leftSidebar;
+    private int videoFrameWidth;
+    private int videoFrameHeight;
+    private boolean isFrontCamera;
+    private int vrMode;
+    private float vrScale;
+    private float vrCenterOffset;
+    private float vrOsdOffset;
+    private boolean updateVideoFrameOrientation;
 
     public GlRenderer(MainActivity activity, Config config){
         this.activity = activity;
@@ -259,22 +271,30 @@ public class GlRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        vrMode = config.getVrMode();
+        vrScale = config.getVrFrameScale() * 0.01f;
         screenWidth = width;
         screenHeight = height;
+        int osdScreenHeight = height;
+        if (vrMode != SettingsCommon.VrMode.off) {
+            screenWidth = screenWidth / 2;
+            osdScreenHeight = Math.round(screenHeight * 0.65f);
+        }
         if (screenWidth > screenHeight){
             screenFactor = screenWidth / 1920f;
         }else{
             screenFactor = screenHeight / 1920f;
         }
+        vrCenterOffset = config.getVrCenterOffset() * screenFactor;
+        vrOsdOffset = config.getVrOsdOffset() * screenFactor;
 
-        if (osd != null) osd.setScreenSize(width, height, screenFactor);
+        int osdHeightOffset = (screenHeight - osdScreenHeight) / 2;
+        if (osd != null) osd.setScreenSize(screenWidth, osdScreenHeight, osdHeightOffset, screenFactor);
 
         float[] mProjectionMatrix = new float[16];
-        float[] mViewMatrix = new float[16];
         float[] pvMatrix = new float[16];
-        float[] mModelMatrix = new float[16];
-        GLES31.glViewport(0, 0, width, height);
-        Matrix.orthoM(mProjectionMatrix, 0, 0, width, 0, height, 0, 1);
+        GLES31.glViewport(0, 0, screenWidth, screenHeight);
+        Matrix.orthoM(mProjectionMatrix, 0, 0, screenWidth, 0, screenHeight, 0, 1);
         Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 1, 0, 0, -1, 0, 1, 0);
         Matrix.multiplyMM(pvMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
         Matrix.setIdentityM(mModelMatrix, 0);
@@ -289,50 +309,52 @@ public class GlRenderer implements GLSurfaceView.Renderer {
 
         if (glButtons != null){
             glButtons.clear();
-            if (config.isShowVideoRecordButton() && !config.isViewer()) {
-                recButton = glButtons.registerButton(width - Osd.rawRecButtonOffset * screenFactor,
-                        height, Osd.rawPhoneOsdHeight * screenFactor, Osd.rawPhoneOsdHeight * screenFactor,
-                        SpritesMapping.BUTTON_REC, SpritesMapping.BUTTON_REC_DOWN, SpritesMapping.BUTTON_STOP, SpritesMapping.BUTTON_STOP_DOWN, false);
-                recButton.setOnClickListener(new GlButtons.OnClickListener() {
+            if (vrMode == SettingsCommon.VrMode.off) {
+                if (config.isShowVideoRecordButton() && !config.isViewer()) {
+                    recButton = glButtons.registerButton(screenWidth - Osd.rawRecButtonOffset * screenFactor,
+                            screenHeight, Osd.rawPhoneOsdHeight * screenFactor, Osd.rawPhoneOsdHeight * screenFactor,
+                            SpritesMapping.BUTTON_REC, SpritesMapping.BUTTON_REC_DOWN, SpritesMapping.BUTTON_STOP, SpritesMapping.BUTTON_STOP_DOWN, false);
+                    recButton.setOnClickListener(new GlButtons.OnClickListener() {
+                        @Override
+                        void onClick(GlButtons.Button button) {
+                            boolean startRecording = (button.getCurrentState() == 0);
+                            if (udp != null) udp.sendStartStopRecording(startRecording);
+                        }
+                    });
+                }
+
+                // left sidebar buttons
+                float buttonsPadding = 5 * screenFactor;
+                float buttonsSize = 70 * screenFactor;
+                float buttonsY = screenHeight - Osd.rawPhoneOsdHeight * screenFactor - buttonsPadding - 100 * screenFactor;
+                boolean isHidden = true;
+
+                if (leftSidebar != null) isHidden = leftSidebar.isHidden();
+                leftSidebar = new LeftSidebar(0, buttonsPadding + buttonsSize, SpritesMapping.LEFT_SIDEBAR_1, SpritesMapping.LEFT_SIDEBAR_2, isHidden);
+
+                GlButtons.Button mapButton = glButtons.registerButton(buttonsPadding, buttonsY,
+                        buttonsSize, buttonsSize,
+                        SpritesMapping.BUTTON_MAP_1, SpritesMapping.BUTTON_MAP_2, 0, 0, false);
+                leftSidebar.addButton(mapButton);
+                mapButton.setOnClickListener(new GlButtons.OnClickListener() {
                     @Override
                     void onClick(GlButtons.Button button) {
-                        boolean startRecording = (button.getCurrentState() == 0);
-                        if (udp != null) udp.sendStartStopRecording(startRecording);
+                        activity.showMapFragment();
+                    }
+                });
+
+                buttonsY -= buttonsSize + buttonsPadding;
+                GlButtons.Button settingsButton = glButtons.registerButton(buttonsPadding, buttonsY,
+                        buttonsSize, buttonsSize,
+                        SpritesMapping.BUTTON_SETTINGS_1, SpritesMapping.BUTTON_SETTINGS_2, 0, 0, false);
+                leftSidebar.addButton(settingsButton);
+                settingsButton.setOnClickListener(new GlButtons.OnClickListener() {
+                    @Override
+                    void onClick(GlButtons.Button button) {
+                        activity.showSettingsFragment();
                     }
                 });
             }
-
-            // left sidebar buttons
-            float buttonsPadding = 5 * screenFactor;
-            float buttonsSize = 70 * screenFactor;
-            float buttonsY = height - Osd.rawPhoneOsdHeight * screenFactor - buttonsPadding - 100 * screenFactor;
-            boolean isHidden = true;
-
-            if (leftSidebar != null) isHidden = leftSidebar.isHidden();
-            leftSidebar = new LeftSidebar(0, buttonsPadding + buttonsSize, SpritesMapping.LEFT_SIDEBAR_1, SpritesMapping.LEFT_SIDEBAR_2, isHidden);
-
-            GlButtons.Button mapButton = glButtons.registerButton(buttonsPadding, buttonsY,
-                    buttonsSize, buttonsSize,
-                    SpritesMapping.BUTTON_MAP_1, SpritesMapping.BUTTON_MAP_2, 0, 0, false);
-            leftSidebar.addButton(mapButton);
-            mapButton.setOnClickListener(new GlButtons.OnClickListener() {
-                @Override
-                void onClick(GlButtons.Button button) {
-                    activity.showMapFragment();
-                }
-            });
-
-            buttonsY -= buttonsSize + buttonsPadding;
-            GlButtons.Button settingsButton = glButtons.registerButton(buttonsPadding, buttonsY,
-                    buttonsSize, buttonsSize,
-                    SpritesMapping.BUTTON_SETTINGS_1, SpritesMapping.BUTTON_SETTINGS_2, 0, 0, false);
-            leftSidebar.addButton(settingsButton);
-            settingsButton.setOnClickListener(new GlButtons.OnClickListener() {
-                @Override
-                void onClick(GlButtons.Button button) {
-                    activity.showSettingsFragment();
-                }
-            });
         }
 
         if (glText != null){
@@ -347,6 +369,10 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         }
         if (glSprites != null){
             glSprites.setScreenFactor(screenFactor);
+        }
+        if (updateVideoFrameOrientation) {
+            updateVideoFrameOrientation();
+            updateVideoFrameOrientation = false;
         }
         videoFramePositionBuffer.update(true);
         videoFrameTexCoordBuffer.update(true);
@@ -446,16 +472,115 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         }
     }
 
+    private void setLeftVrDisplay(){
+        float[] mProjectionMatrix = new float[16];
+        float[] pvMatrix = new float[16];
+        GLES31.glViewport(0, 0, screenWidth, screenHeight );
+        Matrix.orthoM(mProjectionMatrix, 0, 0, screenWidth, 0, screenHeight, 0, 1);
+        Matrix.setIdentityM(mModelMatrix, 0);
+        Matrix.translateM(mModelMatrix, 0, screenWidth / 2f - screenWidth / 2f * vrScale + vrCenterOffset,
+                screenHeight / 2f - screenHeight / 2f * vrScale, 0);
+        Matrix.scaleM(mModelMatrix, 0, vrScale, vrScale, 1);
+        Matrix.multiplyMM(pvMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        Matrix.multiplyMM(mvpMatrix, 0, pvMatrix, 0, mModelMatrix, 0);
+        if (vrMode == SettingsCommon.VrMode.stereoCamera){
+            float[] textureBufferArray = {0, 1, 0.5f, 1, 0, 0, 0.5f, 0};
+            if (isFrontCamera != config.isInvertVideoAxisX()) {
+                textureBufferArray[0] = 0.5f;
+                textureBufferArray[2] = 0;
+                textureBufferArray[4] = 0.5f;
+                textureBufferArray[6] = 0;
+            }
+            if (config.isInvertVideoAxisY()){
+                textureBufferArray[1] = 0;
+                textureBufferArray[3] = 0;
+                textureBufferArray[5] = 1;
+                textureBufferArray[7] = 1;
+            }
+            videoFrameTexCoordBuffer.putArray(0, textureBufferArray);
+        }
+    }
+
+    private void setRightVrDisplay(){
+        float[] mProjectionMatrix = new float[16];
+        float[] pvMatrix = new float[16];
+        GLES31.glViewport(screenWidth, 0, screenWidth * 2, screenHeight);
+        Matrix.orthoM(mProjectionMatrix, 0, 0, screenWidth * 2, 0, screenHeight, 0, 1);
+        Matrix.setIdentityM(mModelMatrix, 0);
+        Matrix.translateM(mModelMatrix, 0, screenWidth / 2f - screenWidth / 2f * vrScale - vrCenterOffset,
+                screenHeight / 2f - screenHeight / 2f * vrScale, 0);
+        Matrix.scaleM(mModelMatrix, 0, vrScale, vrScale, 1);
+        Matrix.multiplyMM(pvMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        Matrix.multiplyMM(mvpMatrix, 0, pvMatrix, 0, mModelMatrix, 0);
+        if (vrMode == SettingsCommon.VrMode.stereoCamera) {
+            float[] textureBufferArray = {0.5f, 1, 1, 1, 0.5f, 0, 1, 0};
+            if (isFrontCamera != config.isInvertVideoAxisX()) {
+                textureBufferArray[0] = 1;
+                textureBufferArray[2] = 0.5f;
+                textureBufferArray[4] = 1;
+                textureBufferArray[6] = 0.5f;
+            }
+            if (config.isInvertVideoAxisY()) {
+                textureBufferArray[1] = 0;
+                textureBufferArray[3] = 0;
+                textureBufferArray[5] = 1;
+                textureBufferArray[7] = 1;
+            }
+            videoFrameTexCoordBuffer.putArray(0, textureBufferArray);
+        }
+    }
+
+    private void setLeftOsdOffset(){
+        float[] mProjectionMatrix = new float[16];
+        float[] pvMatrix = new float[16];
+        Matrix.orthoM(mProjectionMatrix, 0, 0, screenWidth, 0, screenHeight, 0, 1);
+        Matrix.setIdentityM(mModelMatrix, 0);
+        Matrix.translateM(mModelMatrix, 0, screenWidth / 2f - screenWidth / 2f * vrScale + vrCenterOffset + vrOsdOffset,
+                screenHeight / 2f - screenHeight / 2f * vrScale, 0);
+        Matrix.scaleM(mModelMatrix, 0, vrScale, vrScale, 1);
+        Matrix.multiplyMM(pvMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        Matrix.multiplyMM(mvpMatrix, 0, pvMatrix, 0, mModelMatrix, 0);
+    }
+
+    private void setRightOsdOffset(){
+        float[] mProjectionMatrix = new float[16];
+        float[] pvMatrix = new float[16];
+        Matrix.orthoM(mProjectionMatrix, 0, 0, screenWidth * 2, 0, screenHeight, 0, 1);
+        Matrix.setIdentityM(mModelMatrix, 0);
+        Matrix.translateM(mModelMatrix, 0, screenWidth / 2f - screenWidth / 2f * vrScale - vrCenterOffset - vrOsdOffset,
+                screenHeight / 2f - screenHeight / 2f * vrScale, 0);
+        Matrix.scaleM(mModelMatrix, 0, vrScale, vrScale, 1);
+        Matrix.multiplyMM(pvMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        Matrix.multiplyMM(mvpMatrix, 0, pvMatrix, 0, mModelMatrix, 0);
+    }
+
     @Override
     public void onDrawFrame(GL10 gl) {
         try {
             glFrameCounter++;
             GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT);
-            drawVideoFrame();
             prepareOsdFrame();
-            if (leftSidebar != null) leftSidebar.processSidebar();
-            if (glButtons != null) glButtons.prepareFrame();
-            drawOsdFrame();
+
+            switch (vrMode){
+                case SettingsCommon.VrMode.off:
+                default:
+                    drawVideoFrame();
+                    if (leftSidebar != null) leftSidebar.processSidebar();
+                    if (glButtons != null) glButtons.prepareFrame();
+                    drawOsdFrame(true);
+                    break;
+                case SettingsCommon.VrMode.singleCamera:
+                case SettingsCommon.VrMode.stereoCamera:
+                    setLeftVrDisplay();
+                    drawVideoFrame();
+                    setLeftOsdOffset();
+                    drawOsdFrame(false);
+                    setRightVrDisplay();
+                    drawVideoFrame();
+                    setRightOsdOffset();
+                    drawOsdFrame(true);
+                    break;
+            }
         }catch (Exception e){
             //
         }
@@ -574,18 +699,20 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         if (glText != null) glText.addText(text, x + xOffset, y);
     }
 
-    private void drawOsdFrame(){
+    private void drawOsdFrame(boolean clear){
         if (glSprites != null) {
             GLES31.glUseProgram(spritesShader);
             GLES31.glUniformMatrix4fv(spritesMVPMatrixHandle, 1, false, mvpMatrix, 0);
             GLES31.glUniform1i(spritesTextureUniformHandle, 0);
             glSprites.draw();
+            if (clear) glSprites.clear();
         }
         if (glText != null) {
             GLES31.glUseProgram(textShader);
             GLES31.glUniformMatrix4fv(textMVPMatrixHandle, 1, false, mvpMatrix, 0);
             GLES31.glUniform1i(textTextureUniformHandle, 0);
             glText.draw();
+            if (clear) glText.clear();
         }
     }
 
@@ -639,6 +766,21 @@ public class GlRenderer implements GLSurfaceView.Renderer {
 
     public void setVideoFrameSize(int width, int height, boolean isFront) {
         mSurfaceTexture.setDefaultBufferSize(width, height);
+        videoFrameWidth = width;
+        if (vrMode == SettingsCommon.VrMode.stereoCamera) videoFrameWidth = width / 2;
+        videoFrameHeight = height;
+        isFrontCamera = isFront;
+        updateVideoFrameOrientation();
+    }
+
+    public void updateVideoFrameOrientationOnSurfaceChanged(){
+        updateVideoFrameOrientation = true;
+        updateVideoFrameOrientation();
+    }
+
+    private void updateVideoFrameOrientation(){
+        int width = videoFrameWidth;
+        int height = videoFrameHeight;
         float videoRatio = (float) width / height;
         float screenRatio = (float) screenWidth / screenHeight;
         int wOffset = 0;
@@ -664,7 +806,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         videoFramePositionBuffer.putArray(0, buf8);
 
         float[] textureBufferArray = {0, 1, 1, 1, 0, 0, 1, 0};
-        if (isFront != config.isInvertVideoAxisX()) {
+        if (isFrontCamera != config.isInvertVideoAxisX()) {
             textureBufferArray[0] = 1;
             textureBufferArray[2] = 0;
             textureBufferArray[4] = 1;

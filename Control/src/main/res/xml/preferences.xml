@@ -88,6 +88,29 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:key="vr"
+        app:title="@string/vr">
+        <ListPreference
+            app:key="vrMode"
+            app:title="@string/vr_mode"
+            app:entries="@array/vrModeEntries"
+            app:entryValues="@array/vrModeValues"
+            app:defaultValue="0" />
+        <EditTextPreference
+            app:key="vrFrameScale"
+            app:defaultValue="100"
+            app:title="@string/vr_frame_scale" />
+        <EditTextPreference
+            app:key="vrCenterOffset"
+            app:defaultValue="200"
+            app:title="@string/vr_center_offset" />
+        <EditTextPreference
+            app:key="vrOsdOffset"
+            app:defaultValue="10"
+            app:title="@string/vr_osd_offset" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:key="audio"
         app:title="@string/audio">
         <SwitchPreferenceCompat

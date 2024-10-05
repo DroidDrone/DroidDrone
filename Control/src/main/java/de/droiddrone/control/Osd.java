@@ -122,6 +122,7 @@ public class Osd {
     private float osdWidthFactor, osdHeightFactor;
     private float osdCanvasFactor;
     private float screenFactor;
+    private int osdHeightOffset;
     private float phoneOsdHeight;
     private boolean wasArmed;
     private boolean isArmed;
@@ -168,10 +169,11 @@ public class Osd {
         updateOsdFactor();
     }
 
-    public void setScreenSize(int width, int height, float screenFactor){
+    public void setScreenSize(int width, int height, int osdHeightOffset, float screenFactor){
         screenWidth = width;
         screenHeight = height;
         this.screenFactor = screenFactor;
+        this.osdHeightOffset = osdHeightOffset;
         if (isDrawPhoneOsd()) {
             phoneOsdHeight = rawPhoneOsdHeight * screenFactor;
         }else{
@@ -196,7 +198,7 @@ public class Osd {
     }
 
     private float getOsdItemScreenY(int posY){
-        return screenHeight - phoneOsdHeight - posY * osdHeightFactor;
+        return screenHeight - phoneOsdHeight + osdHeightOffset - posY * osdHeightFactor;
     }
 
     private String getTimeFormatted(int timeSec) {
@@ -700,7 +702,7 @@ public class Osd {
             float spriteWidthD2 = glSprites.getSpriteWidth(SpritesMapping.CROSSHAIR_4) / 2f;
             float spriteHeightD2 = glSprites.getSpriteHeight(SpritesMapping.CROSSHAIR_4) / 2f;
             float centerX = screenWidth / 2f;
-            float centerY = (screenHeight - phoneOsdHeight) / 2f;
+            float centerY = (screenHeight - phoneOsdHeight) / 2f + osdHeightOffset;
             glSprites.addSprite(SpritesMapping.CROSSHAIR_4, centerX - spriteWidthD2, centerY + spriteHeightD2);
         }
     }
@@ -717,7 +719,7 @@ public class Osd {
             if (glSprites == null) return;
             float sizeFactor = glSprites.getDefaultSizeFactor() / osdCanvasFactor;
             float centerX = screenWidth / 2f;
-            float centerY = (screenHeight - phoneOsdHeight) / 2f;
+            float centerY = (screenHeight - phoneOsdHeight) / 2f + osdHeightOffset;
             float horizonWidthD2 = glSprites.getSpriteWidth(SpritesMapping.ARTIFICIAL_HORIZON, sizeFactor) / 2f;
             float horizonHeightD2 = glSprites.getSpriteHeight(SpritesMapping.ARTIFICIAL_HORIZON, sizeFactor) / 2f;
             float offsetY = pitch * screenFactor * 3f;
@@ -800,7 +802,7 @@ public class Osd {
             if (glSprites == null) return;
             float sizeFactor = glSprites.getDefaultSizeFactor() / osdCanvasFactor;
             float centerX = screenWidth / 2f;
-            float centerY = (screenHeight - phoneOsdHeight) / 2f;
+            float centerY = (screenHeight - phoneOsdHeight) / 2f + osdHeightOffset;
             float sidebarsOffset = 250 * screenFactor;
             float sidebarWidthD2 = glSprites.getSpriteWidth(SpritesMapping.SIDEBAR, sizeFactor) / 2f;
             float sidebarHeightD2 = glSprites.getSpriteHeight(SpritesMapping.SIDEBAR, sizeFactor) / 2f;
@@ -1011,7 +1013,7 @@ public class Osd {
         float spriteWidth = 0;
         if (glText != null) textLength = glText.getLengthInPixels(msg);
         if (glSprites != null) spriteWidth = glSprites.getSpriteWidth(spriteName);
-        renderer.addSpriteWithText(screenWidth / 2f - (textLength + spriteWidth) / 2f, (screenHeight - phoneOsdHeight) / 2f, spriteName, msg, true, false);
+        renderer.addSpriteWithText(screenWidth / 2f - (textLength + spriteWidth) / 2f, (screenHeight - phoneOsdHeight) / 2f + osdHeightOffset, spriteName, msg, true, false);
     }
 
     private String formatBitRate(float bitRate){
@@ -1026,7 +1028,7 @@ public class Osd {
         float textSize = 8.5f / osdCanvasFactor;
         float spriteSize = 1 / osdCanvasFactor;
         float xOffset = 5 * screenFactor;
-        float y = screenHeight;
+        float y = screenHeight + osdHeightOffset;
         float textSpace = 35 * screenFactor;
         float spriteSpace = 10 * screenFactor;
         String text;
@@ -2068,7 +2070,7 @@ public class Osd {
             final float rowOffset = glText.getLineHeight(textSize) * 1.5f;
             int currentColl = 0;
             float x;
-            float y = screenHeight - phoneOsdHeight - startOffset;
+            float y = screenHeight - phoneOsdHeight + osdHeightOffset - startOffset;
             String text = null;
             for (int i = 0; i < statsCount; i++) {
                 if (!statEnabled[i]) continue;

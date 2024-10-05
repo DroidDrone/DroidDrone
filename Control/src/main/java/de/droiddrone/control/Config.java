@@ -70,8 +70,13 @@ public class Config {
     private int fcProtocol;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
+    private int vrMode;
+    private int vrFrameScale;
+    private int vrCenterOffset;
+    private int vrOsdOffset;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
     private boolean decoderConfigChanged;
+    private boolean videoFrameOrientationChanged;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
@@ -86,6 +91,14 @@ public class Config {
 
     public void decoderConfigUpdated(){
         decoderConfigChanged = false;
+    }
+
+    public boolean isVideoFrameOrientationChanged() {
+        return videoFrameOrientationChanged;
+    }
+
+    public void videoFrameOrientationUpdated(){
+        videoFrameOrientationChanged = false;
     }
 
     private void loadConfig(){
@@ -138,8 +151,11 @@ public class Config {
         fcProtocol = parseInt(preferences.getString("fcProtocol", ""), SettingsCommon.fcProtocol);
         mavlinkTargetSysId = parseInt(preferences.getString("mavlinkTargetSysId", ""), SettingsCommon.mavlinkTargetSysId);
         mavlinkGcsSysId = parseInt(preferences.getString("mavlinkGcsSysId", ""), SettingsCommon.mavlinkGcsSysId);
-        invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
-        invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
+        boolean invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
+        boolean invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
+        if (invertVideoAxisX != this.invertVideoAxisX || invertVideoAxisY != this.invertVideoAxisY) videoFrameOrientationChanged = true;
+        this.invertVideoAxisX = invertVideoAxisX;
+        this.invertVideoAxisY = invertVideoAxisY;
         showPhoneBattery = preferences.getBoolean("showPhoneBattery", SettingsCommon.showPhoneBattery);
         showNetworkState = preferences.getBoolean("showNetworkState", SettingsCommon.showNetworkState);
         showCameraFps = preferences.getBoolean("showCameraFps", SettingsCommon.showCameraFps);
@@ -149,6 +165,12 @@ public class Config {
         showVideoRecordButton = preferences.getBoolean("showVideoRecordButton", SettingsCommon.showVideoRecordButton);
         showVideoRecordIndication = preferences.getBoolean("showVideoRecordIndication", SettingsCommon.showVideoRecordIndication);
         osdTextColor = preferences.getInt("osdTextColor", SettingsCommon.osdTextColor);
+        int vrMode = parseInt(preferences.getString("vrMode", ""), SettingsCommon.vrMode);
+        if (vrMode != this.vrMode) videoFrameOrientationChanged = true;
+        this.vrMode = vrMode;
+        vrFrameScale = parseInt(preferences.getString("vrFrameScale", ""), SettingsCommon.vrFrameScale);
+        vrCenterOffset = parseInt(preferences.getString("vrCenterOffset", ""), SettingsCommon.vrCenterOffset);
+        vrOsdOffset = parseInt(preferences.getString("vrOsdOffset", ""), SettingsCommon.vrOsdOffset);
         // RC channels map
         boolean setDefaultRcMap = true;
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
@@ -338,6 +360,22 @@ public class Config {
 
     public boolean isUsbCameraReset(){
         return usbCameraReset;
+    }
+
+    public int getVrMode() {
+        return vrMode;
+    }
+
+    public int getVrFrameScale() {
+        return vrFrameScale;
+    }
+
+    public int getVrCenterOffset() {
+        return vrCenterOffset;
+    }
+
+    public int getVrOsdOffset() {
+        return vrOsdOffset;
     }
 
     public String getIp(){

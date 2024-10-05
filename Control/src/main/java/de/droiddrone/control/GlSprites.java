@@ -249,6 +249,9 @@ public class GlSprites {
         texCoordBuffer.update(false);
         GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textureId);
         GLES31.glDrawArrays(GLES31.GL_TRIANGLES, 0, spriteOnScreenIndex * 6);
+    }
+
+    public void clear(){
         spriteOnScreenIndex = 0;
     }
 

@@ -31,6 +31,7 @@ import de.droiddrone.common.Log;
 import de.droiddrone.common.MediaCodecBuffer;
 import de.droiddrone.common.ReceiverBuffer;
 import de.droiddrone.common.SavedPacket;
+import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.UdpCommon;
 import de.droiddrone.common.UdpPacketData;
 import de.droiddrone.common.UdpSender;
@@ -467,7 +468,7 @@ public class Udp {
                 }
                 case FcCommon.MSP_OSD_CONFIG: {
                     int versionCode = buffer.readShort();
-                    if (versionCode != MainActivity.versionCode){
+                    if (versionCode != SettingsCommon.versionCompatibleCode){
                         versionMismatch = true;
                         break;
                     }
@@ -769,9 +770,9 @@ public class Udp {
 
     public void sendConnect(){
         if (isViewer){
-            udpSender.sendConnect(2, key, MainActivity.versionCode);
+            udpSender.sendConnect(2, key, SettingsCommon.versionCompatibleCode);
         }else{
-            udpSender.sendConnect(1, key, MainActivity.versionCode);
+            udpSender.sendConnect(1, key, SettingsCommon.versionCompatibleCode);
         }
     }
 

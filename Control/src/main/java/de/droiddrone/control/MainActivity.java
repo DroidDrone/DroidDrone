@@ -48,13 +48,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
+import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.TelephonyService;
 
 
 public class MainActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     public static String versionName;
-    public static int versionCode;
     private Timer mainTimer;
     private Udp udp;
     private Decoder decoder;
@@ -83,14 +83,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         try {
             PackageInfo packageInfo = this.getPackageManager().getPackageInfo(this.getPackageName(), 0);
             versionName = packageInfo.versionName;
-            versionCode = packageInfo.versionCode;
         }catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
         isRunning = false;
 
         activity = this;
-        config = new Config(this, versionCode);
+        config = new Config(this, SettingsCommon.versionCompatibleCode);
         telephonyService = new TelephonyService(this);
         renderer = new GlRenderer(this, config);
         rc = new Rc(config);
@@ -291,6 +290,10 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 renderer.close();
             }
             config.decoderConfigUpdated();
+        }
+        if (config.isVideoFrameOrientationChanged()){
+            renderer.updateVideoFrameOrientationOnSurfaceChanged();
+            config.videoFrameOrientationUpdated();
         }
     }
 
