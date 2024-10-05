@@ -65,6 +65,22 @@ public class SettingsCommon {
     public static final boolean showVideoRecordButton = true;
     public static final boolean showVideoRecordIndication = true;
     public static final int osdTextColor = 0xFFFFFFFF;
+    public static final int vrMode = VrMode.off;
+    public static final int vrFrameScale = 100;
+    public static final int vrFrameScaleMin = 50;
+    public static final int vrFrameScaleMax = 200;
+    public static final int vrCenterOffset = 200;
+    public static final int vrCenterOffsetMin = 0;
+    public static final int vrCenterOffsetMax = 500;
+    public static final int vrOsdOffset = 10;
+    public static final int vrOsdOffsetMin = 0;
+    public static final int vrOsdOffsetMax = 100;
+
+    public static class VrMode {
+        public static final int off = 0;
+        public static final int singleCamera = 1;
+        public static final int stereoCamera = 2;
+    }
 
     public static class ConnectionMode {
         public static final int overServer = 0;

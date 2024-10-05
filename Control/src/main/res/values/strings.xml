@@ -26,6 +26,7 @@
     <string name="on">On</string>
     <string name="off">Off</string>
     <string name="video">Video</string>
+    <string name="vr">VR</string>
     <string name="camera_id">Camera ID</string>
     <string name="camera_resolution">Camera target resolution</string>
     <string name="camera_fps">Camera target FPS</string>
@@ -71,8 +72,18 @@
     <string name="native_serial_off">Off - use USB serial</string>
     <string name="native_serial_port_address">Native serial port address</string>
     <string name="settings_fs_warning">Changing some settings may cause a failsafe!</string>
+    <string name="vr_mode">VR mode</string>
+    <string name="vr_frame_scale">VR frame scale (50 – 200%)</string>
+    <string name="vr_center_offset">VR frame center offset (0 – 500)</string>
+    <string name="vr_osd_offset">VR OSD offset (0 – 100)</string>
 
     <string-array name="cameraResolutionsEntries">
+        <item>3840x1520 (Stereo camera)</item>
+        <item>3840x1080 (Stereo camera)</item>
+        <item>3040x1520 (Stereo camera)</item>
+        <item>2560x720 (Stereo camera)</item>
+        <item>2160x1080 (Stereo camera)</item>
+        <item>1280x480 (Stereo camera)</item>
         <item>3840x2160</item>
         <item>3280x2464</item>
         <item>2592x1944</item>
@@ -93,6 +104,12 @@
     </string-array>
 
     <string-array name="cameraResolutionsValues">
+        <item>3840x1520</item>
+        <item>3840x1080</item>
+        <item>3040x1520</item>
+        <item>2560x720</item>
+        <item>2160x1080</item>
+        <item>1280x480</item>
         <item>3840x2160</item>
         <item>3280x2464</item>
         <item>2592x1944</item>
@@ -273,6 +290,18 @@
     </string-array>
 
     <string-array name="fcProtocolValues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="vrModeEntries">
+        <item>Off</item>
+        <item>Single camera - duplicate the frame</item>
+        <item>Stereo camera - split the frame for left and right site</item>
+    </string-array>
+
+    <string-array name="vrModeValues">
         <item>0</item>
         <item>1</item>
         <item>2</item>

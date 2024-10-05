@@ -70,6 +70,10 @@ public class Config {
     private int fcProtocol;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
+    private int vrMode;
+    private int vrFrameScale;
+    private int vrCenterOffset;
+    private int vrOsdOffset;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
     private boolean decoderConfigChanged;
     private boolean videoFrameOrientationChanged;
@@ -161,6 +165,12 @@ public class Config {
         showVideoRecordButton = preferences.getBoolean("showVideoRecordButton", SettingsCommon.showVideoRecordButton);
         showVideoRecordIndication = preferences.getBoolean("showVideoRecordIndication", SettingsCommon.showVideoRecordIndication);
         osdTextColor = preferences.getInt("osdTextColor", SettingsCommon.osdTextColor);
+        int vrMode = parseInt(preferences.getString("vrMode", ""), SettingsCommon.vrMode);
+        if (vrMode != this.vrMode) videoFrameOrientationChanged = true;
+        this.vrMode = vrMode;
+        vrFrameScale = parseInt(preferences.getString("vrFrameScale", ""), SettingsCommon.vrFrameScale);
+        vrCenterOffset = parseInt(preferences.getString("vrCenterOffset", ""), SettingsCommon.vrCenterOffset);
+        vrOsdOffset = parseInt(preferences.getString("vrOsdOffset", ""), SettingsCommon.vrOsdOffset);
         // RC channels map
         boolean setDefaultRcMap = true;
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
@@ -350,6 +360,22 @@ public class Config {
 
     public boolean isUsbCameraReset(){
         return usbCameraReset;
+    }
+
+    public int getVrMode() {
+        return vrMode;
+    }
+
+    public int getVrFrameScale() {
+        return vrFrameScale;
+    }
+
+    public int getVrCenterOffset() {
+        return vrCenterOffset;
+    }
+
+    public int getVrOsdOffset() {
+        return vrOsdOffset;
     }
 
     public String getIp(){
