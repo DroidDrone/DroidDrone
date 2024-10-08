@@ -76,6 +76,17 @@
     <string name="vr_frame_scale">VR frame scale (50 – 200%)</string>
     <string name="vr_center_offset">VR frame center offset (0 – 500)</string>
     <string name="vr_osd_offset">VR OSD offset (0 – 100)</string>
+    <string name="vr_head_tracking">Use VR head tracking</string>
+    <string name="rc_axis">Axis -&#160;%1$d</string>
+    <string name="rc_key">"Key -&#160;%1$d</string>
+    <string name="rc_head_tracking_x">Head Tracking - X</string>
+    <string name="rc_head_tracking_x_setting">Head Tracking - X:</string>
+    <string name="rc_head_tracking_y">Head Tracking - Y</string>
+    <string name="rc_head_tracking_y_setting">Head Tracking - Y:</string>
+    <string name="rc_head_tracking_z">Head Tracking - Z</string>
+    <string name="rc_head_tracking_z_setting">Head Tracking - Z:</string>
+    <string name="head_tracking_disabled">Disabled</string>
+    <string name="head_tracking_angle_limit">Angle limit (45 – 360 grad):</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3840x1520 (Stereo camera)</item>

@@ -26,6 +26,7 @@ import androidx.preference.PreferenceManager;
 import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.UdpCommon;
+import de.droiddrone.common.Utils;
 
 public class Config {
     private final MainActivity activity;
@@ -74,7 +75,9 @@ public class Config {
     private int vrFrameScale;
     private int vrCenterOffset;
     private int vrOsdOffset;
+    private boolean vrHeadTracking;
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    private final int[] headTrackingAngleLimits = new int[3];
     private boolean decoderConfigChanged;
     private boolean videoFrameOrientationChanged;
 
@@ -109,15 +112,15 @@ public class Config {
         isViewer = preferences.getBoolean("isViewer", SettingsCommon.isViewer);
         cameraId = preferences.getString("cameraId", SettingsCommon.cameraId);
         useUsbCamera = preferences.getBoolean("useUsbCamera", SettingsCommon.useUsbCamera);
-        usbCameraFrameFormat = parseInt(preferences.getString("usbCameraFrameFormat", ""), SettingsCommon.usbCameraFrameFormat);
+        usbCameraFrameFormat = Utils.parseInt(preferences.getString("usbCameraFrameFormat", ""), SettingsCommon.usbCameraFrameFormat);
         usbCameraReset = preferences.getBoolean("usbCameraReset", SettingsCommon.usbCameraReset);
         int cameraResolutionWidth;
         int cameraResolutionHeight;
         try{
             String cameraResolution = preferences.getString("cameraResolution", "");
             String[] sizes = cameraResolution.split("x");
-            cameraResolutionWidth = parseInt(sizes[0], SettingsCommon.cameraResolutionWidth);
-            cameraResolutionHeight = parseInt(sizes[1], SettingsCommon.cameraResolutionHeight);
+            cameraResolutionWidth = Utils.parseInt(sizes[0], SettingsCommon.cameraResolutionWidth);
+            cameraResolutionHeight = Utils.parseInt(sizes[1], SettingsCommon.cameraResolutionHeight);
         }catch (Exception e){
             cameraResolutionWidth = SettingsCommon.cameraResolutionWidth;
             cameraResolutionHeight = SettingsCommon.cameraResolutionHeight;
@@ -128,29 +131,29 @@ public class Config {
         try{
             String cameraFps = preferences.getString("cameraFps", "");
             String[] ranges = cameraFps.split("-");
-            cameraFpsMin = parseInt(ranges[0], SettingsCommon.cameraFpsMin);
-            cameraFpsMax = parseInt(ranges[1], SettingsCommon.cameraFpsMax);
+            cameraFpsMin = Utils.parseInt(ranges[0], SettingsCommon.cameraFpsMin);
+            cameraFpsMax = Utils.parseInt(ranges[1], SettingsCommon.cameraFpsMax);
         }catch (Exception e){
             cameraFpsMin = SettingsCommon.cameraFpsMin;
             cameraFpsMax = SettingsCommon.cameraFpsMax;
         }
-        bitrateLimit = parseInt(preferences.getString("bitrateLimit", ""), SettingsCommon.bitrateLimit);
+        bitrateLimit = Utils.parseInt(preferences.getString("bitrateLimit", ""), SettingsCommon.bitrateLimit);
         useExtraEncoder = preferences.getBoolean("useExtraEncoder", SettingsCommon.useExtraEncoder);
-        videoRecorderCodec = parseInt(preferences.getString("videoRecorderCodec", ""), SettingsCommon.videoRecorderCodec);
-        recordedVideoBitrate = parseInt(preferences.getString("recordedVideoBitrate", ""), SettingsCommon.recordedVideoBitrate);
+        videoRecorderCodec = Utils.parseInt(preferences.getString("videoRecorderCodec", ""), SettingsCommon.videoRecorderCodec);
+        recordedVideoBitrate = Utils.parseInt(preferences.getString("recordedVideoBitrate", ""), SettingsCommon.recordedVideoBitrate);
         sendAudioStream = preferences.getBoolean("sendAudioStream", SettingsCommon.sendAudioStream);
-        audioStreamBitrate = parseInt(preferences.getString("audioStreamBitrate", ""), SettingsCommon.audioStreamBitrate);
+        audioStreamBitrate = Utils.parseInt(preferences.getString("audioStreamBitrate", ""), SettingsCommon.audioStreamBitrate);
         recordAudio = preferences.getBoolean("recordAudio", SettingsCommon.recordAudio);
-        recordedAudioBitrate = parseInt(preferences.getString("recordedAudioBitrate", ""), SettingsCommon.recordedAudioBitrate);
-        telemetryRefreshRate = parseInt(preferences.getString("telemetryRefreshRate", ""), SettingsCommon.telemetryRefreshRate);
-        rcRefreshRate = parseInt(preferences.getString("rcRefreshRate", ""), SettingsCommon.rcRefreshRate);
-        serialBaudRate = parseInt(preferences.getString("serialBaudRate", ""), SettingsCommon.serialBaudRate);
-        usbSerialPortIndex = parseInt(preferences.getString("usbSerialPortIndex", ""), SettingsCommon.usbSerialPortIndex);
+        recordedAudioBitrate = Utils.parseInt(preferences.getString("recordedAudioBitrate", ""), SettingsCommon.recordedAudioBitrate);
+        telemetryRefreshRate = Utils.parseInt(preferences.getString("telemetryRefreshRate", ""), SettingsCommon.telemetryRefreshRate);
+        rcRefreshRate = Utils.parseInt(preferences.getString("rcRefreshRate", ""), SettingsCommon.rcRefreshRate);
+        serialBaudRate = Utils.parseInt(preferences.getString("serialBaudRate", ""), SettingsCommon.serialBaudRate);
+        usbSerialPortIndex = Utils.parseInt(preferences.getString("usbSerialPortIndex", ""), SettingsCommon.usbSerialPortIndex);
         useNativeSerialPort = preferences.getBoolean("useNativeSerialPort", SettingsCommon.useNativeSerialPort);
         nativeSerialPort = preferences.getString("nativeSerialPort", SettingsCommon.nativeSerialPort);
-        fcProtocol = parseInt(preferences.getString("fcProtocol", ""), SettingsCommon.fcProtocol);
-        mavlinkTargetSysId = parseInt(preferences.getString("mavlinkTargetSysId", ""), SettingsCommon.mavlinkTargetSysId);
-        mavlinkGcsSysId = parseInt(preferences.getString("mavlinkGcsSysId", ""), SettingsCommon.mavlinkGcsSysId);
+        fcProtocol = Utils.parseInt(preferences.getString("fcProtocol", ""), SettingsCommon.fcProtocol);
+        mavlinkTargetSysId = Utils.parseInt(preferences.getString("mavlinkTargetSysId", ""), SettingsCommon.mavlinkTargetSysId);
+        mavlinkGcsSysId = Utils.parseInt(preferences.getString("mavlinkGcsSysId", ""), SettingsCommon.mavlinkGcsSysId);
         boolean invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
         boolean invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
         if (invertVideoAxisX != this.invertVideoAxisX || invertVideoAxisY != this.invertVideoAxisY) videoFrameOrientationChanged = true;
@@ -165,12 +168,14 @@ public class Config {
         showVideoRecordButton = preferences.getBoolean("showVideoRecordButton", SettingsCommon.showVideoRecordButton);
         showVideoRecordIndication = preferences.getBoolean("showVideoRecordIndication", SettingsCommon.showVideoRecordIndication);
         osdTextColor = preferences.getInt("osdTextColor", SettingsCommon.osdTextColor);
-        int vrMode = parseInt(preferences.getString("vrMode", ""), SettingsCommon.vrMode);
+        int vrMode = Utils.parseInt(preferences.getString("vrMode", ""), SettingsCommon.vrMode);
         if (vrMode != this.vrMode) videoFrameOrientationChanged = true;
         this.vrMode = vrMode;
-        vrFrameScale = parseInt(preferences.getString("vrFrameScale", ""), SettingsCommon.vrFrameScale);
-        vrCenterOffset = parseInt(preferences.getString("vrCenterOffset", ""), SettingsCommon.vrCenterOffset);
-        vrOsdOffset = parseInt(preferences.getString("vrOsdOffset", ""), SettingsCommon.vrOsdOffset);
+        vrFrameScale = Utils.parseInt(preferences.getString("vrFrameScale", ""), SettingsCommon.vrFrameScale);
+        vrCenterOffset = Utils.parseInt(preferences.getString("vrCenterOffset", ""), SettingsCommon.vrCenterOffset);
+        vrOsdOffset = Utils.parseInt(preferences.getString("vrOsdOffset", ""), SettingsCommon.vrOsdOffset);
+        vrHeadTracking = preferences.getBoolean("vrHeadTracking", SettingsCommon.vrHeadTracking);
+
         // RC channels map
         boolean setDefaultRcMap = true;
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
@@ -178,6 +183,10 @@ public class Config {
             if (rcChannelsMap[i] != -1) setDefaultRcMap = false;
         }
         if (setDefaultRcMap) setDefaultRcMap();
+
+        for (int i = 0; i < 3; i++) {
+            headTrackingAngleLimits[i] = preferences.getInt("htAngleLimit" + i, SettingsCommon.headTrackingAngleLimit);
+        }
     }
 
     // Taranis Q X7 defaults
@@ -204,6 +213,28 @@ public class Config {
         return rcChannelsMap;
     }
 
+    public int[] getHeadTrackingAngleLimits(){
+        return headTrackingAngleLimits;
+    }
+
+    public int getHeadTrackingChannel(int axis){
+        if (axis < 0 || axis >= 3) return -1;
+        int code = axis + Rc.HEAD_TRACKING_CODE_OFFSET;
+        for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+            if (rcChannelsMap[i] == code) return i;
+        }
+        return -1;
+    }
+
+    public boolean isHeadTrackingUsed(){
+        if (vrHeadTracking && vrMode != SettingsCommon.VrMode.off) return true;
+        for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+            if (rcChannelsMap[i] >= Rc.HEAD_TRACKING_CODE_OFFSET
+                    && rcChannelsMap[i] < Rc.HEAD_TRACKING_CODE_OFFSET + 3) return true;
+        }
+        return false;
+    }
+
     public void updateChannelMap(int channel, int code){
         if (channel < 0 || channel >= FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT) return;
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
@@ -215,6 +246,15 @@ public class Config {
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
             editor.putInt("rcMap" + i, rcChannelsMap[i]);
         }
+        editor.apply();
+    }
+
+    public void updateHeadTrackingAngleLimit(int angle, int axis){
+        if (axis < 0 || axis >= 3) return;
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        SharedPreferences.Editor editor = preferences.edit();
+        this.headTrackingAngleLimits[axis] = angle;
+        editor.putInt("htAngleLimit" + axis, angle);
         editor.apply();
     }
 
@@ -378,6 +418,10 @@ public class Config {
         return vrOsdOffset;
     }
 
+    public boolean isVrHeadTracking() {
+        return vrHeadTracking;
+    }
+
     public String getIp(){
         return ip;
     }
@@ -392,14 +436,6 @@ public class Config {
 
     public boolean isViewer(){
         return isViewer;
-    }
-
-    private int parseInt(String str, int defaultValue){
-        try{
-            return Integer.parseInt(str);
-        }catch (Exception e){
-            return defaultValue;
-        }
     }
 
     public boolean updateConfig(){

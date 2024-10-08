@@ -27,4 +27,12 @@ public class Utils {
         i = (int)Math.pow(2, pow);
         return i;
     }
+
+    public static int parseInt(String str, int defaultValue){
+        try{
+            return Integer.parseInt(str);
+        }catch (Exception e){
+            return defaultValue;
+        }
+    }
 }

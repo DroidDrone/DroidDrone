@@ -102,12 +102,18 @@
             app:title="@string/vr_frame_scale" />
         <EditTextPreference
             app:key="vrCenterOffset"
-            app:defaultValue="200"
+            app:defaultValue="250"
             app:title="@string/vr_center_offset" />
         <EditTextPreference
             app:key="vrOsdOffset"
             app:defaultValue="10"
             app:title="@string/vr_osd_offset" />
+        <SwitchPreferenceCompat
+            app:key="vrHeadTracking"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="false"
+            app:title="@string/vr_head_tracking"/>
     </PreferenceCategory>
 
     <PreferenceCategory

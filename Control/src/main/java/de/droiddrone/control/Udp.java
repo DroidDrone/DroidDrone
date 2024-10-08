@@ -828,7 +828,7 @@ public class Udp {
             while (id == threadsId) {
                 try {
                     if (isConnected() && configReceived){
-                        sendRcFrame(rc.getRcChannels());
+                        sendRcFrame(rc.getRcChannels(false));
                     }
                     Thread.sleep(1000 / config.getRcRefreshRate());
                 } catch (Exception e) {

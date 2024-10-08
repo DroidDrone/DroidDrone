@@ -47,7 +47,7 @@ public class RcChannelMapUiElement {
         lChannel.setOrientation(LinearLayout.HORIZONTAL);
         lChannel.setLayoutParams(lp);
 
-        lp = new LinearLayout.LayoutParams((int) (100 * scale), FrameLayout.LayoutParams.MATCH_PARENT);
+        lp = new LinearLayout.LayoutParams((int) (150 * scale), FrameLayout.LayoutParams.MATCH_PARENT);
         LinearLayout lCode = new LinearLayout(activity);
         lCode.setOrientation(LinearLayout.HORIZONTAL);
         lCode.setLayoutParams(lp);
@@ -62,24 +62,7 @@ public class RcChannelMapUiElement {
         tvCode = new TextView(activity);
         bar = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
 
-        String text = "CH" + (channelId + 1);
-        switch (channelId){
-            case 0:
-                text += " (A - Roll): ";
-                break;
-            case 1:
-                text += " (E - Pitch): ";
-                break;
-            case 2:
-                text += " (R - Yaw): ";
-                break;
-            case 3:
-                text += " (T - Throttle): ";
-                break;
-            default:
-                text += ": ";
-        }
-        tvChannel.setText(text);
+        tvChannel.setText(ChannelsMappingFragment.getChannelName(channelId));
         tvChannel.setTextColor(Color.BLACK);
         tvChannel.setBackgroundColor(0x00000000);
         tvChannel.setSingleLine(true);
@@ -123,12 +106,25 @@ public class RcChannelMapUiElement {
     }
 
     private void updateCodeUi(){
-        if (code == -1){
-            tvCode.setText(activity.getResources().getString(R.string.not_set));
-        }else if (code >= Rc.KEY_CODE_OFFSET){
-            tvCode.setText("Key - " + (code - Rc.KEY_CODE_OFFSET));
+        if (code >= 0 && code < Rc.KEY_CODE_OFFSET){
+            tvCode.setText(activity.getResources().getString(R.string.rc_axis, code));
+        }else if (code >= Rc.KEY_CODE_OFFSET && code < Rc.HEAD_TRACKING_CODE_OFFSET){
+            tvCode.setText(activity.getResources().getString(R.string.rc_key, code - Rc.KEY_CODE_OFFSET));
+        }else if (code >= Rc.HEAD_TRACKING_CODE_OFFSET && code < Rc.HEAD_TRACKING_CODE_OFFSET + 3){
+            resetFocus();
+            switch (code - Rc.HEAD_TRACKING_CODE_OFFSET){
+                case 0:
+                    tvCode.setText(activity.getResources().getString(R.string.rc_head_tracking_x));
+                    break;
+                case 1:
+                    tvCode.setText(activity.getResources().getString(R.string.rc_head_tracking_y));
+                    break;
+                case 2:
+                    tvCode.setText(activity.getResources().getString(R.string.rc_head_tracking_z));
+                    break;
+            }
         }else{
-            tvCode.setText("Axis - " + code);
+            tvCode.setText(activity.getResources().getString(R.string.not_set));
         }
     }
 
