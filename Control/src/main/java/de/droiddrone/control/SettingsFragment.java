@@ -34,6 +34,7 @@ import com.rarepebble.colorpicker.ColorPreference;
 
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.SettingsCommon;
+import de.droiddrone.common.Utils;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final int fragmentId = 3;
@@ -108,6 +109,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         EditTextPreference vrFrameScale = findPreference("vrFrameScale");
         EditTextPreference vrCenterOffset = findPreference("vrCenterOffset");
         EditTextPreference vrOsdOffset = findPreference("vrOsdOffset");
+        SwitchPreferenceCompat vrHeadTracking = findPreference("vrHeadTracking");
         setNumericEditTextPreferenceSummary(vrFrameScale, SettingsCommon.vrFrameScaleMin, SettingsCommon.vrFrameScaleMax);
         setNumericEditTextPreferenceSummary(vrCenterOffset, SettingsCommon.vrCenterOffsetMin, SettingsCommon.vrCenterOffsetMax);
         setNumericEditTextPreferenceSummary(vrOsdOffset, SettingsCommon.vrOsdOffsetMin, SettingsCommon.vrOsdOffsetMax);
@@ -116,10 +118,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (vrMode != null){
             setListPreferenceSummary(vrMode);
             vrMode.setOnPreferenceChangeListener((preference, newValue) -> {
-                vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, (String) newValue);
+                vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrHeadTracking, (String) newValue);
                 return true;
             });
-            vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrMode.getValue());
+            vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrHeadTracking, vrMode.getValue());
         }
 
         Preference channelsMapping = findPreference("channelsMapping");
@@ -141,7 +143,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (mavlinkGcsSysId != null) mavlinkGcsSysId.setEnabled(!isMsp);
     }
 
-    private void vrModeChanged(EditTextPreference vrFrameScale, EditTextPreference vrCenterOffset, EditTextPreference vrOsdOffset, String value){
+    private void vrModeChanged(EditTextPreference vrFrameScale, EditTextPreference vrCenterOffset,
+                               EditTextPreference vrOsdOffset, SwitchPreferenceCompat vrHeadTracking, String value){
         boolean isVrEnabled = false;
         try {
             isVrEnabled = Integer.parseInt(value) != SettingsCommon.VrMode.off;
@@ -150,6 +153,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (vrFrameScale != null) vrFrameScale.setEnabled(isVrEnabled);
         if (vrCenterOffset != null) vrCenterOffset.setEnabled(isVrEnabled);
         if (vrOsdOffset != null) vrOsdOffset.setEnabled(isVrEnabled);
+        if (vrHeadTracking != null) vrHeadTracking.setEnabled(isVrEnabled);
     }
 
     @Override
@@ -181,7 +185,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE ||
                             event != null && event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
                         if (event == null || !event.isShiftPressed()) {
-                            int value = parseInt(v.getText().toString(), min);
+                            int value = Utils.parseInt(v.getText().toString(), min);
                             if (value < min) v.setText(String.valueOf(min));
                             if (value > max) v.setText(String.valueOf(max));
                         }
@@ -189,14 +193,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     return false;
                 });
             });
-        }
-    }
-
-    private int parseInt(String str, int defaultValue){
-        try{
-            return Integer.parseInt(str);
-        }catch (Exception e){
-            return defaultValue;
         }
     }
 

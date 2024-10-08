@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private BatteryManager batteryManager;
     private Config config;
     private MapData mapData;
+    private HeadTracker headTracker;
     private boolean connectionThreadRunning = false;
     private TelephonyService telephonyService;
     private boolean phoneStatePermissionRequested = false;
@@ -91,14 +92,18 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         activity = this;
         config = new Config(this, SettingsCommon.versionCompatibleCode);
         telephonyService = new TelephonyService(this);
-        renderer = new GlRenderer(this, config);
         rc = new Rc(config);
+        renderer = new GlRenderer(this, config);
+        headTracker = new HeadTracker(this, rc, renderer);
+        renderer.setHeadTracker(headTracker);
         mapData = new MapData();
 
         FragmentManager fm = getSupportFragmentManager();
         customFragmentFactory = new CustomFragmentFactory(fm, this, config, rc, renderer, mapData);
         fm.setFragmentFactory(customFragmentFactory);
         super.onCreate(savedInstanceState);
+
+        rc.setCustomFragmentFactory(customFragmentFactory);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -119,12 +124,15 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     protected void onResume(){
         super.onResume();
         startMainTimer();
+        if (config.isHeadTrackingUsed()
+                || customFragmentFactory.getCurrentFragmentId() == ChannelsMappingFragment.fragmentId) headTracker.start();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     @Override
     protected void onPause(){
         stopMainTimer();
+        headTracker.pause();
         super.onPause();
     }
 
@@ -134,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     public void showStartFragment(){
         customFragmentFactory.showStartFragment();
+        headTracker.pause();
     }
 
     public void showGlFragment(boolean runInUiThread){
@@ -142,19 +151,23 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         }else{
             customFragmentFactory.showGlFragment();
         }
+        if (config.isHeadTrackingUsed()) headTracker.start();
     }
 
     public void showSettingsFragment(){
         customFragmentFactory.showSettingsFragment();
+        headTracker.pause();
     }
 
     public void showChannelsMappingFragment(){
         customFragmentFactory.showChannelsMappingFragment();
+        headTracker.start();
     }
 
     public void showMapFragment(){
         if (!isLocationPermissionGranted() && !isRunning) requestLocationPermissions();
         customFragmentFactory.showMapFragment();
+        headTracker.pause();
     }
 
     public boolean isLocationPermissionGranted(){
@@ -491,19 +504,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         int source = event.getSource();
         int action = event.getAction();
         int code = event.getKeyCode();
-        ChannelsMappingFragment channelsMappingFragment = null;
         if ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK){
-            if (customFragmentFactory.getCurrentFragmentId() == ChannelsMappingFragment.fragmentId) {
-                channelsMappingFragment = customFragmentFactory.getChannelsMappingFragment();
-            }
             switch (action){
                 case KeyEvent.ACTION_DOWN:
                     rc.setKeyValue(code, true);
-                    if (channelsMappingFragment != null) channelsMappingFragment.updateChannelsLevels();
                     break;
                 case KeyEvent.ACTION_UP:
                     rc.setKeyValue(code, false);
-                    if (channelsMappingFragment != null) channelsMappingFragment.updateChannelsLevels();
                     break;
             }
             return true;
@@ -516,12 +523,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     public boolean onGenericMotionEvent(MotionEvent event) {
         int source = event.getSource();
         int action = event.getAction();
-        ChannelsMappingFragment channelsMappingFragment = null;
         if ((source & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD || (source & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
             if (action == MotionEvent.ACTION_MOVE) {
-                if (customFragmentFactory.getCurrentFragmentId() == ChannelsMappingFragment.fragmentId) {
-                    channelsMappingFragment = customFragmentFactory.getChannelsMappingFragment();
-                }
                 HashMap<Integer, Float> axisValues = new HashMap<>();
                 float axisX = event.getAxisValue(MotionEvent.AXIS_X);
                 axisValues.put(MotionEvent.AXIS_X, axisX);
@@ -554,9 +557,9 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                 float axisThrottle = event.getAxisValue(MotionEvent.AXIS_THROTTLE);
                 axisValues.put(MotionEvent.AXIS_THROTTLE, axisThrottle);
                 rc.setAxisValues(axisValues);
-                if (channelsMappingFragment != null) channelsMappingFragment.updateChannelsLevels();
             }else{
-                if (action == MotionEvent.ACTION_CANCEL && customFragmentFactory.getCurrentFragmentId() != SettingsFragment.fragmentId) {
+                if (action == MotionEvent.ACTION_CANCEL && customFragmentFactory.getCurrentFragmentId() != SettingsFragment.fragmentId
+                        && customFragmentFactory.getCurrentFragmentId() != ChannelsMappingFragment.fragmentId) {
                     rc.setState(false);
                 }
             }

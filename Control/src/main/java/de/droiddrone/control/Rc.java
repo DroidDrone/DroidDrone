@@ -25,6 +25,7 @@ import de.droiddrone.common.FcCommon;
 
 public class Rc {
     public static final int KEY_CODE_OFFSET = 10000;
+    public static final int HEAD_TRACKING_CODE_OFFSET = 20000;
     public static final int MIN_CHANNEL_LEVEL = 1000;
     public static final int MAX_CHANNEL_LEVEL = 2000;
     private final short[] rcChannels = new short[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -36,6 +37,8 @@ public class Rc {
     private int lastMovedStickCode = -1;
     private long lastMovedStickTimestamp = 0;
     private final HashMap<Integer, Integer> lastMovedSticks = new HashMap<>();
+    private final float[] headTrackingAxes = new float[3];
+    private CustomFragmentFactory customFragmentFactory;
 
     public Rc(Config config){
         this.config = config;
@@ -43,10 +46,28 @@ public class Rc {
             resetChannel(i);
             rcChannelUpdate[i] = false;
         }
+        resetHeadTrackingAxes();
     }
 
-    public short[] getRcChannels(){
-        if (lastChannelIndex == -1 || !isActive()) return null;
+    public void setCustomFragmentFactory(CustomFragmentFactory customFragmentFactory){
+        this.customFragmentFactory = customFragmentFactory;
+    }
+
+    private void updateChannelsMappingUi(){
+        if (customFragmentFactory == null) return;
+        if (customFragmentFactory.getCurrentFragmentId() != ChannelsMappingFragment.fragmentId) return;
+        ChannelsMappingFragment channelsMappingFragment = customFragmentFactory.getChannelsMappingFragment();
+        if (channelsMappingFragment == null) return;
+        channelsMappingFragment.updateChannelsLevels(getRcChannels(true), getLastMovedStickCode());
+    }
+
+    public short[] getRcChannels(boolean ignoreControllerStatus){
+        int lastChannelIndex = this.lastChannelIndex;
+        if (!ignoreControllerStatus && (lastChannelIndex == -1 || !isActive())) return null;
+        for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+            if (rcChannelUpdate[i] && i > lastChannelIndex) lastChannelIndex = i;
+        }
+        if (lastChannelIndex == -1) return null;
         int count = lastChannelIndex + 1;
         short[] channels = new short[count];
         System.arraycopy(rcChannels, 0, channels, 0, count);
@@ -66,6 +87,32 @@ public class Rc {
         return lastChannelIndex + 1;
     }
 
+    public void setGyroValues(float[] gyroAxes){
+        int[] headTrackingAngleLimits = config.getHeadTrackingAngleLimits();
+        int levelDiff = MAX_CHANNEL_LEVEL - MIN_CHANNEL_LEVEL;
+        boolean update = false;
+        for (int i = 0; i < 3; i++){
+            headTrackingAxes[i] -= gyroAxes[i];
+            if (headTrackingAxes[i] > headTrackingAngleLimits[i]) headTrackingAxes[i] = headTrackingAngleLimits[i];
+            if (headTrackingAxes[i] < 0) headTrackingAxes[i] = 0;
+            int code = i + Rc.HEAD_TRACKING_CODE_OFFSET;
+            int channel = getChannelFromCode(code);
+            if (channel == -1) continue;
+            int value = MIN_CHANNEL_LEVEL + Math.round(headTrackingAxes[i] * levelDiff / headTrackingAngleLimits[i]);
+            rcChannels[channel] = (short) value;
+            rcChannelUpdate[channel] = true;
+            update = true;
+        }
+        if (update) updateChannelsMappingUi();
+    }
+
+    public void resetHeadTrackingAxes(){
+        int[] headTrackingAngleLimits = config.getHeadTrackingAngleLimits();
+        for (int i = 0; i < 3; i++){
+            headTrackingAxes[i] = headTrackingAngleLimits[i] / 2f;
+        }
+    }
+
     public void setKeyValue(int keyCode, boolean isDown){
         int code = keyCode + Rc.KEY_CODE_OFFSET;
         int value = isDown ? MAX_CHANNEL_LEVEL : MIN_CHANNEL_LEVEL;
@@ -81,9 +128,11 @@ public class Rc {
         rcChannels[channel] = (short) value;
         rcChannelUpdate[channel] = true;
         if (channel > lastChannelIndex) lastChannelIndex = channel;
+        updateChannelsMappingUi();
     }
 
     public void setAxisValues(HashMap<Integer, Float> axisValues){
+        boolean update = false;
         for (HashMap.Entry<Integer, Float> entry : axisValues.entrySet()) {
             int code = entry.getKey();
             float axisValue = entry.getValue();
@@ -102,9 +151,11 @@ public class Rc {
             if (rcChannelUpdate[channel]){
                 rcChannels[channel] = (short) value;
                 if (channel > lastChannelIndex) lastChannelIndex = channel;
+                update = true;
             }
             isActive = true;
         }
+        if (update) updateChannelsMappingUi();
     }
 
     public void resetChannel(int channel) {
@@ -115,7 +166,7 @@ public class Rc {
         }
     }
 
-    public int getLastMovedStickCode(){
+    private int getLastMovedStickCode(){
         if (System.currentTimeMillis() - lastMovedStickTimestamp > 500) return -1;
         return lastMovedStickCode;
     }

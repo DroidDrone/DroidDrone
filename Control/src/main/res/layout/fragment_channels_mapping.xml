@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:contentDescription="@string/channels_mapping_content_description">
     <LinearLayout
-        android:id="@+id/llChannelsMapping"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
@@ -38,6 +37,109 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/status_disconnected" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llChannelsMapping"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rc_head_tracking_x_setting" />
+                <Spinner
+                    android:id="@+id/headTrackingChannelX"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/head_tracking_angle_limit" />
+                <EditText
+                    android:id="@+id/headTrackingAngleLimitX"
+                    android:layout_width="60dp"
+                    android:layout_height="48dp"
+                    android:ems="10"
+                    android:hint="@string/head_tracking_angle_limit"
+                    android:imeOptions="actionDone"
+                    android:inputType="number"
+                    android:singleLine="true"
+                    android:importantForAutofill="no" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rc_head_tracking_y_setting" />
+                <Spinner
+                    android:id="@+id/headTrackingChannelY"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/head_tracking_angle_limit" />
+                <EditText
+                    android:id="@+id/headTrackingAngleLimitY"
+                    android:layout_width="60dp"
+                    android:layout_height="48dp"
+                    android:ems="10"
+                    android:hint="@string/head_tracking_angle_limit"
+                    android:imeOptions="actionDone"
+                    android:inputType="number"
+                    android:singleLine="true"
+                    android:importantForAutofill="no" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rc_head_tracking_z_setting" />
+                <Spinner
+                    android:id="@+id/headTrackingChannelZ"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/head_tracking_angle_limit" />
+                <EditText
+                    android:id="@+id/headTrackingAngleLimitZ"
+                    android:layout_width="60dp"
+                    android:layout_height="48dp"
+                    android:ems="10"
+                    android:hint="@string/head_tracking_angle_limit"
+                    android:imeOptions="actionDone"
+                    android:inputType="number"
+                    android:singleLine="true"
+                    android:importantForAutofill="no" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

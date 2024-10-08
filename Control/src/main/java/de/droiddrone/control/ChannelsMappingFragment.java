@@ -18,15 +18,26 @@
 package de.droiddrone.control;
 
 import android.os.Bundle;
+import android.text.InputType;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import java.util.ArrayList;
+
 import de.droiddrone.common.FcCommon;
+import de.droiddrone.common.SettingsCommon;
+import de.droiddrone.common.Utils;
 
 public class ChannelsMappingFragment extends Fragment {
     public static final int fragmentId = 4;
@@ -34,6 +45,9 @@ public class ChannelsMappingFragment extends Fragment {
     private final Config config;
     private final Rc rc;
     private TextView tvControllerStatusRc;
+    private Spinner headTrackingChannelX;
+    private Spinner headTrackingChannelY;
+    private Spinner headTrackingChannelZ;
     private final RcChannelMapUiElement[] uiChannels = new RcChannelMapUiElement[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
     private int selectedChannel = -1;
     private boolean isHidden = false;
@@ -67,25 +81,122 @@ public class ChannelsMappingFragment extends Fragment {
                 }
             });
         }
+
+        headTrackingChannelX = view.findViewById(R.id.headTrackingChannelX);
+        headTrackingChannelY = view.findViewById(R.id.headTrackingChannelY);
+        headTrackingChannelZ = view.findViewById(R.id.headTrackingChannelZ);
+        setHeadTrackingChannelSpinner(headTrackingChannelX, 0);
+        setHeadTrackingChannelSpinner(headTrackingChannelY, 1);
+        setHeadTrackingChannelSpinner(headTrackingChannelZ, 2);
+        setHeadTrackingAngleLimitEditText(view.findViewById(R.id.headTrackingAngleLimitX), 0);
+        setHeadTrackingAngleLimitEditText(view.findViewById(R.id.headTrackingAngleLimitY), 1);
+        setHeadTrackingAngleLimitEditText(view.findViewById(R.id.headTrackingAngleLimitZ), 2);
     }
 
-    private void detectMovedChannel(){
-        int lastCode = rc.getLastMovedStickCode();
-        if (lastCode == -1) return;
-        int selected = selectedChannel;
-        selectedChannel = -1;
-        if (selected == -1) return;
-        uiChannels[selected].resetFocus();
-        int oldChannel = rc.getChannelFromCode(lastCode);
-        if (oldChannel != -1 && oldChannel != selected){
-            rc.resetChannel(oldChannel);
-            uiChannels[oldChannel].setChannelLevel(Rc.MIN_CHANNEL_LEVEL);
-        }
-        config.updateChannelMap(selected, lastCode);
-        int[] channelsMap = config.getRcChannelsMap();
+    private void setHeadTrackingAngleLimitEditText(EditText editText, final int axis){
+        int[] headTrackingAngleLimits = config.getHeadTrackingAngleLimits();
+        editText.setText(String.valueOf(headTrackingAngleLimits[axis]));
+        editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        editText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE ||
+                    event != null && event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                if (event == null || !event.isShiftPressed()) {
+                    int value = Utils.parseInt(v.getText().toString(), SettingsCommon.headTrackingAngleLimitMin);
+                    if (value < SettingsCommon.headTrackingAngleLimitMin) v.setText(String.valueOf(SettingsCommon.headTrackingAngleLimitMin));
+                    if (value > SettingsCommon.headTrackingAngleLimitMax) v.setText(String.valueOf(SettingsCommon.headTrackingAngleLimitMax));
+                    config.updateHeadTrackingAngleLimit(value, axis);
+                }
+            }
+            return false;
+        });
+    }
+
+    private void setHeadTrackingChannelSpinner(Spinner spinner, final int axis){
+        ArrayList<String> headTrackingChannels = new ArrayList<>();
+        headTrackingChannels.add(this.getResources().getString(R.string.head_tracking_disabled));
         for (int i = 0; i < FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+            headTrackingChannels.add(getChannelName(i));
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(activity.getApplicationContext(), android.R.layout.simple_spinner_item, headTrackingChannels);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                int code = Rc.HEAD_TRACKING_CODE_OFFSET + axis;
+                if (position > 0){
+                    int channel = position - 1;
+                    assignChannelMap(channel, code);
+                }else{
+                    int[] channelsMap = config.getRcChannelsMap();
+                    for (int i = 0; i < channelsMap.length; i++) {
+                        if (channelsMap[i] == code) {
+                            assignChannelMap(i, -1);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        spinner.setSelection(config.getHeadTrackingChannel(axis) + 1);
+    }
+
+    public static String getChannelName(int channelId){
+        String channelName = "CH" + (channelId + 1);
+        switch (channelId){
+            case 0:
+                channelName += " (A - Roll): ";
+                break;
+            case 1:
+                channelName += " (E - Pitch): ";
+                break;
+            case 2:
+                channelName += " (R - Yaw): ";
+                break;
+            case 3:
+                channelName += " (T - Throttle): ";
+                break;
+            default:
+                channelName += ": ";
+        }
+        return channelName;
+    }
+
+    private void assignChannelMap(int channel, int code){
+        selectedChannel = -1;
+        if (channel == -1) return;
+        uiChannels[channel].resetFocus();
+        int[] channelsMap = config.getRcChannelsMap();
+        if (code == -1){
+            rc.resetChannel(channel);
+            uiChannels[channel].setChannelLevel(Rc.MIN_CHANNEL_LEVEL);
+        }else{
+            for (int i = 0; i < channelsMap.length; i++) {
+                if (channelsMap[i] == code && i != channel) {
+                    rc.resetChannel(i);
+                    uiChannels[i].setChannelLevel(Rc.MIN_CHANNEL_LEVEL);
+                }
+            }
+        }
+        if (code != Rc.HEAD_TRACKING_CODE_OFFSET) resetHeadTrackingSpinnerChannel(headTrackingChannelX, channel);
+        if (code != Rc.HEAD_TRACKING_CODE_OFFSET + 1) resetHeadTrackingSpinnerChannel(headTrackingChannelY, channel);
+        if (code != Rc.HEAD_TRACKING_CODE_OFFSET + 2) resetHeadTrackingSpinnerChannel(headTrackingChannelZ, channel);
+        config.updateChannelMap(channel, code);
+        channelsMap = config.getRcChannelsMap();
+        for (int i = 0; i < channelsMap.length; i++) {
             uiChannels[i].setCode(channelsMap[i]);
         }
+    }
+
+    private void resetHeadTrackingSpinnerChannel(Spinner spinner, int channel){
+        if (spinner == null) return;
+        int spinnerChannel = spinner.getSelectedItemPosition() - 1;
+        if (spinnerChannel != channel) return;
+        spinner.setSelection(0);
     }
 
     public void updateStatus(){
@@ -93,14 +204,15 @@ public class ChannelsMappingFragment extends Fragment {
         activity.updateControllerStatusUi(tvControllerStatusRc);
     }
 
-    public void updateChannelsLevels(){
+    public void updateChannelsLevels(short[] channels, int lastMovedStickCode){
         if (isHidden) return;
-        short[] channels = rc.getRcChannels();
         if (channels == null) return;
         for (int i = 0; i < channels.length; i++) {
             uiChannels[i].setChannelLevel(channels[i]);
         }
-        if (selectedChannel != -1) detectMovedChannel();
+        if (selectedChannel != -1 && lastMovedStickCode != -1) {
+            assignChannelMap(selectedChannel, lastMovedStickCode);
+        }
     }
 
     @Override
