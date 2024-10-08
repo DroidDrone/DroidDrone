@@ -108,6 +108,10 @@
             app:key="vrOsdOffset"
             app:defaultValue="10"
             app:title="@string/vr_osd_offset" />
+        <EditTextPreference
+            app:key="vrOsdScale"
+            app:defaultValue="100"
+            app:title="@string/vr_osd_scale" />
         <SwitchPreferenceCompat
             app:key="vrHeadTracking"
             app:summaryOn="@string/on"
@@ -151,56 +155,71 @@
         app:key="osd"
         app:title="@string/osd">
         <SwitchPreferenceCompat
+            app:key="drawOsd"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="true"
+            app:title="@string/draw_osd"/>
+        <SwitchPreferenceCompat
             app:key="showPhoneBattery"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
+            app:dependency="drawOsd"
             app:title="@string/show_phone_battery"/>
         <SwitchPreferenceCompat
             app:key="showNetworkState"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
+            app:dependency="drawOsd"
             app:title="@string/show_network_state"/>
         <SwitchPreferenceCompat
             app:key="showCameraFps"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
+            app:dependency="drawOsd"
             app:title="@string/show_camera_fps"/>
         <SwitchPreferenceCompat
             app:key="showScreenFps"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="false"
+            app:dependency="drawOsd"
             app:title="@string/show_screen_fps"/>
         <SwitchPreferenceCompat
             app:key="showVideoBitrate"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
+            app:dependency="drawOsd"
             app:title="@string/show_video_bitrate"/>
         <SwitchPreferenceCompat
             app:key="showPing"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
+            app:dependency="drawOsd"
             app:title="@string/show_ping"/>
         <SwitchPreferenceCompat
             app:key="showVideoRecordButton"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
+            app:dependency="drawOsd"
             app:title="@string/show_video_record_button"/>
         <SwitchPreferenceCompat
             app:key="showVideoRecordIndication"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
+            app:dependency="drawOsd"
             app:title="@string/show_video_record_indication"/>
         <com.rarepebble.colorpicker.ColorPreference
             app:key="osdTextColor"
             app:title="@string/osd_text_color"
+            app:dependency="drawOsd"
             app:defaultValue="@color/white"/>
     </PreferenceCategory>
 

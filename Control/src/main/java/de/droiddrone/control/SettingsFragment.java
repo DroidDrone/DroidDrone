@@ -109,19 +109,21 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         EditTextPreference vrFrameScale = findPreference("vrFrameScale");
         EditTextPreference vrCenterOffset = findPreference("vrCenterOffset");
         EditTextPreference vrOsdOffset = findPreference("vrOsdOffset");
+        EditTextPreference vrOsdScale = findPreference("vrOsdScale");
         SwitchPreferenceCompat vrHeadTracking = findPreference("vrHeadTracking");
         setNumericEditTextPreferenceSummary(vrFrameScale, SettingsCommon.vrFrameScaleMin, SettingsCommon.vrFrameScaleMax);
         setNumericEditTextPreferenceSummary(vrCenterOffset, SettingsCommon.vrCenterOffsetMin, SettingsCommon.vrCenterOffsetMax);
         setNumericEditTextPreferenceSummary(vrOsdOffset, SettingsCommon.vrOsdOffsetMin, SettingsCommon.vrOsdOffsetMax);
+        setNumericEditTextPreferenceSummary(vrOsdScale, SettingsCommon.vrOsdScaleMin, SettingsCommon.vrOsdScaleMax);
 
         ListPreference vrMode = findPreference("vrMode");
         if (vrMode != null){
             setListPreferenceSummary(vrMode);
             vrMode.setOnPreferenceChangeListener((preference, newValue) -> {
-                vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrHeadTracking, (String) newValue);
+                vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrHeadTracking, vrOsdScale, (String) newValue);
                 return true;
             });
-            vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrHeadTracking, vrMode.getValue());
+            vrModeChanged(vrFrameScale, vrCenterOffset, vrOsdOffset, vrHeadTracking, vrOsdScale, vrMode.getValue());
         }
 
         Preference channelsMapping = findPreference("channelsMapping");
@@ -144,7 +146,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     private void vrModeChanged(EditTextPreference vrFrameScale, EditTextPreference vrCenterOffset,
-                               EditTextPreference vrOsdOffset, SwitchPreferenceCompat vrHeadTracking, String value){
+                               EditTextPreference vrOsdOffset, SwitchPreferenceCompat vrHeadTracking,
+                               EditTextPreference vrOsdScale, String value){
         boolean isVrEnabled = false;
         try {
             isVrEnabled = Integer.parseInt(value) != SettingsCommon.VrMode.off;
@@ -154,6 +157,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (vrCenterOffset != null) vrCenterOffset.setEnabled(isVrEnabled);
         if (vrOsdOffset != null) vrOsdOffset.setEnabled(isVrEnabled);
         if (vrHeadTracking != null) vrHeadTracking.setEnabled(isVrEnabled);
+        if (vrOsdScale != null) vrOsdScale.setEnabled(isVrEnabled);
     }
 
     @Override

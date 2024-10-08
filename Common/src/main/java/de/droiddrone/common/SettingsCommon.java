@@ -56,6 +56,7 @@ public class SettingsCommon {
     public static final boolean connectOnStartup = false;
     public static final boolean invertVideoAxisX = false;
     public static final boolean invertVideoAxisY = false;
+    public static final boolean drawOsd = true;
     public static final boolean showPhoneBattery = true;
     public static final boolean showNetworkState = true;
     public static final boolean showCameraFps = true;
@@ -75,6 +76,9 @@ public class SettingsCommon {
     public static final int vrOsdOffset = 10;
     public static final int vrOsdOffsetMin = 0;
     public static final int vrOsdOffsetMax = 100;
+    public static final int vrOsdScale = 100;
+    public static final int vrOsdScaleMin = 20;
+    public static final int vrOsdScaleMax = 150;
     public static final boolean vrHeadTracking = false;
     public static final int headTrackingAngleLimit = 180;
     public static final int headTrackingAngleLimitMin = 45;

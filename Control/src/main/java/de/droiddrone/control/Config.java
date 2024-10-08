@@ -53,6 +53,7 @@ public class Config {
     private int audioStreamBitrate;
     private boolean recordAudio;
     private int recordedAudioBitrate;
+    private boolean drawOsd;
     private boolean showPhoneBattery;
     private boolean showNetworkState;
     private boolean showCameraFps;
@@ -62,6 +63,7 @@ public class Config {
     private boolean showVideoRecordButton;
     private boolean showVideoRecordIndication;
     private int osdTextColor;
+    private int vrOsdScale;
     private int telemetryRefreshRate;
     private int rcRefreshRate;
     private int serialBaudRate;
@@ -159,6 +161,7 @@ public class Config {
         if (invertVideoAxisX != this.invertVideoAxisX || invertVideoAxisY != this.invertVideoAxisY) videoFrameOrientationChanged = true;
         this.invertVideoAxisX = invertVideoAxisX;
         this.invertVideoAxisY = invertVideoAxisY;
+        drawOsd = preferences.getBoolean("drawOsd", SettingsCommon.drawOsd);
         showPhoneBattery = preferences.getBoolean("showPhoneBattery", SettingsCommon.showPhoneBattery);
         showNetworkState = preferences.getBoolean("showNetworkState", SettingsCommon.showNetworkState);
         showCameraFps = preferences.getBoolean("showCameraFps", SettingsCommon.showCameraFps);
@@ -174,6 +177,7 @@ public class Config {
         vrFrameScale = Utils.parseInt(preferences.getString("vrFrameScale", ""), SettingsCommon.vrFrameScale);
         vrCenterOffset = Utils.parseInt(preferences.getString("vrCenterOffset", ""), SettingsCommon.vrCenterOffset);
         vrOsdOffset = Utils.parseInt(preferences.getString("vrOsdOffset", ""), SettingsCommon.vrOsdOffset);
+        vrOsdScale = Utils.parseInt(preferences.getString("vrOsdScale", ""), SettingsCommon.vrOsdScale);
         vrHeadTracking = preferences.getBoolean("vrHeadTracking", SettingsCommon.vrHeadTracking);
 
         // RC channels map
@@ -306,6 +310,10 @@ public class Config {
         return recordedAudioBitrate;
     }
 
+    public boolean isDrawOsd() {
+        return drawOsd;
+    }
+
     public boolean isShowPhoneBattery() {
         return showPhoneBattery;
     }
@@ -340,6 +348,10 @@ public class Config {
 
     public int getOsdTextColor() {
         return osdTextColor;
+    }
+
+    public int getVrOsdScale() {
+        return vrOsdScale;
     }
 
     public int getTelemetryRefreshRate() {
