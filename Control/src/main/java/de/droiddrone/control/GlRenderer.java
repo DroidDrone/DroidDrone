@@ -75,8 +75,10 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     private boolean isFrontCamera;
     private int vrMode;
     private float vrScale;
+    private float vrOsdScale;
     private float vrCenterOffset;
     private float vrOsdOffset;
+    private boolean drawOsd;
     private boolean updateVideoFrameOrientation;
     private HeadTracker headTracker;
     private final float[] headTrackingAxes = new float[3];
@@ -303,6 +305,8 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         vrMode = config.getVrMode();
         vrScale = config.getVrFrameScale() * 0.01f;
+        vrOsdScale = config.getVrOsdScale() * 0.01f * vrScale;
+        drawOsd = config.isDrawOsd();
         screenWidth = width;
         screenHeight = height;
         vrScreenWidth = width;
@@ -351,7 +355,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
 
         if (glButtons != null){
             glButtons.clear();
-            if (vrMode == SettingsCommon.VrMode.off) {
+            if (vrMode == SettingsCommon.VrMode.off && drawOsd) {
                 if (config.isShowVideoRecordButton() && !config.isViewer()) {
                     recButton = glButtons.registerButton(screenWidth - Osd.rawRecButtonOffset * screenFactor,
                             screenHeight, Osd.rawPhoneOsdHeight * screenFactor, Osd.rawPhoneOsdHeight * screenFactor,
@@ -463,6 +467,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         }
 
         public void processSidebar() {
+            if (!drawOsd) return;
             int spriteId;
             if (isHidden) {
                 spriteId = spriteMin;
@@ -581,18 +586,18 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     private void setLeftOsdOffset(){
         Matrix.setIdentityM(mModelMatrix, 0);
         Matrix.translateM(mModelMatrix, 0,
-                vrScreenWidth / 2f - vrScreenWidth / 2f * vrScale + vrCenterOffset + vrOsdOffset - getHeadTrackingOffsetX(),
-                vrScreenHeight / 2f - vrScreenHeight / 2f * vrScale - getHeadTrackingOffsetY(), 0);
-        Matrix.scaleM(mModelMatrix, 0, vrScale, vrScale, 1);
+                vrScreenWidth / 2f - vrScreenWidth / 2f * vrOsdScale + vrCenterOffset + vrOsdOffset - getHeadTrackingOffsetX(),
+                vrScreenHeight / 2f - vrScreenHeight / 2f * vrOsdScale - getHeadTrackingOffsetY(), 0);
+        Matrix.scaleM(mModelMatrix, 0, vrOsdScale, vrOsdScale, 1);
         Matrix.multiplyMM(mvpMatrix, 0, pvMatrix, 0, mModelMatrix, 0);
     }
 
     private void setRightOsdOffset(){
         Matrix.setIdentityM(mModelMatrix, 0);
         Matrix.translateM(mModelMatrix, 0,
-                vrScreenWidth / 2f - vrScreenWidth / 2f * vrScale - vrCenterOffset - vrOsdOffset - getHeadTrackingOffsetX(),
-                vrScreenHeight / 2f - vrScreenHeight / 2f * vrScale - getHeadTrackingOffsetY(), 0);
-        Matrix.scaleM(mModelMatrix, 0, vrScale, vrScale, 1);
+                vrScreenWidth / 2f - vrScreenWidth / 2f * vrOsdScale - vrCenterOffset - vrOsdOffset - getHeadTrackingOffsetX(),
+                vrScreenHeight / 2f - vrScreenHeight / 2f * vrOsdScale - getHeadTrackingOffsetY(), 0);
+        Matrix.scaleM(mModelMatrix, 0, vrOsdScale, vrOsdScale, 1);
         Matrix.multiplyMM(mvpMatrix, 0, pvMatrixRight, 0, mModelMatrix, 0);
     }
 
@@ -601,7 +606,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         try {
             glFrameCounter++;
             GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT);
-            prepareOsdFrame();
+            if (drawOsd) prepareOsdFrame();
 
             switch (vrMode){
                 case SettingsCommon.VrMode.off:

@@ -87,6 +87,8 @@
     <string name="rc_head_tracking_z_setting">Head Tracking - Z:</string>
     <string name="head_tracking_disabled">Disabled</string>
     <string name="head_tracking_angle_limit">Angle limit (45 – 360 grad):</string>
+    <string name="vr_osd_scale">OSD frame scale (20 – 150%)</string>
+    <string name="draw_osd">Draw OSD</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3840x1520 (Stereo camera)</item>
