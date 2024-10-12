@@ -83,6 +83,7 @@ public class SettingsCommon {
     public static final int headTrackingAngleLimit = 180;
     public static final int headTrackingAngleLimitMin = 45;
     public static final int headTrackingAngleLimitMax = 360;
+    public static final int gyroSamplingPeriodUs = 16666;
 
     public static class VrMode {
         public static final int off = 0;
