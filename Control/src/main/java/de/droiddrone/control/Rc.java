@@ -91,10 +91,22 @@ public class Rc {
         int[] headTrackingAngleLimits = config.getHeadTrackingAngleLimits();
         int levelDiff = MAX_CHANNEL_LEVEL - MIN_CHANNEL_LEVEL;
         boolean update = false;
-        for (int i = 0; i < 3; i++){
+        for (int i = 0; i < 3; i++) {
             headTrackingAxes[i] -= gyroAxes[i];
             if (headTrackingAxes[i] > headTrackingAngleLimits[i]) headTrackingAxes[i] = headTrackingAngleLimits[i];
             if (headTrackingAxes[i] < 0) headTrackingAxes[i] = 0;
+        }
+        // Z-axis stabilization
+        float xyAbs = Math.abs(gyroAxes[0]) + Math.abs(gyroAxes[1]);
+        float zCenterAbs = Math.abs(headTrackingAxes[2] - headTrackingAngleLimits[2] / 2f);
+        if (xyAbs > zCenterAbs) xyAbs = zCenterAbs;
+        if (headTrackingAxes[2] > headTrackingAngleLimits[2] / 2f){
+            headTrackingAxes[2] -= xyAbs;
+        }else{
+            headTrackingAxes[2] += xyAbs;
+        }
+        // convert to PWM 1000 - 2000
+        for (int i = 0; i < 3; i++) {
             int code = i + Rc.HEAD_TRACKING_CODE_OFFSET;
             int channel = getChannelFromCode(code);
             if (channel == -1) continue;
