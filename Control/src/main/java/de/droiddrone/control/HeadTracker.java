@@ -23,6 +23,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import de.droiddrone.common.SettingsCommon;
+
 public class HeadTracker implements SensorEventListener {
     private final Rc rc;
     private final GlRenderer glRenderer;
@@ -59,7 +61,7 @@ public class HeadTracker implements SensorEventListener {
         if (sensorManager == null || isRegistered) return;
         Sensor gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         if (gyroscope != null) {
-            sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
+            sensorManager.registerListener(this, gyroscope, SettingsCommon.gyroSamplingPeriodUs);
             isRegistered = true;
         }
     }
