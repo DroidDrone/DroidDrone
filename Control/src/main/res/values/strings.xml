@@ -91,8 +91,11 @@
     <string name="draw_osd">Draw OSD</string>
 
     <string-array name="cameraResolutionsEntries">
+        <item>3840x1920 (Stereo camera)</item>
         <item>3840x1520 (Stereo camera)</item>
         <item>3840x1080 (Stereo camera)</item>
+        <item>3600x1800 (Stereo camera)</item>
+        <item>3408x1704 (Stereo camera)</item>
         <item>3040x1520 (Stereo camera)</item>
         <item>2560x720 (Stereo camera)</item>
         <item>2160x1080 (Stereo camera)</item>
@@ -117,8 +120,11 @@
     </string-array>
 
     <string-array name="cameraResolutionsValues">
+        <item>3840x1920</item>
         <item>3840x1520</item>
         <item>3840x1080</item>
+        <item>3600x1800</item>
+        <item>3408x1704</item>
         <item>3040x1520</item>
         <item>2560x720</item>
         <item>2160x1080</item>
