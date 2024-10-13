@@ -80,7 +80,6 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     private float vrCenterOffset;
     private float vrOsdOffset;
     private boolean drawOsd;
-    private boolean updateVideoFrameOrientation;
     private HeadTracker headTracker;
     private final float[] headTrackingAxes = new float[3];
     private boolean vrHeadTracking;
@@ -427,10 +426,6 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         }
         if (glSprites != null){
             glSprites.setScreenFactor(screenFactor);
-        }
-        if (updateVideoFrameOrientation) {
-            updateVideoFrameOrientation();
-            updateVideoFrameOrientation = false;
         }
         videoFramePositionBuffer.update(true);
         videoFrameTexCoordBuffer.update(true);
@@ -870,11 +865,6 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         if (vrMode == SettingsCommon.VrMode.stereoCamera) videoFrameWidth = width / 2;
         videoFrameHeight = height;
         isFrontCamera = isFront;
-        updateVideoFrameOrientation();
-    }
-
-    public void updateVideoFrameOrientationOnSurfaceChanged(){
-        updateVideoFrameOrientation = true;
         updateVideoFrameOrientation();
     }
 

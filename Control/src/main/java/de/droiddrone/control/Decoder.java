@@ -50,6 +50,11 @@ public class Decoder {
     private int audioEncoding, audioChannelCount, audioSampleRate;
     private AudioTrack audioTrack;
     private int skipAudioBufCount;
+    private byte[] initialFrame;
+    private boolean isHevc;
+    private int width;
+    private int height;
+    private boolean isFrontCamera;
 
     public Decoder(GlRenderer renderer) {
         this.renderer = renderer;
@@ -142,9 +147,26 @@ public class Decoder {
         audioDecoderThread.start();
     }
 
+    public void reset(){
+        close();
+        videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_CODEC_CONFIG, initialFrame));
+        Thread t1 = new Thread(() -> initializeVideo(isHevc, width, height, isFrontCamera));
+        t1.start();
+    }
+
+    public void setVideoInitialFrame(byte[] buf){
+        initialFrame = buf.clone();
+        videoInputBuffer.clear();
+        videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_CODEC_CONFIG, buf));
+    }
+
     public void initializeVideo(boolean isHevc, int width, int height, boolean isFrontCamera){
         videoThreadId++;
         videoDecoderStarted = false;
+        this.isHevc = isHevc;
+        this.width = width;
+        this.height = height;
+        this.isFrontCamera = isFrontCamera;
 
         // waiting for OpenGL
         for (int i = 0; i < 10; i++) {

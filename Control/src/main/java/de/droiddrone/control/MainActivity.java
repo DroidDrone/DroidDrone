@@ -297,16 +297,19 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     }
 
     private void checkConfigUpdate(){
+        if (config.isVideoFrameOrientationChanged()){
+            if (!config.isDecoderConfigChanged()) {
+                renderer.close();
+                decoder.reset();
+            }
+            config.videoFrameOrientationUpdated();
+        }
         if (config.isDecoderConfigChanged()){
             if (isVideoStreamStarted()){
                 decoder.close();
                 renderer.close();
             }
             config.decoderConfigUpdated();
-        }
-        if (config.isVideoFrameOrientationChanged()){
-            renderer.updateVideoFrameOrientationOnSurfaceChanged();
-            config.videoFrameOrientationUpdated();
         }
     }
 
