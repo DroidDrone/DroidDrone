@@ -9,8 +9,12 @@
         app:layout="@layout/fs_warning" />
 
     <PreferenceCategory
-        app:key="video"
-        app:title="@string/video">
+        app:key="cameras"
+        app:title="@string/cameras">
+        <Preference
+            app:selectable="false"
+            app:title="@string/camera1">
+        </Preference>
         <EditTextPreference
             app:key="cameraId"
             app:defaultValue="0"
@@ -47,6 +51,107 @@
             app:entries="@array/cameraFpsEntries"
             app:entryValues="@array/cameraFpsValues"
             app:defaultValue="30-60"/>
+
+        <SwitchPreferenceCompat
+            app:key="cameraEnabled_2"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="false"
+            app:allowDividerAbove="true"
+            app:title="@string/camera2"/>
+        <EditTextPreference
+            app:key="cameraId_2"
+            app:defaultValue="0"
+            app:dependency="cameraEnabled_2"
+            app:title="@string/camera_id" />
+        <SwitchPreferenceCompat
+            app:key="useUsbCamera_2"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="false"
+            app:dependency="cameraEnabled_2"
+            app:title="@string/use_usb_camera"/>
+        <ListPreference
+            app:key="usbCameraFrameFormat_2"
+            app:title="@string/usb_camera_frame_format"
+            app:entries="@array/usbCameraFrameFormatEntries"
+            app:entryValues="@array/usbCameraFrameFormatValues"
+            app:defaultValue="1"
+            app:dependency="useUsbCamera_2"/>
+        <SwitchPreferenceCompat
+            app:key="usbCameraReset_2"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="true"
+            app:title="@string/usb_camera_reset_to_defaults"
+            app:dependency="useUsbCamera_2"/>
+        <ListPreference
+            app:key="cameraResolution_2"
+            app:title="@string/camera_resolution"
+            app:entries="@array/cameraResolutionsEntries"
+            app:entryValues="@array/cameraResolutionsValues"
+            app:dependency="cameraEnabled_2"
+            app:defaultValue="1920x1080"/>
+        <ListPreference
+            app:key="cameraFps_2"
+            app:title="@string/camera_fps"
+            app:entries="@array/cameraFpsEntries"
+            app:entryValues="@array/cameraFpsValues"
+            app:dependency="cameraEnabled_2"
+            app:defaultValue="30-60"/>
+
+        <SwitchPreferenceCompat
+            app:key="cameraEnabled_3"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="false"
+            app:allowDividerAbove="true"
+            app:title="@string/camera3"/>
+        <EditTextPreference
+            app:key="cameraId_3"
+            app:defaultValue="0"
+            app:dependency="cameraEnabled_3"
+            app:title="@string/camera_id" />
+        <SwitchPreferenceCompat
+            app:key="useUsbCamera_3"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="false"
+            app:dependency="cameraEnabled_3"
+            app:title="@string/use_usb_camera"/>
+        <ListPreference
+            app:key="usbCameraFrameFormat_3"
+            app:title="@string/usb_camera_frame_format"
+            app:entries="@array/usbCameraFrameFormatEntries"
+            app:entryValues="@array/usbCameraFrameFormatValues"
+            app:defaultValue="1"
+            app:dependency="useUsbCamera_3"/>
+        <SwitchPreferenceCompat
+            app:key="usbCameraReset_3"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="true"
+            app:title="@string/usb_camera_reset_to_defaults"
+            app:dependency="useUsbCamera_3"/>
+        <ListPreference
+            app:key="cameraResolution_3"
+            app:title="@string/camera_resolution"
+            app:entries="@array/cameraResolutionsEntries"
+            app:entryValues="@array/cameraResolutionsValues"
+            app:dependency="cameraEnabled_3"
+            app:defaultValue="1920x1080"/>
+        <ListPreference
+            app:key="cameraFps_3"
+            app:title="@string/camera_fps"
+            app:entries="@array/cameraFpsEntries"
+            app:entryValues="@array/cameraFpsValues"
+            app:dependency="cameraEnabled_3"
+            app:defaultValue="30-60"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="video"
+        app:title="@string/video">
         <ListPreference
             app:key="bitrateLimit"
             app:title="@string/bitrate_limit"

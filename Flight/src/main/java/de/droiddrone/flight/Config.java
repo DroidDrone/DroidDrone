@@ -34,14 +34,6 @@ public class Config {
     private int port;
     private String key;
     private int connectionMode;
-    private String cameraId;
-    private boolean useUsbCamera;
-    private int usbCameraFrameFormat;
-    private boolean usbCameraReset;
-    private int cameraResolutionWidth;
-    private int cameraResolutionHeight;
-    private int cameraFpsMin;
-    private int cameraFpsMax;
     private int bitrateLimit;
     private boolean useExtraEncoder;
     private int videoRecorderCodec;
@@ -65,10 +57,22 @@ public class Config {
     private boolean audioStreamConfigChanged;
     private boolean fcConfigChanged;
     private boolean rcConfigChanged;
+    private final boolean[] cameraEnabled = new boolean[SettingsCommon.maxCamerasCount];
+    private final String[] cameraId = new String[SettingsCommon.maxCamerasCount];
+    private final int[] cameraResolutionWidth = new int[SettingsCommon.maxCamerasCount];
+    private final int[] cameraResolutionHeight = new int[SettingsCommon.maxCamerasCount];
+    private final int[] cameraFpsMin = new int[SettingsCommon.maxCamerasCount];
+    private final int[] cameraFpsMax = new int[SettingsCommon.maxCamerasCount];
+    private final boolean[] useUsbCamera = new boolean[SettingsCommon.maxCamerasCount];
+    private final int[] usbCameraFrameFormat = new int[SettingsCommon.maxCamerasCount];
+    private final boolean[] usbCameraReset = new boolean[SettingsCommon.maxCamerasCount];
+    private int currentCameraIndex = SettingsCommon.currentCameraIndex;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
         this.versionCode = versionCode;
+        System.arraycopy(SettingsCommon.cameraEnabled, 0, cameraEnabled, 0, SettingsCommon.maxCamerasCount);
+        System.arraycopy(SettingsCommon.cameraId, 0, cameraId, 0, SettingsCommon.maxCamerasCount);
         loadConfig();
     }
 
@@ -129,35 +133,61 @@ public class Config {
     }
 
     public String getCameraId() {
-        return cameraId;
+        return cameraId[currentCameraIndex];
     }
 
     public boolean isUseUsbCamera(){
-        return useUsbCamera;
+        return useUsbCamera[currentCameraIndex];
     }
 
     public int getUsbCameraFrameFormat(){
-        return usbCameraFrameFormat;
+        return usbCameraFrameFormat[currentCameraIndex];
     }
 
     public boolean isUsbCameraReset(){
-        return usbCameraReset;
+        return usbCameraReset[currentCameraIndex];
     }
 
     public int getCameraResolutionWidth() {
-        return cameraResolutionWidth;
+        return cameraResolutionWidth[currentCameraIndex];
     }
 
     public int getCameraResolutionHeight() {
-        return cameraResolutionHeight;
+        return cameraResolutionHeight[currentCameraIndex];
     }
 
     public int getCameraFpsMin() {
-        return cameraFpsMin;
+        return cameraFpsMin[currentCameraIndex];
     }
 
     public int getCameraFpsMax() {
-        return cameraFpsMax;
+        return cameraFpsMax[currentCameraIndex];
+    }
+
+    public int getCamerasCount(){
+        int count = 0;
+        for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+            if (cameraEnabled[i]) count++;
+        }
+        return count;
+    }
+
+    public int getCurrentUsbCameraIndex(){
+        int index = 0;
+        for (int i = 0; i < currentCameraIndex; i++) {
+            if (cameraEnabled[i] && useUsbCamera[i]) index++;
+        }
+        return index;
+    }
+
+    public void changeCamera(){
+        int count = getCamerasCount();
+        if (count == 1) return;
+        int camera = currentCameraIndex;
+        camera++;
+        if (camera >= count) camera = 0;
+        currentCameraIndex = camera;
+        cameraConfigChanged = true;
     }
 
     public int getBitrateLimit() {
@@ -242,19 +272,42 @@ public class Config {
         try {
             int version = buffer.readShort();
             if (version != versionCode) return -1;
-            String cameraId = buffer.readUTF();
-            if (cameraId != null && !cameraId.equals(this.cameraId)) cameraConfigChanged = true;
-            this.cameraId = cameraId;
-            int cameraResolutionWidth = buffer.readShort();
-            int cameraResolutionHeight = buffer.readShort();
-            if (cameraResolutionWidth != this.cameraResolutionWidth || cameraResolutionHeight != this.cameraResolutionHeight) cameraConfigChanged = true;
-            this.cameraResolutionWidth = cameraResolutionWidth;
-            this.cameraResolutionHeight = cameraResolutionHeight;
-            int cameraFpsMin = buffer.readShort();
-            int cameraFpsMax = buffer.readShort();
-            if (cameraFpsMin != this.cameraFpsMin || cameraFpsMax != this.cameraFpsMax) cameraConfigChanged = true;
-            this.cameraFpsMin = cameraFpsMin;
-            this.cameraFpsMax = cameraFpsMax;
+            // cameras
+            for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+                boolean cameraEnabled = true;
+                if (i > 0) cameraEnabled = buffer.readBoolean();
+                if (this.cameraEnabled[i] != cameraEnabled) {
+                    currentCameraIndex = 0;
+                    cameraConfigChanged = true;
+                }
+                this.cameraEnabled[i] = cameraEnabled;
+                String cameraId = buffer.readUTF();
+                if (cameraId != null && !cameraId.equals(this.cameraId[i]) && currentCameraIndex == i)
+                    cameraConfigChanged = true;
+                this.cameraId[i] = cameraId;
+                int cameraResolutionWidth = buffer.readShort();
+                int cameraResolutionHeight = buffer.readShort();
+                if ((cameraResolutionWidth != this.cameraResolutionWidth[i] || cameraResolutionHeight != this.cameraResolutionHeight[i])
+                        && currentCameraIndex == i) cameraConfigChanged = true;
+                this.cameraResolutionWidth[i] = cameraResolutionWidth;
+                this.cameraResolutionHeight[i] = cameraResolutionHeight;
+                int cameraFpsMin = buffer.readShort();
+                int cameraFpsMax = buffer.readShort();
+                if ((cameraFpsMin != this.cameraFpsMin[i] || cameraFpsMax != this.cameraFpsMax[i])
+                        && currentCameraIndex == i) cameraConfigChanged = true;
+                this.cameraFpsMin[i] = cameraFpsMin;
+                this.cameraFpsMax[i] = cameraFpsMax;
+                boolean useUsbCamera = buffer.readBoolean();
+                int usbCameraFrameFormat = buffer.readByte();
+                boolean usbCameraReset = buffer.readBoolean();
+                if ((useUsbCamera != this.useUsbCamera[i] || usbCameraFrameFormat != this.usbCameraFrameFormat[i]
+                        || usbCameraReset != this.usbCameraReset[i]) && currentCameraIndex == i)
+                    cameraConfigChanged = true;
+                this.useUsbCamera[i] = useUsbCamera;
+                this.usbCameraFrameFormat[i] = usbCameraFrameFormat;
+                this.usbCameraReset[i] = usbCameraReset;
+            }
+            // video
             bitrateLimit = buffer.readUnsignedByteAsInt() * 1000000;
             boolean useExtraEncoder = buffer.readBoolean();
             if (useExtraEncoder != this.useExtraEncoder){
@@ -274,6 +327,7 @@ public class Config {
                 recorderConfigChanged = true;
             }
             this.recordedVideoBitrate = recordedVideoBitrate;
+            // audio
             boolean sendAudioStream = buffer.readBoolean();
             if (sendAudioStream != this.sendAudioStream) audioStreamConfigChanged = true;
             this.sendAudioStream = sendAudioStream;
@@ -286,6 +340,7 @@ public class Config {
             int recordedAudioBitrate = buffer.readShort() * 1000;
             if (recordedAudioBitrate != this.recordedAudioBitrate) recorderConfigChanged = true;
             this.recordedAudioBitrate = recordedAudioBitrate;
+            // fc
             int telemetryRefreshRate = buffer.readUnsignedByteAsInt();
             if (telemetryRefreshRate != this.telemetryRefreshRate) fcConfigChanged = true;
             this.telemetryRefreshRate = telemetryRefreshRate;
@@ -306,14 +361,6 @@ public class Config {
             int fcProtocol = buffer.readByte();
             if (fcProtocol != this.fcProtocol) fcConfigChanged = true;
             this.fcProtocol = fcProtocol;
-            boolean useUsbCamera = buffer.readBoolean();
-            int usbCameraFrameFormat = buffer.readByte();
-            boolean usbCameraReset = buffer.readBoolean();
-            if (useUsbCamera != this.useUsbCamera || usbCameraFrameFormat != this.usbCameraFrameFormat
-                    || usbCameraReset != this.usbCameraReset) cameraConfigChanged = true;
-            this.useUsbCamera = useUsbCamera;
-            this.usbCameraFrameFormat = usbCameraFrameFormat;
-            this.usbCameraReset = usbCameraReset;
             int mavlinkTargetSysId = buffer.readUnsignedByteAsInt();
             int mavlinkGcsSysId = buffer.readUnsignedByteAsInt();
             if (mavlinkTargetSysId != this.mavlinkTargetSysId || mavlinkGcsSysId != this.mavlinkGcsSysId) fcConfigChanged = true;
@@ -333,14 +380,23 @@ public class Config {
         port = preferences.getInt("port", SettingsCommon.port);
         key = preferences.getString("key", SettingsCommon.key);
         connectionMode = preferences.getInt("connectionMode", SettingsCommon.connectionMode);
-        cameraId = preferences.getString("cameraId", SettingsCommon.cameraId);
-        useUsbCamera = preferences.getBoolean("useUsbCamera", SettingsCommon.useUsbCamera);
-        usbCameraFrameFormat = preferences.getInt("usbCameraFrameFormat", SettingsCommon.usbCameraFrameFormat);
-        usbCameraReset = preferences.getBoolean("usbCameraReset", SettingsCommon.usbCameraReset);
-        cameraResolutionWidth = preferences.getInt("cameraResolutionWidth", SettingsCommon.cameraResolutionWidth);
-        cameraResolutionHeight = preferences.getInt("cameraResolutionHeight", SettingsCommon.cameraResolutionHeight);
-        cameraFpsMin = preferences.getInt("cameraFpsMin", SettingsCommon.cameraFpsMin);
-        cameraFpsMax = preferences.getInt("cameraFpsMax", SettingsCommon.cameraFpsMax);
+        for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+            String cameraNum = "";
+            if (i == 0){
+                cameraEnabled[i] = SettingsCommon.cameraEnabled[i];
+            }else{
+                cameraNum = "_" + (i + 1);
+                cameraEnabled[i] = preferences.getBoolean("cameraEnabled" + cameraNum, SettingsCommon.cameraEnabled[i]);
+            }
+            cameraId[i] = preferences.getString("cameraId" + cameraNum, SettingsCommon.cameraId[i]);
+            useUsbCamera[i] = preferences.getBoolean("useUsbCamera" + cameraNum, SettingsCommon.useUsbCamera);
+            usbCameraFrameFormat[i] = preferences.getInt("usbCameraFrameFormat" + cameraNum, SettingsCommon.usbCameraFrameFormat);
+            usbCameraReset[i] = preferences.getBoolean("usbCameraReset" + cameraNum, SettingsCommon.usbCameraReset);
+            cameraResolutionWidth[i] = preferences.getInt("cameraResolutionWidth" + cameraNum, SettingsCommon.cameraResolutionWidth);
+            cameraResolutionHeight[i] = preferences.getInt("cameraResolutionHeight" + cameraNum, SettingsCommon.cameraResolutionHeight);
+            cameraFpsMin[i] = preferences.getInt("cameraFpsMin" + cameraNum, SettingsCommon.cameraFpsMin);
+            cameraFpsMax[i] = preferences.getInt("cameraFpsMax" + cameraNum, SettingsCommon.cameraFpsMax);
+        }
         bitrateLimit = preferences.getInt("bitrateLimit", SettingsCommon.bitrateLimit);
         useExtraEncoder = preferences.getBoolean("useExtraEncoder", SettingsCommon.useExtraEncoder);
         videoRecorderCodec = preferences.getInt("videoRecorderCodec", SettingsCommon.videoRecorderCodec);
@@ -381,14 +437,21 @@ public class Config {
         editor.putInt("port", port);
         editor.putString("key", key);
         editor.putInt("connectionMode", connectionMode);
-        editor.putString("cameraId", cameraId);
-        editor.putBoolean("useUsbCamera", useUsbCamera);
-        editor.putInt("usbCameraFrameFormat", usbCameraFrameFormat);
-        editor.putBoolean("usbCameraReset", usbCameraReset);
-        editor.putInt("cameraResolutionWidth", cameraResolutionWidth);
-        editor.putInt("cameraResolutionHeight", cameraResolutionHeight);
-        editor.putInt("cameraFpsMin", cameraFpsMin);
-        editor.putInt("cameraFpsMax", cameraFpsMax);
+        for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+            String cameraNum = "";
+            if (i > 0) {
+                cameraNum = "_" + (i + 1);
+                editor.putBoolean("cameraEnabled" + cameraNum, cameraEnabled[i]);
+            }
+            editor.putString("cameraId" + cameraNum, cameraId[i]);
+            editor.putBoolean("useUsbCamera" + cameraNum, useUsbCamera[i]);
+            editor.putInt("usbCameraFrameFormat" + cameraNum, usbCameraFrameFormat[i]);
+            editor.putBoolean("usbCameraReset" + cameraNum, usbCameraReset[i]);
+            editor.putInt("cameraResolutionWidth" + cameraNum, cameraResolutionWidth[i]);
+            editor.putInt("cameraResolutionHeight" + cameraNum, cameraResolutionHeight[i]);
+            editor.putInt("cameraFpsMin" + cameraNum, cameraFpsMin[i]);
+            editor.putInt("cameraFpsMax" + cameraNum, cameraFpsMax[i]);
+        }
         editor.putInt("bitrateLimit", bitrateLimit);
         editor.putBoolean("useExtraEncoder", useExtraEncoder);
         editor.putInt("videoRecorderCodec", videoRecorderCodec);

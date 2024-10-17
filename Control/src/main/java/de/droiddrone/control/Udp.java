@@ -292,7 +292,8 @@ public class Udp {
                 byte[] buf = new byte[dataSize];
                 int read = buffer.read(buf, 0, dataSize);
                 if (read == dataSize) {
-                    if (videoInitialFrameReceived && decoder.isVideoDecoderStarted() || decoder.videoDecoderInitializationRunning) break;
+                    if (decoder.videoDecoderInitializationRunning) break;
+                    if (videoInitialFrameReceived && decoder.isVideoDecoderStarted()) decoder.close();
                     try {
                         decoder.videoDecoderInitializationRunning = true;
                         videoInitialFrameReceived = true;
@@ -938,24 +939,48 @@ public class Udp {
         return cameraFps;
     }
 
+    public void sendChangeCamera(){
+        if (isViewer) return;
+        Thread t1 = new Thread(() -> {
+            try {
+                UdpPacketData packetData = new UdpPacketData(UdpCommon.ChangeCamera);
+                udpSender.sendPacket(packetData.getData());
+            } catch (Exception e) {
+                e.printStackTrace();
+                log("sendChangeCamera error: " + e);
+            }
+        });
+        t1.start();
+    }
+
     public void sendConfig() {
         if (isViewer) return;
         try {
             UdpPacketData packetData = new UdpPacketData(UdpCommon.Config);
             packetData.daos.writeShort(config.getVersionCode());
-            packetData.daos.writeUTF(config.getCameraId());
-            packetData.daos.writeShort(config.getCameraResolutionWidth());
-            packetData.daos.writeShort(config.getCameraResolutionHeight());
-            packetData.daos.writeShort(config.getCameraFpsMin());
-            packetData.daos.writeShort(config.getCameraFpsMax());
+            // cameras
+            for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+                if (i > 0) packetData.daos.writeBoolean(config.isCameraEnabled(i));
+                packetData.daos.writeUTF(config.getCameraId(i));
+                packetData.daos.writeShort(config.getCameraResolutionWidth(i));
+                packetData.daos.writeShort(config.getCameraResolutionHeight(i));
+                packetData.daos.writeShort(config.getCameraFpsMin(i));
+                packetData.daos.writeShort(config.getCameraFpsMax(i));
+                packetData.daos.writeBoolean(config.isUseUsbCamera(i));
+                packetData.daos.writeByte(config.getUsbCameraFrameFormat(i));
+                packetData.daos.writeBoolean(config.isUsbCameraReset(i));
+            }
+            // video
             packetData.daos.writeByte(config.getBitrateLimit() / 1000000);
             packetData.daos.writeBoolean(config.isUseExtraEncoder());
             packetData.daos.writeByte(config.getVideoRecorderCodec());
             packetData.daos.writeByte(config.getRecordedVideoBitrate() / 1000000);
+            // audio
             packetData.daos.writeBoolean(config.isSendAudioStream());
             packetData.daos.writeShort(config.getAudioStreamBitrate() / 1000);
             packetData.daos.writeBoolean(config.isRecordAudio());
             packetData.daos.writeShort(config.getRecordedAudioBitrate() / 1000);
+            // fc
             packetData.daos.writeByte(config.getTelemetryRefreshRate());
             packetData.daos.writeByte(config.getRcRefreshRate());
             packetData.daos.writeInt(config.getSerialBaudRate());
@@ -963,9 +988,6 @@ public class Udp {
             packetData.daos.writeBoolean(config.isUseNativeSerialPort());
             packetData.daos.writeUTF(config.getNativeSerialPort());
             packetData.daos.writeByte(config.getFcProtocol());
-            packetData.daos.writeBoolean(config.isUseUsbCamera());
-            packetData.daos.writeByte(config.getUsbCameraFrameFormat());
-            packetData.daos.writeBoolean(config.isUsbCameraReset());
             packetData.daos.writeByte(config.getMavlinkTargetSysId());
             packetData.daos.writeByte(config.getMavlinkGcsSysId());
             udpSender.sendPacket(packetData.getData());

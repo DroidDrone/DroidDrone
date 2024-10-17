@@ -56,6 +56,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     private int textMVPMatrixHandle, textTextureUniformHandle;
     private int spritesMVPMatrixHandle, spritesTextureUniformHandle;
     private int videoFrameTexture;
+    private boolean createVideoFrameTexture;
     private SurfaceTexture mSurfaceTexture;
     private Surface glSurface;
     private int glFrameCounter;
@@ -358,10 +359,7 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         vrHeadTracking = config.isVrHeadTracking();
 
         if (mSurfaceTexture == null) {
-            int texId = createExternalOesTexture();
-            mSurfaceTexture = new SurfaceTexture(texId);
-            glSurface = new Surface(mSurfaceTexture);
-            videoFrameTexture = texId;
+            createVideoFrameTexture();
         }
 
         if (glButtons != null){
@@ -411,6 +409,22 @@ public class GlRenderer implements GLSurfaceView.Renderer {
                         activity.showSettingsFragment();
                     }
                 });
+
+                if (!config.isViewer() && config.getCamerasCount() > 1) {
+                    buttonsY -= buttonsSize + buttonsPadding;
+                    GlButtons.Button cameraButton = glButtons.registerButton(buttonsPadding, buttonsY,
+                            buttonsSize, buttonsSize,
+                            SpritesMapping.BUTTON_CAMERA_1, SpritesMapping.BUTTON_CAMERA_2, 0, 0, false);
+                    leftSidebar.addButton(cameraButton);
+                    cameraButton.setOnClickListener(new GlButtons.OnClickListener() {
+                        @Override
+                        void onClick(GlButtons.Button button) {
+                            udp.sendChangeCamera();
+                            surfaceReset();
+                            activity.stopDecoder();
+                        }
+                    });
+                }
             }
         }
 
@@ -626,6 +640,8 @@ public class GlRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         try {
+            if (createVideoFrameTexture) createVideoFrameTexture();
+
             glFrameCounter++;
             GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT);
             if (drawOsd) prepareOsdFrame();
@@ -859,6 +875,14 @@ public class GlRenderer implements GLSurfaceView.Renderer {
         return t[0];
     }
 
+    private void createVideoFrameTexture(){
+        int texId = createExternalOesTexture();
+        mSurfaceTexture = new SurfaceTexture(texId);
+        glSurface = new Surface(mSurfaceTexture);
+        videoFrameTexture = texId;
+        createVideoFrameTexture = false;
+    }
+
     public void setVideoFrameSize(int width, int height, boolean isFront) {
         mSurfaceTexture.setDefaultBufferSize(width, height);
         videoFrameWidth = width;
@@ -913,6 +937,11 @@ public class GlRenderer implements GLSurfaceView.Renderer {
 
     public Surface getSurface(){
         return glSurface;
+    }
+
+    private void surfaceReset(){
+        close();
+        createVideoFrameTexture = true;
     }
 
     public void close(){

@@ -26,6 +26,7 @@
     <string name="on">On</string>
     <string name="off">Off</string>
     <string name="video">Video</string>
+    <string name="cameras">Cameras</string>
     <string name="vr">VR</string>
     <string name="camera_id">Camera ID</string>
     <string name="camera_resolution">Camera target resolution</string>
@@ -89,6 +90,9 @@
     <string name="head_tracking_angle_limit">Angle limit (45 – 360 grad):</string>
     <string name="vr_osd_scale">OSD frame scale (20 – 150%)</string>
     <string name="draw_osd">Draw OSD</string>
+    <string name="camera1">Camera 1</string>
+    <string name="camera2">Camera 2</string>
+    <string name="camera3">Camera 3</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3840x1920 (Stereo camera)</item>

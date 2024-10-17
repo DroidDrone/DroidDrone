@@ -47,6 +47,7 @@ public class UdpCommon {
     public static final byte ConfigReceived = 22;
     public static final byte VersionMismatch = 23;
     public static final byte RcFrame = 24;
+    public static final byte ChangeCamera = 25;
     //endregion
 
     public static boolean isPacketNumbered(byte packetName){
@@ -66,6 +67,7 @@ public class UdpCommon {
             case Config:
             case ConfigReceived:
             case VersionMismatch:
+            case ChangeCamera:
                 return true;
             default:
                 return false;
@@ -88,6 +90,7 @@ public class UdpCommon {
             case Config:
             case ConfigReceived:
             case VersionMismatch:
+            case ChangeCamera:
                 return true;
             default:
                 return false;

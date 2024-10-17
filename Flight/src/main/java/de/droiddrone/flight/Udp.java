@@ -68,6 +68,7 @@ public class Udp {
     private final Object rcSync = new Object();
     private short[] rcChannels = null;
     private final Object udpSync = new Object();
+    private boolean isCameraRestarting;
 
     public Udp(String destIpStr, int port, String key, int connectionMode, StreamEncoder streamEncoder,
                Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry, Config config, Serial serial){
@@ -250,7 +251,7 @@ public class Udp {
         videoSenderThreadId++;
         audioSenderThreadId++;
         streamEncoder.close();
-        mp4Recorder.close();
+        if (mp4Recorder.isRecording()) mp4Recorder.close();
         cameraManager.getCamera().close();
     }
 
@@ -407,6 +408,17 @@ public class Udp {
                 videoInitialFrame = null;
                 break;
             }
+            case UdpCommon.ChangeCamera:
+            {
+                if (isCameraRestarting) break;
+                final Camera oldCamera = cameraManager.getCamera();
+                config.changeCamera();
+                Thread t1 = new Thread(() -> {
+                    checkConfigUpdate(oldCamera);
+                });
+                t1.start();
+                break;
+            }
         }
     }
 
@@ -421,7 +433,8 @@ public class Udp {
             config.fcConfigUpdated();
         }
         if (config.isCameraConfigChanged()) {
-            if (camera.isStarted() || videoInitialFrame != null){
+            if ((camera.isStarted() || videoInitialFrame != null) && !isCameraRestarting){
+                isCameraRestarting = true;
                 boolean isRecording = mp4Recorder.isRecording();
                 boolean isHevc = MediaCommon.hevcCodecMime.equals(streamEncoder.getCurrentCodecType());
                 if (isRecording) mp4Recorder.stopRecording(camera);
@@ -447,9 +460,12 @@ public class Udp {
                                 break;
                             }
                         }
+                        isCameraRestarting = false;
                     });
                     t1.start();
                     config.recorderConfigUpdated();
+                }else{
+                    isCameraRestarting = false;
                 }
             }
             config.cameraConfigUpdated();
@@ -1101,5 +1117,6 @@ public class Udp {
         if (socket != null) socket.close();
         videoInitialFrame = null;
         audioInitialFrame = null;
+        isCameraRestarting = false;
     }
 }

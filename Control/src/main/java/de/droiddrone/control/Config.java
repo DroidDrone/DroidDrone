@@ -35,14 +35,6 @@ public class Config {
     private int port;
     private String key;
     private boolean isViewer;
-    private String cameraId;
-    private boolean useUsbCamera;
-    private int usbCameraFrameFormat;
-    private boolean usbCameraReset;
-    private int cameraResolutionWidth;
-    private int cameraResolutionHeight;
-    private int cameraFpsMin;
-    private int cameraFpsMax;
     private int bitrateLimit;
     private boolean useExtraEncoder;
     private int videoRecorderCodec;
@@ -78,6 +70,15 @@ public class Config {
     private int vrCenterOffset;
     private int vrOsdOffset;
     private boolean vrHeadTracking;
+    private final boolean[] cameraEnabled = new boolean[SettingsCommon.maxCamerasCount];
+    private final String[] cameraId = new String[SettingsCommon.maxCamerasCount];
+    private final int[] cameraResolutionWidth = new int[SettingsCommon.maxCamerasCount];
+    private final int[] cameraResolutionHeight = new int[SettingsCommon.maxCamerasCount];
+    private final int[] cameraFpsMin = new int[SettingsCommon.maxCamerasCount];
+    private final int[] cameraFpsMax = new int[SettingsCommon.maxCamerasCount];
+    private final boolean[] useUsbCamera = new boolean[SettingsCommon.maxCamerasCount];
+    private final int[] usbCameraFrameFormat = new int[SettingsCommon.maxCamerasCount];
+    private final boolean[] usbCameraReset = new boolean[SettingsCommon.maxCamerasCount];
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
     private final int[] headTrackingAngleLimits = new int[3];
     private boolean decoderConfigChanged;
@@ -112,32 +113,42 @@ public class Config {
         port = preferences.getInt("port", SettingsCommon.port);
         key = preferences.getString("key", SettingsCommon.key);
         isViewer = preferences.getBoolean("isViewer", SettingsCommon.isViewer);
-        cameraId = preferences.getString("cameraId", SettingsCommon.cameraId);
-        useUsbCamera = preferences.getBoolean("useUsbCamera", SettingsCommon.useUsbCamera);
-        usbCameraFrameFormat = Utils.parseInt(preferences.getString("usbCameraFrameFormat", ""), SettingsCommon.usbCameraFrameFormat);
-        usbCameraReset = preferences.getBoolean("usbCameraReset", SettingsCommon.usbCameraReset);
-        int cameraResolutionWidth;
-        int cameraResolutionHeight;
-        try{
-            String cameraResolution = preferences.getString("cameraResolution", "");
-            String[] sizes = cameraResolution.split("x");
-            cameraResolutionWidth = Utils.parseInt(sizes[0], SettingsCommon.cameraResolutionWidth);
-            cameraResolutionHeight = Utils.parseInt(sizes[1], SettingsCommon.cameraResolutionHeight);
-        }catch (Exception e){
-            cameraResolutionWidth = SettingsCommon.cameraResolutionWidth;
-            cameraResolutionHeight = SettingsCommon.cameraResolutionHeight;
-        }
-        if (cameraResolutionWidth != this.cameraResolutionWidth || cameraResolutionHeight != this.cameraResolutionHeight) decoderConfigChanged = true;
-        this.cameraResolutionWidth = cameraResolutionWidth;
-        this.cameraResolutionHeight = cameraResolutionHeight;
-        try{
-            String cameraFps = preferences.getString("cameraFps", "");
-            String[] ranges = cameraFps.split("-");
-            cameraFpsMin = Utils.parseInt(ranges[0], SettingsCommon.cameraFpsMin);
-            cameraFpsMax = Utils.parseInt(ranges[1], SettingsCommon.cameraFpsMax);
-        }catch (Exception e){
-            cameraFpsMin = SettingsCommon.cameraFpsMin;
-            cameraFpsMax = SettingsCommon.cameraFpsMax;
+        for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+            String cameraNum = "";
+            if (i == 0){
+                cameraEnabled[i] = SettingsCommon.cameraEnabled[i];
+            }else{
+                cameraNum = "_" + (i + 1);
+                cameraEnabled[i] = preferences.getBoolean("cameraEnabled" + cameraNum, SettingsCommon.cameraEnabled[i]);
+            }
+            cameraId[i] = preferences.getString("cameraId" + cameraNum, SettingsCommon.cameraId[i]);
+            useUsbCamera[i] = preferences.getBoolean("useUsbCamera" + cameraNum, SettingsCommon.useUsbCamera);
+            usbCameraFrameFormat[i] = Utils.parseInt(preferences.getString("usbCameraFrameFormat" + cameraNum, ""), SettingsCommon.usbCameraFrameFormat);
+            usbCameraReset[i] = preferences.getBoolean("usbCameraReset" + cameraNum, SettingsCommon.usbCameraReset);
+            int cameraResolutionWidth;
+            int cameraResolutionHeight;
+            try {
+                String cameraResolution = preferences.getString("cameraResolution" + cameraNum, "");
+                String[] sizes = cameraResolution.split("x");
+                cameraResolutionWidth = Utils.parseInt(sizes[0], SettingsCommon.cameraResolutionWidth);
+                cameraResolutionHeight = Utils.parseInt(sizes[1], SettingsCommon.cameraResolutionHeight);
+            } catch (Exception e) {
+                cameraResolutionWidth = SettingsCommon.cameraResolutionWidth;
+                cameraResolutionHeight = SettingsCommon.cameraResolutionHeight;
+            }
+            if (cameraResolutionWidth != this.cameraResolutionWidth[i] || cameraResolutionHeight != this.cameraResolutionHeight[i])
+                decoderConfigChanged = true;
+            this.cameraResolutionWidth[i] = cameraResolutionWidth;
+            this.cameraResolutionHeight[i] = cameraResolutionHeight;
+            try {
+                String cameraFps = preferences.getString("cameraFps" + cameraNum, "");
+                String[] ranges = cameraFps.split("-");
+                cameraFpsMin[i] = Utils.parseInt(ranges[0], SettingsCommon.cameraFpsMin);
+                cameraFpsMax[i] = Utils.parseInt(ranges[1], SettingsCommon.cameraFpsMax);
+            } catch (Exception e) {
+                cameraFpsMin[i] = SettingsCommon.cameraFpsMin;
+                cameraFpsMax[i] = SettingsCommon.cameraFpsMax;
+            }
         }
         bitrateLimit = Utils.parseInt(preferences.getString("bitrateLimit", ""), SettingsCommon.bitrateLimit);
         useExtraEncoder = preferences.getBoolean("useExtraEncoder", SettingsCommon.useExtraEncoder);
@@ -262,12 +273,20 @@ public class Config {
         editor.apply();
     }
 
-    public int getCameraFpsMin() {
-        return cameraFpsMin;
+    public int getCamerasCount(){
+        int count = 0;
+        for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+            if (cameraEnabled[i]) count++;
+        }
+        return count;
     }
 
-    public int getCameraFpsMax() {
-        return cameraFpsMax;
+    public int getCameraFpsMin(int cameraIndex) {
+        return cameraFpsMin[cameraIndex];
+    }
+
+    public int getCameraFpsMax(int cameraIndex) {
+        return cameraFpsMax[cameraIndex];
     }
 
     public int getBitrateLimit() {
@@ -390,28 +409,28 @@ public class Config {
         return mavlinkGcsSysId;
     }
 
-    public int getCameraResolutionWidth() {
-        return cameraResolutionWidth;
+    public int getCameraResolutionWidth(int cameraIndex) {
+        return cameraResolutionWidth[cameraIndex];
     }
 
-    public int getCameraResolutionHeight() {
-        return cameraResolutionHeight;
+    public int getCameraResolutionHeight(int cameraIndex) {
+        return cameraResolutionHeight[cameraIndex];
     }
 
-    public String getCameraId(){
-        return cameraId;
+    public String getCameraId(int cameraIndex){
+        return cameraId[cameraIndex];
     }
 
-    public boolean isUseUsbCamera(){
-        return useUsbCamera;
+    public boolean isUseUsbCamera(int cameraIndex){
+        return useUsbCamera[cameraIndex];
     }
 
-    public int getUsbCameraFrameFormat(){
-        return usbCameraFrameFormat;
+    public int getUsbCameraFrameFormat(int cameraIndex){
+        return usbCameraFrameFormat[cameraIndex];
     }
 
-    public boolean isUsbCameraReset(){
-        return usbCameraReset;
+    public boolean isUsbCameraReset(int cameraIndex){
+        return usbCameraReset[cameraIndex];
     }
 
     public int getVrMode() {
@@ -432,6 +451,10 @@ public class Config {
 
     public boolean isVrHeadTracking() {
         return vrHeadTracking;
+    }
+
+    public boolean isCameraEnabled(int cameraIndex) {
+        return cameraEnabled[cameraIndex];
     }
 
     public String getIp(){

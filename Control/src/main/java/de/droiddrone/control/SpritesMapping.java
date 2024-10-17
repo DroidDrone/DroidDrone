@@ -61,4 +61,6 @@ public class SpritesMapping {
     public static final int BUTTON_MAP_2 = 3021;
     public static final int BUTTON_SETTINGS_1 = 3022;
     public static final int BUTTON_SETTINGS_2 = 3023;
+    public static final int BUTTON_CAMERA_1 = 3024;
+    public static final int BUTTON_CAMERA_2 = 3025;
 }
