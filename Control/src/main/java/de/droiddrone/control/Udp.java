@@ -299,8 +299,7 @@ public class Udp {
                         activity.showGlFragment(true);
                         lastFrameReceivedTs = System.currentTimeMillis() + 500;
                         lastKeyFrameReceivedTs = lastFrameReceivedTs;
-                        decoder.videoInputBuffer.clear();
-                        decoder.videoInputBuffer.offer(new MediaCodecBuffer(Decoder.BUFFER_FLAG_CODEC_CONFIG, buf));
+                        decoder.setVideoInitialFrame(buf);
                         Thread t1 = new Thread(() -> decoder.initializeVideo(isHevc, width, height, isFrontCamera));
                         t1.start();
                     }catch (Exception e){
