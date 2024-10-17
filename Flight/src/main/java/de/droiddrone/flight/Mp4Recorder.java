@@ -417,10 +417,10 @@ public class Mp4Recorder {
         if (videoEncoder != null){
             try {
                 videoEncoder.stop();
-            }catch (IllegalStateException ignored){
+                videoEncoder.release();
+                videoEncoder = null;
+            }catch (Exception ignored){
             }
-            videoEncoder.release();
-            videoEncoder = null;
         }
         if (surface != null) surface.release();
     }

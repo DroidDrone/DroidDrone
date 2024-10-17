@@ -125,8 +125,8 @@ public class InternalCamera implements Camera{
             handlerThread.start();
             final Handler handler = new Handler(handlerThread.getLooper());
             cameraManager.openCamera(config.getCameraId(), cameraStateCallback, handler);
-        }catch (CameraAccessException e){
-            log("openCamera CameraAccessException: "+ e);
+        }catch (Exception e){
+            log("openCamera error: "+ e);
             return false;
         }
         return true;
@@ -197,10 +197,8 @@ public class InternalCamera implements Camera{
                 final Handler handler = new Handler(handlerThread.getLooper());
                 camera.createCaptureSessionByOutputConfigurations(outputConfigurations, sessionStateCallback, handler);
             }
-        } catch (CameraAccessException e) {
-            log("createCaptureSession CameraAccessException: " + e);
-        } catch (IllegalArgumentException e) {
-            log("createCaptureSession IllegalArgumentException: " + e);
+        } catch (Exception e) {
+            log("createCaptureSession error: " + e);
         }
     }
 

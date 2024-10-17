@@ -296,6 +296,10 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         return super.onKeyDown(keyCode, event);
     }
 
+    public void stopDecoder(){
+        if (decoder != null) decoder.close();
+    }
+
     private void checkConfigUpdate(){
         if (config.isVideoFrameOrientationChanged()){
             if (!config.isDecoderConfigChanged()) {

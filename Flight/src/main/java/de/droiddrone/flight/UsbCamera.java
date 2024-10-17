@@ -153,8 +153,12 @@ public class UsbCamera implements Camera {
             return null;
         }
         if (usbDevices.isEmpty()) return null;
+        int index = -1;
         for (UsbDevice usbDevice : usbDevices) {
-            if (checkUsbDevice(usbDevice)) return usbDevice;
+            if (checkUsbDevice(usbDevice)) {
+                index++;
+                if (index == config.getCurrentUsbCameraIndex()) return usbDevice;
+            }
         }
         return null;
     }

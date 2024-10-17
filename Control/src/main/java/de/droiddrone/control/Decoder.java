@@ -178,7 +178,13 @@ public class Decoder {
             }
         }
 
-        renderer.setVideoFrameSize(width, height, isFrontCamera);
+        try {
+            renderer.setVideoFrameSize(width, height, isFrontCamera);
+        }catch (Exception e){
+            log("setVideoFrameSize error: " + e);
+            videoDecoderInitializationRunning = false;
+            return;
+        }
         Surface surface = renderer.getSurface();
         if (surface == null) {
             videoDecoderInitializationRunning = false;
@@ -343,19 +349,25 @@ public class Decoder {
         videoDecoderStarted = false;
         audioDecoderStarted = false;
         if (videoDecoder != null){
-            videoDecoder.stop();
-            videoDecoder.release();
-            videoDecoder = null;
+            try {
+                videoDecoder.stop();
+                videoDecoder.release();
+                videoDecoder = null;
+            }catch (Exception ignored){}
         }
         if (audioDecoder != null){
-            audioDecoder.stop();
-            audioDecoder.release();
-            audioDecoder = null;
+            try {
+                audioDecoder.stop();
+                audioDecoder.release();
+                audioDecoder = null;
+            }catch (Exception ignored){}
         }
         if (audioTrack != null){
-            audioTrack.stop();
-            audioTrack.release();
-            audioTrack = null;
+            try {
+                audioTrack.stop();
+                audioTrack.release();
+                audioTrack = null;
+            }catch (Exception ignored){}
         }
         videoInputBuffer.clear();
         audioInputBuffer.clear();

@@ -19,7 +19,7 @@ package de.droiddrone.common;
 
 public class SettingsCommon {
     // increase when the Control/Flight app is not compatible with the previous version (UDP packets changed, new added etc.)
-    public static final int versionCompatibleCode = 7;
+    public static final int versionCompatibleCode = 8;
 
     // default settings
     public static final String ip = "";
@@ -28,7 +28,6 @@ public class SettingsCommon {
     public static final int connectionMode = ConnectionMode.overServer;
     public static final boolean isViewer = false;
     public static final int viewersCount = 2;
-    public static final String cameraId = "0";
     public static final boolean useUsbCamera = false;
     public static final int usbCameraFrameFormat = UsbCameraFrameFormat.MJPEG;
     public static final boolean usbCameraReset = true;
@@ -84,6 +83,10 @@ public class SettingsCommon {
     public static final int headTrackingAngleLimitMin = 45;
     public static final int headTrackingAngleLimitMax = 360;
     public static final int gyroSamplingPeriodUs = 16666;
+    public static final int maxCamerasCount = 3;
+    public static final int currentCameraIndex = 0;
+    public static final boolean[] cameraEnabled = {true, false, false};
+    public static final String[] cameraId = {"0", "1", "3"};
 
     public static class VrMode {
         public static final int off = 0;

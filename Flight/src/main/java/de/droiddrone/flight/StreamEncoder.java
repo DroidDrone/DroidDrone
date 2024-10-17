@@ -119,6 +119,7 @@ public class StreamEncoder {
         }
         bitRateCounter = 0;
         bitRateTimestamp = System.currentTimeMillis();
+        lastBitrateReduceTs = System.currentTimeMillis();
         lastBitRateMbs = 0;
         if (config.getBitrateLimit() != 0){
             while (getTargetBitRate() > config.getBitrateLimit() && bitRateIndex > 0){

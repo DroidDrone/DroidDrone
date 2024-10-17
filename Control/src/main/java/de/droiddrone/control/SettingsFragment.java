@@ -39,6 +39,8 @@ import de.droiddrone.common.Utils;
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final int fragmentId = 3;
     private final MainActivity activity;
+    private final boolean[] isCameraEnabled = new boolean[SettingsCommon.maxCamerasCount];
+    private final boolean[] isUseUsbCamera = new boolean[SettingsCommon.maxCamerasCount];
 
     public SettingsFragment(MainActivity activity){
         this.activity = activity;
@@ -48,17 +50,27 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
         checkFsWarning();
-        EditTextPreference cameraId = findPreference("cameraId");
-        SwitchPreferenceCompat useUsbCamera = findPreference("useUsbCamera");
-        if (cameraId != null) {
-            setNumericEditTextPreferenceSummary(cameraId);
-            cameraId.setEnabled(useUsbCamera == null || !useUsbCamera.isChecked());
-        }
-        if (useUsbCamera != null) {
-            useUsbCamera.setOnPreferenceChangeListener((preference, newValue) -> {
-                if (cameraId != null) cameraId.setEnabled(Boolean.FALSE.equals(newValue));
-                return true;
-            });
+        isCameraEnabled[0] = true;
+        for (int i = 0; i < SettingsCommon.maxCamerasCount; i++) {
+            String cameraNum = "";
+            SwitchPreferenceCompat cameraEnabled = null;
+            if (i > 0){
+                cameraNum = "_" + (i + 1);
+                cameraEnabled = findPreference("cameraEnabled" + cameraNum);
+                isCameraEnabled[i] = cameraEnabled != null && cameraEnabled.isChecked();
+            }
+            SwitchPreferenceCompat useUsbCamera = findPreference("useUsbCamera" + cameraNum);
+            isUseUsbCamera[i] = useUsbCamera != null && useUsbCamera.isChecked();
+            EditTextPreference cameraId = findPreference("cameraId" + cameraNum);
+            if (cameraId != null) {
+                setEditTextPreferenceSummary(cameraId);
+                cameraId.setEnabled(!isUseUsbCamera[i] && isCameraEnabled[i]);
+            }
+            setListPreferenceSummary(findPreference("usbCameraFrameFormat" + cameraNum));
+            setListPreferenceSummary(findPreference("cameraResolution" + cameraNum));
+            setListPreferenceSummary(findPreference("cameraFps" + cameraNum));
+            onUseUsbCameraChanged(useUsbCamera, cameraId, i);
+            onCameraEnabledChanged(cameraEnabled, cameraId, i);
         }
         EditTextPreference usbSerialPortIndex = findPreference("usbSerialPortIndex");
         EditTextPreference mavlinkTargetSysId = findPreference("mavlinkTargetSysId");
@@ -66,9 +78,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setNumericEditTextPreferenceSummary(usbSerialPortIndex);
         setNumericEditTextPreferenceSummary(mavlinkTargetSysId);
         setNumericEditTextPreferenceSummary(mavlinkGcsSysId);
-        setListPreferenceSummary(findPreference("usbCameraFrameFormat"));
-        setListPreferenceSummary(findPreference("cameraResolution"));
-        setListPreferenceSummary(findPreference("cameraFps"));
         setListPreferenceSummary(findPreference("bitrateLimit"));
         setListPreferenceSummary(findPreference("audioStreamBitrate"));
         setListPreferenceSummary(findPreference("recordedAudioBitrate"));
@@ -77,14 +86,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setListPreferenceSummary(findPreference("telemetryRefreshRate"));
         setListPreferenceSummary(findPreference("rcRefreshRate"));
         setListPreferenceSummary(findPreference("serialBaudRate"));
-        EditTextPreference nativeSerialPort = findPreference("nativeSerialPort");
-        if (nativeSerialPort != null){
-            nativeSerialPort.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
-            nativeSerialPort.setOnBindEditTextListener(editText -> {
-                editText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-                editText.setMaxLines(1);
-            });
-        }
+        setEditTextPreferenceSummary(findPreference("nativeSerialPort"));
         SwitchPreferenceCompat useNativeSerialPort = findPreference("useNativeSerialPort");
         if (usbSerialPortIndex != null) {
             usbSerialPortIndex.setEnabled(useNativeSerialPort == null || !useNativeSerialPort.isChecked());
@@ -135,6 +137,30 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         }
     }
 
+    private void onUseUsbCameraChanged(SwitchPreferenceCompat useUsbCamera, final EditTextPreference cameraId, final int cameraIndex){
+        if (useUsbCamera != null) {
+            useUsbCamera.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (cameraId != null){
+                    cameraId.setEnabled(Boolean.FALSE.equals(newValue) && isCameraEnabled[cameraIndex]);
+                }
+                isUseUsbCamera[cameraIndex] = (boolean) newValue;
+                return true;
+            });
+        }
+    }
+
+    private void onCameraEnabledChanged(SwitchPreferenceCompat cameraEnabled, final EditTextPreference cameraId, final int cameraIndex){
+        if (cameraEnabled != null) {
+            cameraEnabled.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (cameraId != null) {
+                    cameraId.setEnabled(Boolean.TRUE.equals(newValue) && !isUseUsbCamera[cameraIndex]);
+                }
+                isCameraEnabled[cameraIndex] = (boolean) newValue;
+                return true;
+            });
+        }
+    }
+
     private void fcProtocolChanged(EditTextPreference mavlinkTargetSysId, EditTextPreference mavlinkGcsSysId, String value){
         boolean isMsp = false;
         try {
@@ -170,6 +196,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private void setListPreferenceSummary(ListPreference preference){
         if (preference != null){
             preference.setSummaryProvider((Preference.SummaryProvider<ListPreference>) ListPreference::getEntry);
+        }
+    }
+
+    private void setEditTextPreferenceSummary(EditTextPreference preference){
+        if (preference != null) {
+            preference.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
+            preference.setOnBindEditTextListener(editText -> {
+                editText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+                editText.setMaxLines(1);
+            });
         }
     }
 
