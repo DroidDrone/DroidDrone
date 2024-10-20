@@ -1126,6 +1126,7 @@ public class Osd {
     public void drawItems(){
         if (activeItems == null) {
             drawTelemetryDataWarning(0, "Awaiting OSD initialization...");
+            if (isDrawPhoneOsd()) drawPhoneOsd();
             return;
         }
         if (fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_ARDUPILOT){
