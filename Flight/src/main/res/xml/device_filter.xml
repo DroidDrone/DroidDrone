@@ -2,6 +2,7 @@
 <resources>
     <!-- FC -->
     <usb-device vendor-id="1155" product-id="22336" />
+    <usb-device vendor-id="4617" product-id="22336" />
     <usb-device vendor-id="4617" product-id="22337" />
     <!-- USB to UART/TTL converter -->
     <usb-device vendor-id="6790" product-id="29987" />
