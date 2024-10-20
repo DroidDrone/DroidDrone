@@ -194,6 +194,7 @@ public class Udp {
 			case UdpCommon.StartStopRecording:
 			case UdpCommon.Config:
 			case UdpCommon.RcFrame:
+			case UdpCommon.ChangeCamera:
 				// send to drone from controller only
 				if (clientId != 1) break;
 				if (senders[0] != null) senders[0].sendPacket(packet.data);
