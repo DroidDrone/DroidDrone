@@ -35,6 +35,8 @@ The mobile phones usually do not have a public IP address and you have two optio
 3. **Connect over server** - you start a Server app (Java) on your PC or virtual server and connect both phones to its public IP address.
    
    ![Server](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_server.JPG?raw=true)
+   
+> Java JRE is required to run the server app. You can download it from [here](https://www.java.com/en/download/).
 
 You can also use your home PC as a server, but you have to configure port forwarding (default is 6286 / UDP) in your router and allow this port in the firewall first (and don't forget to turn off the sleep mode...).
 > Of course, your router should have a public IP for it to work, but most internet providers give one.
