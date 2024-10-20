@@ -405,7 +405,6 @@ public class Mavlink {
                         fcVersionMinor = (int) (message.flight_sw_version >> 16 & 0xFF);
                         fcVersionPatchLevel = (int) (message.flight_sw_version >> 8 & 0xFF);
                         byte fw_type = (byte) (message.flight_sw_version & 0xFF);
-                        setFcInfo();
                         break;
                     }
                     case msg_param_value.MAVLINK_MSG_ID_PARAM_VALUE: {
@@ -454,11 +453,12 @@ public class Mavlink {
                     case msg_statustext.MAVLINK_MSG_ID_STATUSTEXT: {
                         msg_statustext message = new msg_statustext(packet);
                         isStatusTextReceived = true;
-                        if (message.getText() == null || message.getText().contains("No ap_message for mavlink"))
+                        String msg = message.getText();
+                        if (msg == null || msg.contains("No ap_message for mavlink"))
                             break;
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeByte((byte) message.severity);
-                        buffer.writeUTF(message.getText());
+                        buffer.writeUTF(msg);
                         telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_STATUS_TEXT, buffer.getData()));
                         break;
                     }
