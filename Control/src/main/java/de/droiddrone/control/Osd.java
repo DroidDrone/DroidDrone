@@ -183,8 +183,9 @@ public class Osd {
     }
 
     private boolean isDrawPhoneOsd(){
-        return (config.isShowPhoneBattery() || config.isShowCameraFps() || config.isShowScreenFps() || config.isShowVideoBitrate()
-                || config.isShowPing() || config.isShowVideoRecordButton() || config.isShowVideoRecordIndication()
+        return (config.isShowDronePhoneBattery() || config.isShowControlPhoneBattery() || config.isShowCameraFps()
+                || config.isShowScreenFps() || config.isShowVideoBitrate() || config.isShowPing()
+                || config.isShowVideoRecordButton() || config.isShowVideoRecordIndication()
                 || config.isShowNetworkState());
     }
 
@@ -1033,10 +1034,10 @@ public class Osd {
         float spriteSpace = 10 * screenFactor;
         String text;
 
-        if (config.isShowPhoneBattery()) {
+        if (config.isShowDronePhoneBattery()) {
             int icon = getPhoneBatteryIcon(dronePhoneBatteryPercentage, dronePhoneBatteryIsCharging);
             glSprites.addSprite(icon, xOffset, y, spriteSize);
-            xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
+            xOffset += glSprites.getSpriteWidth(icon, spriteSize) + spriteSpace;
             if (dronePhoneBatteryPercentage <= 30){
                 glSprites.addSprite(SpritesMapping.ALERT, xOffset, y, spriteSize);
                 xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
@@ -1044,10 +1045,12 @@ public class Osd {
             text = dronePhoneBatteryPercentage + "%";
             glText.addText(text, xOffset, y, textSize);
             xOffset += glText.getLengthInPixels(text, textSize) + textSpace / 3;
+        }
 
-            icon = getPhoneBatteryIcon(controlPhoneBatteryPercentage, controlPhoneBatteryIsCharging);
+        if (config.isShowControlPhoneBattery()) {
+            int icon = getPhoneBatteryIcon(controlPhoneBatteryPercentage, controlPhoneBatteryIsCharging);
             glSprites.addSprite(icon, xOffset, y, spriteSize);
-            xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;
+            xOffset += glSprites.getSpriteWidth(icon, spriteSize) + spriteSpace;
             if (controlPhoneBatteryPercentage <= 30){
                 glSprites.addSprite(SpritesMapping.ALERT, xOffset, y, spriteSize);
                 xOffset += glSprites.getSpriteWidth(SpritesMapping.ALERT, spriteSize) + spriteSpace;

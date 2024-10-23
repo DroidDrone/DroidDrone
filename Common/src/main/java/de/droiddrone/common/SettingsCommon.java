@@ -56,7 +56,8 @@ public class SettingsCommon {
     public static final boolean invertVideoAxisX = false;
     public static final boolean invertVideoAxisY = false;
     public static final boolean drawOsd = true;
-    public static final boolean showPhoneBattery = true;
+    public static final boolean showDronePhoneBattery = true;
+    public static final boolean showControlPhoneBattery = true;
     public static final boolean showNetworkState = true;
     public static final boolean showCameraFps = true;
     public static final boolean showScreenFps = false;
