@@ -46,7 +46,8 @@ public class Config {
     private boolean recordAudio;
     private int recordedAudioBitrate;
     private boolean drawOsd;
-    private boolean showPhoneBattery;
+    private boolean showDronePhoneBattery;
+    private boolean showControlPhoneBattery;
     private boolean showNetworkState;
     private boolean showCameraFps;
     private boolean showScreenFps;
@@ -173,7 +174,8 @@ public class Config {
         this.invertVideoAxisX = invertVideoAxisX;
         this.invertVideoAxisY = invertVideoAxisY;
         drawOsd = preferences.getBoolean("drawOsd", SettingsCommon.drawOsd);
-        showPhoneBattery = preferences.getBoolean("showPhoneBattery", SettingsCommon.showPhoneBattery);
+        showDronePhoneBattery = preferences.getBoolean("showDronePhoneBattery", SettingsCommon.showDronePhoneBattery);
+        showControlPhoneBattery = preferences.getBoolean("showControlPhoneBattery", SettingsCommon.showControlPhoneBattery);
         showNetworkState = preferences.getBoolean("showNetworkState", SettingsCommon.showNetworkState);
         showCameraFps = preferences.getBoolean("showCameraFps", SettingsCommon.showCameraFps);
         showScreenFps = preferences.getBoolean("showScreenFps", SettingsCommon.showScreenFps);
@@ -333,8 +335,12 @@ public class Config {
         return drawOsd;
     }
 
-    public boolean isShowPhoneBattery() {
-        return showPhoneBattery;
+    public boolean isShowDronePhoneBattery() {
+        return showDronePhoneBattery;
+    }
+
+    public boolean isShowControlPhoneBattery() {
+        return showControlPhoneBattery;
     }
 
     public boolean isShowNetworkState() {

@@ -266,12 +266,19 @@
             app:defaultValue="true"
             app:title="@string/draw_osd"/>
         <SwitchPreferenceCompat
-            app:key="showPhoneBattery"
+            app:key="showDronePhoneBattery"
             app:summaryOn="@string/on"
             app:summaryOff="@string/off"
             app:defaultValue="true"
             app:dependency="drawOsd"
-            app:title="@string/show_phone_battery"/>
+            app:title="@string/show_drone_phone_battery"/>
+        <SwitchPreferenceCompat
+            app:key="showControlPhoneBattery"
+            app:summaryOn="@string/on"
+            app:summaryOff="@string/off"
+            app:defaultValue="true"
+            app:dependency="drawOsd"
+            app:title="@string/show_control_phone_battery"/>
         <SwitchPreferenceCompat
             app:key="showNetworkState"
             app:summaryOn="@string/on"
