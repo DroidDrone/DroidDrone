@@ -49,6 +49,8 @@ In the Control app you can configure various settings, such as Camera ID (for in
 
 You can also connect an external USB camera (UVC) using the USB OTG splitter (however, some power-hungry cameras may not work stably via phone OTG splitter, please check before flying).
 
+You can configure up to three cameras and then switch them during the flight.
+
 > Cameras with high frame rates have lower internal latency.
 
 Before the first flight you also need to check in the settings of control app that the channels mapping is correct for your remote controller:
@@ -56,6 +58,8 @@ Before the first flight you also need to check in the settings of control app th
 ![Channels map](https://github.com/IvanSchulz/DroidDrone/blob/master/Resources/Screenshots/Scr_channels_map.jpg?raw=true)
 
 The channels mapping in your FC is automatically recognized.
+
+You can assign up to three RC channels to the phone gyroscope axis to use them for camera head tracking in VR mode.
 
 **Note that every time before connect the control app you need to move all sticks and switches on your transmitter to correctly recognize all channels. Some channels can only work as two position switches via USB.**
 
