@@ -94,6 +94,9 @@
     <string name="camera1">Camera 1</string>
     <string name="camera2">Camera 2</string>
     <string name="camera3">Camera 3</string>
+    <string name="mavlink_udp_bridge">Mavlink UDP bridge</string>
+    <string name="mavlink_udp_bridge_ip">Mavlink UDP bridge IP</string>
+    <string name="mavlink_udp_bridge_port">Mavlink UDP bridge port</string>
 
     <string-array name="cameraResolutionsEntries">
         <item>3840x1920 (Stereo camera)</item>
@@ -326,6 +329,18 @@
     </string-array>
 
     <string-array name="vrModeValues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="mavlinkUdpBridgeEntries">
+        <item>Disabled</item>
+        <item>Send to connected IP</item>
+        <item>Send to specific IP</item>
+    </string-array>
+
+    <string-array name="mavlinkUdpBridgeValues">
         <item>0</item>
         <item>1</item>
         <item>2</item>

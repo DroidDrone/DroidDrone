@@ -51,12 +51,16 @@ public class Config {
     private int fcProtocol;
     private int mavlinkTargetSysId;
     private int mavlinkGcsSysId;
+    private int mavlinkUdpBridge;
+    private String mavlinkUdpBridgeIp;
+    private int mavlinkUdpBridgePort;
     private boolean connectOnStartup;
     private boolean cameraConfigChanged;
     private boolean recorderConfigChanged;
     private boolean audioStreamConfigChanged;
     private boolean fcConfigChanged;
     private boolean rcConfigChanged;
+    private boolean mavlinkUdpBridgeConfigChanged;
     private final boolean[] cameraEnabled = new boolean[SettingsCommon.maxCamerasCount];
     private final String[] cameraId = new String[SettingsCommon.maxCamerasCount];
     private final int[] cameraResolutionWidth = new int[SettingsCommon.maxCamerasCount];
@@ -74,6 +78,14 @@ public class Config {
         System.arraycopy(SettingsCommon.cameraEnabled, 0, cameraEnabled, 0, SettingsCommon.maxCamerasCount);
         System.arraycopy(SettingsCommon.cameraId, 0, cameraId, 0, SettingsCommon.maxCamerasCount);
         loadConfig();
+    }
+
+    public boolean isMavlinkUdpBridgeConfigChanged(){
+        return mavlinkUdpBridgeConfigChanged;
+    }
+
+    public void mavlinkUdpBridgeConfigUpdated(){
+        mavlinkUdpBridgeConfigChanged = false;
     }
 
     public boolean isAudioStreamConfigChanged() {
@@ -264,6 +276,18 @@ public class Config {
         return (short)mavlinkGcsSysId;
     }
 
+    public int getMavlinkUdpBridge() {
+        return mavlinkUdpBridge;
+    }
+
+    public String getMavlinkUdpBridgeIp() {
+        return mavlinkUdpBridgeIp;
+    }
+
+    public int getMavlinkUdpBridgePort() {
+        return mavlinkUdpBridgePort;
+    }
+
     public boolean isConnectOnStartup(){
         return connectOnStartup;
     }
@@ -366,6 +390,17 @@ public class Config {
             if (mavlinkTargetSysId != this.mavlinkTargetSysId || mavlinkGcsSysId != this.mavlinkGcsSysId) fcConfigChanged = true;
             this.mavlinkTargetSysId = mavlinkTargetSysId;
             this.mavlinkGcsSysId = mavlinkGcsSysId;
+            int mavlinkUdpBridge = buffer.readUnsignedByteAsInt();
+            String mavlinkUdpBridgeIp = buffer.readUTF();
+            int mavlinkUdpBridgePort = buffer.readUnsignedShortAsInt();
+            if (mavlinkUdpBridge != this.mavlinkUdpBridge
+                    || mavlinkUdpBridgeIp != null && !mavlinkUdpBridgeIp.equals(this.mavlinkUdpBridgeIp)
+                    || mavlinkUdpBridgePort != this.mavlinkUdpBridgePort) {
+                mavlinkUdpBridgeConfigChanged = true;
+            }
+            this.mavlinkUdpBridge = mavlinkUdpBridge;
+            this.mavlinkUdpBridgeIp = mavlinkUdpBridgeIp;
+            this.mavlinkUdpBridgePort = mavlinkUdpBridgePort;
             if (!updateConfig()) return -2;
             return 0;
         }catch (Exception e){
@@ -414,6 +449,9 @@ public class Config {
         fcProtocol = preferences.getInt("fcProtocol", SettingsCommon.fcProtocol);
         mavlinkTargetSysId = preferences.getInt("mavlinkTargetSysId", SettingsCommon.mavlinkTargetSysId);
         mavlinkGcsSysId = preferences.getInt("mavlinkGcsSysId", SettingsCommon.mavlinkGcsSysId);
+        mavlinkUdpBridge = preferences.getInt("mavlinkUdpBridge", SettingsCommon.mavlinkUdpBridge);
+        mavlinkUdpBridgeIp = preferences.getString("mavlinkUdpBridgeIp", SettingsCommon.mavlinkUdpBridgeIp);
+        mavlinkUdpBridgePort = preferences.getInt("mavlinkUdpBridgePort", SettingsCommon.mavlinkUdpBridgePort);
         connectOnStartup = preferences.getBoolean("connectOnStartup", SettingsCommon.connectOnStartup);
     }
 
@@ -469,6 +507,9 @@ public class Config {
         editor.putInt("fcProtocol", fcProtocol);
         editor.putInt("mavlinkTargetSysId", mavlinkTargetSysId);
         editor.putInt("mavlinkGcsSysId", mavlinkGcsSysId);
+        editor.putInt("mavlinkUdpBridge", mavlinkUdpBridge);
+        editor.putString("mavlinkUdpBridgeIp", mavlinkUdpBridgeIp);
+        editor.putInt("mavlinkUdpBridgePort", mavlinkUdpBridgePort);
         connectOnStartup = activity.cbConnectOnStartup.isChecked();
         editor.putBoolean("connectOnStartup", connectOnStartup);
         editor.apply();

@@ -75,9 +75,15 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         EditTextPreference usbSerialPortIndex = findPreference("usbSerialPortIndex");
         EditTextPreference mavlinkTargetSysId = findPreference("mavlinkTargetSysId");
         EditTextPreference mavlinkGcsSysId = findPreference("mavlinkGcsSysId");
+        ListPreference mavlinkUdpBridge = findPreference("mavlinkUdpBridge");
+        EditTextPreference mavlinkUdpBridgeIp = findPreference("mavlinkUdpBridgeIp");
+        EditTextPreference mavlinkUdpBridgePort = findPreference("mavlinkUdpBridgePort");
         setNumericEditTextPreferenceSummary(usbSerialPortIndex);
         setNumericEditTextPreferenceSummary(mavlinkTargetSysId);
         setNumericEditTextPreferenceSummary(mavlinkGcsSysId);
+        setNumericEditTextPreferenceSummary(mavlinkUdpBridgePort);
+        setEditTextPreferenceSummary(mavlinkUdpBridgeIp);
+        setListPreferenceSummary(mavlinkUdpBridge);
         setListPreferenceSummary(findPreference("bitrateLimit"));
         setListPreferenceSummary(findPreference("audioStreamBitrate"));
         setListPreferenceSummary(findPreference("recordedAudioBitrate"));
@@ -97,15 +103,23 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
+        if (mavlinkUdpBridge != null) {
+            mavlinkUdpBridge.setOnPreferenceChangeListener((preference, newValue) -> {
+                int value = Utils.parseInt((String) newValue, SettingsCommon.mavlinkUdpBridge);
+                if (mavlinkUdpBridgeIp != null) mavlinkUdpBridgeIp.setEnabled(value == SettingsCommon.MavlinkUdpBridge.specificIp);
+                if (mavlinkUdpBridgePort != null) mavlinkUdpBridgePort.setEnabled(value != SettingsCommon.MavlinkUdpBridge.disabled);
+                return true;
+            });
+        }
 
         ListPreference fcProtocol = findPreference("fcProtocol");
         if (fcProtocol != null){
             setListPreferenceSummary(fcProtocol);
             fcProtocol.setOnPreferenceChangeListener((preference, newValue) -> {
-                fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, (String) newValue);
+                fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, mavlinkUdpBridge, mavlinkUdpBridgeIp, mavlinkUdpBridgePort, (String) newValue);
                 return true;
             });
-            fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, fcProtocol.getValue());
+            fcProtocolChanged(mavlinkTargetSysId, mavlinkGcsSysId, mavlinkUdpBridge, mavlinkUdpBridgeIp, mavlinkUdpBridgePort, fcProtocol.getValue());
         }
 
         EditTextPreference vrFrameScale = findPreference("vrFrameScale");
@@ -161,14 +175,23 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         }
     }
 
-    private void fcProtocolChanged(EditTextPreference mavlinkTargetSysId, EditTextPreference mavlinkGcsSysId, String value){
+    private void fcProtocolChanged(EditTextPreference mavlinkTargetSysId, EditTextPreference mavlinkGcsSysId,
+                                   ListPreference mavlinkUdpBridge, EditTextPreference mavlinkUdpBridgeIp,
+                                   EditTextPreference mavlinkUdpBridgePort, String value){
         boolean isMsp = false;
         try {
             isMsp = Integer.parseInt(value) == FcCommon.FC_PROTOCOL_MSP;
         }catch (Exception ignored){
         }
+        int mavlinkUdpBridgeValue = SettingsCommon.mavlinkUdpBridge;
         if (mavlinkTargetSysId != null) mavlinkTargetSysId.setEnabled(!isMsp);
         if (mavlinkGcsSysId != null) mavlinkGcsSysId.setEnabled(!isMsp);
+        if (mavlinkUdpBridge != null) {
+            mavlinkUdpBridge.setEnabled(!isMsp);
+            mavlinkUdpBridgeValue = Utils.parseInt(mavlinkUdpBridge.getValue(), SettingsCommon.mavlinkUdpBridge);
+        }
+        if (mavlinkUdpBridgeIp != null) mavlinkUdpBridgeIp.setEnabled(!isMsp && mavlinkUdpBridgeValue == SettingsCommon.MavlinkUdpBridge.specificIp);
+        if (mavlinkUdpBridgePort != null) mavlinkUdpBridgePort.setEnabled(!isMsp && mavlinkUdpBridgeValue != SettingsCommon.MavlinkUdpBridge.disabled);
     }
 
     private void vrModeChanged(EditTextPreference vrFrameScale, EditTextPreference vrCenterOffset,

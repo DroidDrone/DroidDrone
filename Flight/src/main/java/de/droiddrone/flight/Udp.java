@@ -54,6 +54,7 @@ public class Udp {
     private final PhoneTelemetry phoneTelemetry;
     private final Config config;
     private final Serial serial;
+    private final MavlinkUdpBridge mavlinkUdpBridge;
     private DatagramSocket socket;
     private InetAddress destIp;
     private DatagramPacket receiverPacket;
@@ -71,7 +72,8 @@ public class Udp {
     private boolean isCameraRestarting;
 
     public Udp(String destIpStr, int port, String key, int connectionMode, StreamEncoder streamEncoder,
-               Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry, Config config, Serial serial){
+               Mp4Recorder mp4Recorder, CameraManager cameraManager, Msp msp, Mavlink mavlink, PhoneTelemetry phoneTelemetry,
+               Config config, Serial serial, MavlinkUdpBridge mavlinkUdpBridge){
         this.destIpStr = destIpStr;
         this.port = port;
         this.key = key;
@@ -84,6 +86,7 @@ public class Udp {
         this.phoneTelemetry = phoneTelemetry;
         this.config = config;
         this.serial = serial;
+        this.mavlinkUdpBridge = mavlinkUdpBridge;
         videoSenderThreadId = 0;
         audioSenderThreadId = 0;
         udpThreadsId = 0;
@@ -288,6 +291,12 @@ public class Udp {
         return (receiverBuffer != null && receiverBuffer.isConnected());
     }
 
+    public InetAddress getSenderIp(){
+        UdpSender udpSender = this.udpSender;
+        if (udpSender == null) return null;
+        return udpSender.getIp();
+    }
+
     private void processData(SavedPacket packet) {
         DataReader buffer = new DataReader(packet.data, true);
         byte packetName = buffer.readByte();
@@ -431,6 +440,13 @@ public class Udp {
         if (config.isFcConfigChanged()) {
             serial.restart();
             config.fcConfigUpdated();
+        }
+        if (config.isMavlinkUdpBridgeConfigChanged()){
+            mavlinkUdpBridge.close();
+            if (config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.disabled){
+                mavlinkUdpBridge.initialize();
+            }
+            config.mavlinkUdpBridgeConfigUpdated();
         }
         if (config.isCameraConfigChanged()) {
             if ((camera.isStarted() || videoInitialFrame != null) && !isCameraRestarting){
