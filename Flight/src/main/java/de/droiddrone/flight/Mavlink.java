@@ -111,6 +111,7 @@ public class Mavlink {
     private int distanceToHome; // m
     private float traveledDistance; // m
     private float directionToHome; // grad
+    private MavlinkUdpBridge mavlinkUdpBridge;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -129,6 +130,10 @@ public class Mavlink {
         isHomePositionReceived = false;
         isArmed = false;
         batteryCellCountDetected = 0;
+    }
+
+    public void setMavlinkUdpBridge(MavlinkUdpBridge mavlinkUdpBridge) {
+        this.mavlinkUdpBridge = mavlinkUdpBridge;
     }
 
     public boolean isInitialized(){
@@ -365,6 +370,30 @@ public class Mavlink {
         }
     };
 
+    public void processReceivedUdpData(byte[] data){
+        List<MAVLinkPacket> packets = null;
+        try {
+            packets = parsePackets(data);
+        }catch (Exception e){
+            log("Mavlink processUdpData - parsePackets error: " + e);
+        }
+        if (packets == null || packets.isEmpty()) return;
+        for (MAVLinkPacket packet : packets) {
+            serial.writeDataMavlink(packet.encodePacket());
+        }
+    }
+
+    private void sendUdpPackets(List<MAVLinkPacket> packets){
+        if (mavlinkUdpBridge == null || !mavlinkUdpBridge.isInitialized()) return;
+        try {
+            for (MAVLinkPacket packet : packets) {
+                mavlinkUdpBridge.sendPacket(packet.encodePacket());
+            }
+        }catch (Exception e){
+            log("Mavlink - sendUdpPackets error: " + e);
+        }
+    }
+
     private void processData(byte[] data){
         List<MAVLinkPacket> packets = null;
         try {
@@ -373,6 +402,7 @@ public class Mavlink {
             log("Mavlink - parsePackets error: " + e);
         }
         if (packets == null || packets.isEmpty()) return;
+        sendUdpPackets(packets);
         for (MAVLinkPacket packet : packets) {
             try {
                 switch (packet.msgid) {

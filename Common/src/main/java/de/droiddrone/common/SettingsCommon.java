@@ -19,7 +19,7 @@ package de.droiddrone.common;
 
 public class SettingsCommon {
     // increase when the Control/Flight app is not compatible with the previous version (UDP packets changed, new added etc.)
-    public static final int versionCompatibleCode = 8;
+    public static final int versionCompatibleCode = 9;
 
     // default settings
     public static final String ip = "";
@@ -88,6 +88,15 @@ public class SettingsCommon {
     public static final int currentCameraIndex = 0;
     public static final boolean[] cameraEnabled = {true, false, false};
     public static final String[] cameraId = {"0", "1", "3"};
+    public static final int mavlinkUdpBridge = MavlinkUdpBridge.disabled;
+    public static final String mavlinkUdpBridgeIp = "";
+    public static final int mavlinkUdpBridgePort = 14550;
+
+    public static class MavlinkUdpBridge {
+        public static final int disabled = 0;
+        public static final int connectedIp = 1;
+        public static final int specificIp = 2;
+    }
 
     public static class VrMode {
         public static final int off = 0;

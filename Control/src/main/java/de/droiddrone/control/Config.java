@@ -82,6 +82,9 @@ public class Config {
     private final boolean[] usbCameraReset = new boolean[SettingsCommon.maxCamerasCount];
     private final int[] rcChannelsMap = new int[FcCommon.MAX_SUPPORTED_RC_CHANNEL_COUNT];
     private final int[] headTrackingAngleLimits = new int[3];
+    private int mavlinkUdpBridge;
+    private String mavlinkUdpBridgeIp;
+    private int mavlinkUdpBridgePort;
     private boolean decoderConfigChanged;
     private boolean videoFrameOrientationChanged;
 
@@ -168,6 +171,9 @@ public class Config {
         fcProtocol = Utils.parseInt(preferences.getString("fcProtocol", ""), SettingsCommon.fcProtocol);
         mavlinkTargetSysId = Utils.parseInt(preferences.getString("mavlinkTargetSysId", ""), SettingsCommon.mavlinkTargetSysId);
         mavlinkGcsSysId = Utils.parseInt(preferences.getString("mavlinkGcsSysId", ""), SettingsCommon.mavlinkGcsSysId);
+        mavlinkUdpBridge = Utils.parseInt(preferences.getString("mavlinkUdpBridge", ""), SettingsCommon.mavlinkUdpBridge);
+        mavlinkUdpBridgeIp = preferences.getString("mavlinkUdpBridgeIp", SettingsCommon.mavlinkUdpBridgeIp);
+        mavlinkUdpBridgePort = Utils.parseInt(preferences.getString("mavlinkUdpBridgePort", ""), SettingsCommon.mavlinkUdpBridgePort);
         boolean invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
         boolean invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
         if (invertVideoAxisX != this.invertVideoAxisX || invertVideoAxisY != this.invertVideoAxisY) videoFrameOrientationChanged = true;
@@ -413,6 +419,18 @@ public class Config {
 
     public int getMavlinkGcsSysId() {
         return mavlinkGcsSysId;
+    }
+
+    public int getMavlinkUdpBridge() {
+        return mavlinkUdpBridge;
+    }
+
+    public String getMavlinkUdpBridgeIp() {
+        return mavlinkUdpBridgeIp;
+    }
+
+    public int getMavlinkUdpBridgePort() {
+        return mavlinkUdpBridgePort;
     }
 
     public int getCameraResolutionWidth(int cameraIndex) {

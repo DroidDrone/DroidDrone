@@ -385,6 +385,20 @@
             app:key="mavlinkGcsSysId"
             app:defaultValue="255"
             app:title="@string/mavlink_gcs_sysid" />
+        <ListPreference
+            app:key="mavlinkUdpBridge"
+            app:title="@string/mavlink_udp_bridge"
+            app:entries="@array/mavlinkUdpBridgeEntries"
+            app:entryValues="@array/mavlinkUdpBridgeValues"
+            app:defaultValue="0"/>
+        <EditTextPreference
+            app:key="mavlinkUdpBridgeIp"
+            app:defaultValue=""
+            app:title="@string/mavlink_udp_bridge_ip" />
+        <EditTextPreference
+            app:key="mavlinkUdpBridgePort"
+            app:defaultValue="14550"
+            app:title="@string/mavlink_udp_bridge_port" />
     </PreferenceCategory>
 
     <PreferenceCategory

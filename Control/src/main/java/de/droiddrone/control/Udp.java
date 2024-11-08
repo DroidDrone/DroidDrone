@@ -990,6 +990,9 @@ public class Udp {
             packetData.daos.writeByte(config.getFcProtocol());
             packetData.daos.writeByte(config.getMavlinkTargetSysId());
             packetData.daos.writeByte(config.getMavlinkGcsSysId());
+            packetData.daos.writeByte(config.getMavlinkUdpBridge());
+            packetData.daos.writeUTF(config.getMavlinkUdpBridgeIp());
+            packetData.daos.writeShort(config.getMavlinkUdpBridgePort());
             udpSender.sendPacket(packetData.getData());
         } catch (Exception e) {
             e.printStackTrace();

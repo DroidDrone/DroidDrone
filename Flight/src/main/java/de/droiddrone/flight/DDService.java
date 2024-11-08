@@ -56,6 +56,7 @@ public class DDService extends Service {
     private Msp msp;
     private Mavlink mavlink;
     private PhoneTelemetry phoneTelemetry;
+    private MavlinkUdpBridge mavlinkUdpBridge;
     private int connectionMode;
 
 
@@ -104,11 +105,14 @@ public class DDService extends Service {
         serial = new Serial(this, MainActivity.config);
         msp = new Msp(serial, MainActivity.config);
         mavlink = new Mavlink(serial, MainActivity.config);
+        mavlinkUdpBridge = new MavlinkUdpBridge(MainActivity.config, mavlink);
+        mavlink.setMavlinkUdpBridge(mavlinkUdpBridge);
         serial.initialize(msp, mavlink);
         phoneTelemetry = new PhoneTelemetry(this, streamEncoder, cameraManager, mp4Recorder);
         phoneTelemetry.initialize();
         if (udp != null) udp.close();
-        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, cameraManager, msp, mavlink, phoneTelemetry, MainActivity.config, serial);
+        udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, cameraManager, msp, mavlink, phoneTelemetry, MainActivity.config, serial, mavlinkUdpBridge);
+        mavlinkUdpBridge.setUdp(udp);
         Thread t1 = new Thread(() -> {
             if (!udp.initialize()){
                 log("UDP initialize error.");
@@ -160,7 +164,17 @@ public class DDService extends Service {
                     return;
                 }
                 isConnected = udp.isConnected();
-                if (!isConnected && connectionMode == SettingsCommon.ConnectionMode.overServer) udp.sendConnect();
+                if (isConnected){
+                    if (MainActivity.config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.disabled) {
+                        if (!mavlinkUdpBridge.isInitialized() && mavlink.isInitialized()) {
+                            mavlinkUdpBridge.initialize();
+                        }
+                    }else{
+                        if (mavlinkUdpBridge.isInitialized()) mavlinkUdpBridge.close();
+                    }
+                }else{
+                    if (connectionMode == SettingsCommon.ConnectionMode.overServer) udp.sendConnect();
+                }
                 serialPortStatus = serial.getStatus();
                 if (serialPortStatus == Serial.STATUS_SERIAL_PORT_ERROR){
                     if (serial != null && (msp != null && mavlink != null)) {
@@ -191,6 +205,7 @@ public class DDService extends Service {
         }catch (Exception e){
             //
         }
+        if (mavlinkUdpBridge != null) mavlinkUdpBridge.close();
         if (phoneTelemetry != null) phoneTelemetry.close();
         if (serial != null) serial.close();
         if (udp != null){
