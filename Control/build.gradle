@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "de.droiddrone.control"
-        minSdk 24
+        minSdk 26
         targetSdk 34
         versionCode 8
         versionName "2.2.0"

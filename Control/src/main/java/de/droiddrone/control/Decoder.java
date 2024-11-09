@@ -129,9 +129,7 @@ public class Decoder {
                         .build())
                 .setBufferSizeInBytes(audioBufferSize)
                 .setTransferMode(AudioTrack.MODE_STREAM);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            atBuilder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY);
-        }
+        atBuilder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY);
         try {
             audioTrack = atBuilder.build();
             audioTrack.play();

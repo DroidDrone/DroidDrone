@@ -379,11 +379,7 @@ public class StreamEncoder {
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, baseBitRates[bitRateIndex]);
         mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, cameraManager.getCamera().getTargetFps());
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        if (Build.VERSION.SDK_INT >= 25){
-            mediaFormat.setFloat(MediaFormat.KEY_I_FRAME_INTERVAL, 0.5f);
-        }else{
-            mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
-        }
+        mediaFormat.setFloat(MediaFormat.KEY_I_FRAME_INTERVAL, 0.5f);
         return mediaFormat;
     }
 

@@ -227,11 +227,7 @@ public class MainActivity extends Activity {
             stopService(intent);
         }else{
             if (!config.updateConfig()) return;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                getApplicationContext().startForegroundService(intent);
-            }else{
-                getApplicationContext().startService(intent);
-            }
+            getApplicationContext().startForegroundService(intent);
         }
         updateUi();
     }

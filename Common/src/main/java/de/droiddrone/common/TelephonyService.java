@@ -61,7 +61,7 @@ public class TelephonyService {
             NetworkCapabilities caps = connectivityManager.getNetworkCapabilities(currentNetwork);
             if (caps == null) return unknownNetwork();
             boolean wlan = caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-                    || Build.VERSION.SDK_INT >= 26 && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE);
+                    || caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE);
 
             if (wlan) {
                 if (wifiManager == null) return unknownNetwork();
