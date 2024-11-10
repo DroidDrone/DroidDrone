@@ -437,11 +437,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         try {
             int batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
             if (batteryLevel < 0) return;
-            boolean isCharging = batteryManager.isCharging();
-            if (android.os.Build.VERSION.SDK_INT >= 26) {
-                int status = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_STATUS);
-                isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING);
-            }
+            int status = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_STATUS);
+            boolean isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING);
             osd.setControlPhoneBatteryState((byte) batteryLevel, isCharging);
         }catch (Exception e){
             log("updateBatteryState error: " + e);
