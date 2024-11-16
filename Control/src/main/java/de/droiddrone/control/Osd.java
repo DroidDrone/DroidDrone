@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import de.droiddrone.common.DataReader;
+import de.droiddrone.common.DataWriter;
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.FcInfo;
 import de.droiddrone.common.NetworkState;
@@ -82,7 +83,7 @@ public class Osd {
     private float altVelocity; // m/s
     private int altBaro;
     private FcCommon.GpsFixTypes fixType = FcCommon.GpsFixTypes.GPS_NO_FIX;
-    private FcCommon.GpsFixTypesArduPilot fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS;
+    private FcCommon.GpsFixTypesMavlink fixTypeMavlink = FcCommon.GpsFixTypesMavlink.GPS_FIX_TYPE_NO_GPS;
     private int numSat;
     private float latDeg;
     private float lonDeg;
@@ -134,9 +135,10 @@ public class Osd {
     private NetworkState droneNetworkState = new NetworkState();
     private NetworkState controlNetworkState = new NetworkState();
     private boolean apOsd1Enabled = true;
-    private int apCustomMode = -1;
-    private long apBatteryFaultBitmask;
-    private final List<ArduPilotStatusText> arduPilotMessages = new ArrayList<>();
+    private int mavlinkCustomMode = -1;
+    private String px4CustomModeStr = "";
+    private long mavlinkBatteryFaultBitmask;
+    private final List<MavlinkStatusText> mavlinkMessages = new ArrayList<>();
     private boolean setInavAndBfHomePos;
 
     public Osd(GlRenderer renderer, Config config, MapData mapData) {
@@ -518,24 +520,37 @@ public class Osd {
         public void draw(){
             if (fcInfo == null) return;
             FcCommon.ArduPilotMode[] modes = null;
-            switch (FcCommon.PlatformTypesArduPilot.getArduPilotPlatformBaseType(fcInfo.getPlatformType())){
-                case FcCommon.PlatformTypesArduPilot.AP_BASE_TYPE_COPTER:
+            switch (FcCommon.PlatformTypesMavlink.getArduPilotPlatformBaseType(fcInfo.getPlatformType())){
+                case FcCommon.PlatformTypesMavlink.AP_BASE_TYPE_COPTER:
                     modes = FcCommon.ArduPilotModesCopter;
                     break;
-                case FcCommon.PlatformTypesArduPilot.AP_BASE_TYPE_PLANE:
+                case FcCommon.PlatformTypesMavlink.AP_BASE_TYPE_PLANE:
                     modes = FcCommon.ArduPilotModesPlane;
                     break;
-                case FcCommon.PlatformTypesArduPilot.AP_BASE_TYPE_ROVER:
+                case FcCommon.PlatformTypesMavlink.AP_BASE_TYPE_ROVER:
                     modes = FcCommon.ArduPilotModesRover;
                     break;
             }
             if (modes == null) return;
             for (FcCommon.ArduPilotMode mode : modes){
-                if (mode.modeId == apCustomMode){
+                if (mode.modeId == mavlinkCustomMode){
                     renderer.addText(mode.modeName, getOsdItemScreenX(posX), getOsdItemScreenY(posY));
                     return;
                 }
             }
+        }
+    }
+
+    private final class OsdItemFlyModePx4 extends OsdItem{
+
+        public OsdItemFlyModePx4(OsdItem item) {
+            super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
+        }
+
+        @Override
+        public void draw(){
+            if (fcInfo == null) return;
+            renderer.addText(px4CustomModeStr, getOsdItemScreenX(posX), getOsdItemScreenY(posY));
         }
     }
 
@@ -593,21 +608,21 @@ public class Osd {
         }
     }
 
-    private final class OsdItemMessagesArduPilot extends OsdItem{
+    private final class OsdItemMessagesMavlink extends OsdItem{
 
-        public OsdItemMessagesArduPilot(OsdItem item) {
+        public OsdItemMessagesMavlink(OsdItem item) {
             super(item.id, item.isVisible, item.isBlink, item.posX, item.posY, item.variant);
         }
 
         @Override
         public void draw(){
-            if (arduPilotMessages.isEmpty()) return;
+            if (mavlinkMessages.isEmpty()) return;
             long current = System.currentTimeMillis();
             int msgTime = osdConfig.msgTime;
             if (msgTime < 1 || msgTime > 10) msgTime = 10;
             msgTime *= 1000;
-            List<ArduPilotStatusText> toRemove = new ArrayList<>();
-            for (ArduPilotStatusText item : arduPilotMessages){
+            List<MavlinkStatusText> toRemove = new ArrayList<>();
+            for (MavlinkStatusText item : mavlinkMessages){
                 if (item.startTimeStamp > 0 && item.startTimeStamp + msgTime < current){
                     toRemove.add(item);
                     continue;
@@ -615,16 +630,16 @@ public class Osd {
                 item.show(getOsdItemScreenX(posX), getOsdItemScreenY(posY), renderer);
                 break;
             }
-            if (!toRemove.isEmpty()) arduPilotMessages.removeAll(toRemove);
+            if (!toRemove.isEmpty()) mavlinkMessages.removeAll(toRemove);
         }
     }
 
-    private static final class ArduPilotStatusText{
+    private static final class MavlinkStatusText {
         final short severity;
         final String message;
         long startTimeStamp;
 
-        public ArduPilotStatusText(short severity, String message) {
+        public MavlinkStatusText(short severity, String message) {
             this.severity = severity;
             this.message = message;
             startTimeStamp = 0;
@@ -876,7 +891,7 @@ public class Osd {
         int getBatteryIcon(int batteryPercentage){
             if (batteryState == FcCommon.BatteryState.BATTERY_CRITICAL || batteryState == FcCommon.BatteryState.BATTERY_WARNING
                     || batteryState == FcCommon.BatteryState.BATTERY_NOT_PRESENT || batteryPercentage <= 0 || batteryPercentage > 100
-                    || apBatteryFaultBitmask != 0 || voltage < 2) return SpritesMapping.BATT_ALERT;
+                    || mavlinkBatteryFaultBitmask != 0 || voltage < 2) return SpritesMapping.BATT_ALERT;
             int step = batteryIconSteps - Math.round(batteryPercentage * batteryIconSteps / 100f);
             return SpritesMapping.BATT_FULL + step;
         }
@@ -918,8 +933,8 @@ public class Osd {
         }
     }
 
-    private class OsdItemMainBattVoltageArduPilot extends OsdItemMainBattCellVoltage{
-        public OsdItemMainBattVoltageArduPilot(OsdItem item) {
+    private class OsdItemMainBattVoltageMavlink extends OsdItemMainBattCellVoltage{
+        public OsdItemMainBattVoltageMavlink(OsdItem item) {
             super(item);
         }
 
@@ -931,8 +946,8 @@ public class Osd {
         }
     }
 
-    private class OsdItemMainBattCellVoltageArduPilot extends OsdItemMainBattCellVoltage{
-        public OsdItemMainBattCellVoltageArduPilot(OsdItem item) {
+    private class OsdItemMainBattCellVoltageMavlink extends OsdItemMainBattCellVoltage{
+        public OsdItemMainBattCellVoltageMavlink(OsdItem item) {
             super(item);
         }
 
@@ -1472,14 +1487,86 @@ public class Osd {
         osdStats.setHomeDistance(this.distanceToHome);
     }
 
-    public void setArduPilotMode(int customMode, boolean isArmed){
+    public void setMavlinkMode(int customMode, boolean isArmed){
         updateLastDataTimestamp();
-        apCustomMode = customMode;
+        mavlinkCustomMode = customMode;
+        if (fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_PX4){
+            px4CustomModeStr = getPx4Mode(customMode);
+        }
         this.isArmed = isArmed;
         if (isArmed) wasArmed = true;
     }
 
-    public void setArduPilotSystemStatus(byte batteryCellCountDetected, int voltageBattery, byte batteryRemaining){
+    private String getPx4Mode(int customMode){
+        DataWriter dw = new DataWriter(true);
+        dw.writeInt(customMode);
+        DataReader dr = new DataReader(dw.getData(), true);
+        int subMode = dr.readUnsignedByteAsInt();
+        int mainMode = dr.readUnsignedByteAsInt();
+        switch (mainMode){
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_MANUAL:
+                return "Manual";
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_ALTCTL:
+                return "Altitude";
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_POSCTL:
+                switch (subMode){
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_POSCTL.PX4_CUSTOM_SUB_MODE_POSCTL_SLOW:
+                        return "Position slow";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_POSCTL.PX4_CUSTOM_SUB_MODE_POSCTL_ORBIT:
+                        return "Position orbit";
+                    default:
+                        return "Position";
+                }
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_AUTO:
+                switch (subMode){
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF:
+                        return "Takeoff";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_LOITER:
+                        return "Hold";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_MISSION:
+                        return "Mission";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_RTL:
+                        return "RTL";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_LAND:
+                        return "Land";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_FOLLOW_TARGET:
+                        return "Follow Me";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_PRECLAND:
+                        return "Precision land";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_AUTO_VTOL_TAKEOFF:
+                        return "VTOL Takeoff";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL1:
+                        return "External 1";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL2:
+                        return "External 2";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL3:
+                        return "External 3";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL4:
+                        return "External 4";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL5:
+                        return "External 5";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL6:
+                        return "External 6";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL7:
+                        return "External 7";
+                    case FcCommon.PX4_CUSTOM_SUB_MODE_AUTO.PX4_CUSTOM_SUB_MODE_EXTERNAL8:
+                        return "External 8";
+                    default:
+                        return "Auto";
+                }
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_ACRO:
+                return "Acro";
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_OFFBOARD:
+                return "Offboard";
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_STABILIZED:
+                return "Stabilized";
+            case FcCommon.PX4_CUSTOM_MAIN_MODE.PX4_CUSTOM_MAIN_MODE_TERMINATION:
+                return "Termination";
+        }
+        return "";
+    }
+
+    public void setMavlinkSystemStatus(byte batteryCellCountDetected, int voltageBattery, byte batteryRemaining){
         updateLastDataTimestamp();
         if (batteryCellCountDetected > 0) this.batteryCellCount = batteryCellCountDetected;
         if (voltageBattery != Utils.UINT16_MAX){
@@ -1489,17 +1576,17 @@ public class Osd {
         if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
     }
 
-    public void setArduPilotStatusText(short severity, String message){
+    public void setMavlinkStatusText(short severity, String message){
         updateLastDataTimestamp();
         if (message == null || message.isEmpty()) return;
-        for (ArduPilotStatusText item : arduPilotMessages){
+        for (MavlinkStatusText item : mavlinkMessages){
             if (item.message.equals(message)) return;
         }
-        if (arduPilotMessages.size() > 5) arduPilotMessages.remove(0);
-        arduPilotMessages.add(new ArduPilotStatusText(severity, message));
+        if (mavlinkMessages.size() > 5) mavlinkMessages.remove(0);
+        mavlinkMessages.add(new MavlinkStatusText(severity, message));
     }
 
-    public void setArduPilotBatteryStatus(short currentBattery, int currentConsumed, byte batteryRemaining, long faultBitmask){
+    public void setMavlinkBatteryStatus(short currentBattery, int currentConsumed, byte batteryRemaining, long faultBitmask){
         updateLastDataTimestamp();
         if (currentBattery > 0) {
             this.amperage = currentBattery / 100f;
@@ -1511,13 +1598,13 @@ public class Osd {
             osdStats.setUsedMah(currentConsumed);
         }
         if (batteryRemaining > 0) this.batteryPercentage = batteryRemaining;
-        this.apBatteryFaultBitmask = faultBitmask;
+        this.mavlinkBatteryFaultBitmask = faultBitmask;
     }
 
-    public void setArduPilotGpsRawInt(int fixType, int vel, int satellitesVisible){
+    public void setMavlinkGpsRawInt(int fixType, int vel, int satellitesVisible){
         updateLastDataTimestamp();
-        if (fixType >= 0 && fixType < FcCommon.GpsFixTypesArduPilot.values().length) {
-            this.fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.values()[fixType];
+        if (fixType >= 0 && fixType < FcCommon.GpsFixTypesMavlink.values().length) {
+            this.fixTypeMavlink = FcCommon.GpsFixTypesMavlink.values()[fixType];
         }
         if (vel != Utils.UINT16_MAX) {
             this.groundSpeed = vel * 0.036f;
@@ -1529,7 +1616,7 @@ public class Osd {
         }
     }
 
-    public void setArduPilotGlobalPositionInt(int lat, int lon, int relativeAlt, short vz, int traveledDistance, int distanceToHome, short directionToHome) {
+    public void setMavlinkGlobalPositionInt(int lat, int lon, int relativeAlt, short vz, int traveledDistance, int distanceToHome, short directionToHome) {
         updateLastDataTimestamp();
         this.latDeg = lat / 10000000f;
         this.lonDeg = lon / 10000000f;
@@ -1544,7 +1631,7 @@ public class Osd {
         mapData.setDronePosition(latDeg, lonDeg, isArmed);
     }
 
-    public void setArduPilotHomePosition(int lat, int lon){
+    public void setMavlinkHomePosition(int lat, int lon){
         updateLastDataTimestamp();
         float latDeg = lat / 10000000f;
         float lonDeg = lon / 10000000f;
@@ -1553,7 +1640,7 @@ public class Osd {
         mapData.setHomePosition(homeLatDeg, homeLonDeg);
     }
 
-    public void setArduPilotSystemTime(long timeBootMs, long flightTime, long armingTime){
+    public void setMavlinkSystemTime(long timeBootMs, long flightTime, long armingTime){
         updateLastDataTimestamp();
         this.onTime = Math.round(timeBootMs / 1000f);
         this.flyTime = Math.round(flightTime / 1000f);
@@ -1561,15 +1648,20 @@ public class Osd {
         osdStats.setTimers(this.onTime, this.flyTime, this.lastArmTime);
     }
 
-    public void setArduPilotRcChannels(int rssi){
+    public void setMavlinkRcChannels(int rssi){
         updateLastDataTimestamp();
+        if (fcInfo == null) return;
         if (rssi != Utils.UINT8_MAX){
-            this.rssi = Math.round(rssi / 254f * 100);
+            if (fcInfo.getFcVariant() == FcInfo.FC_VARIANT_ARDUPILOT) {
+                this.rssi = Math.round(rssi / 254f * 100);
+            }else if (fcInfo.getFcVariant() == FcInfo.FC_VARIANT_PX4) {
+                this.rssi = rssi;
+            }
             osdStats.setRssi(this.rssi);
         }
     }
 
-    public void setArduPilotScaledPressure(short temperature){
+    public void setMavlinkScaledPressure(short temperature){
         updateLastDataTimestamp();
         this.baroTemperatureCelsius = Math.round(temperature / 100f);
     }
@@ -1579,7 +1671,7 @@ public class Osd {
         this.vtxPower = vtxPower;
     }
 
-    public void setArduPilotVfrHud(int throttle){
+    public void setMavlinkVfrHud(int throttle){
         updateLastDataTimestamp();
         this.throttle = throttle;
     }
@@ -1605,7 +1697,7 @@ public class Osd {
                     activeItems[c] = new OsdItemAltitude(item);
                     break;
                 case OsdCommon.AP_OSD_BAT_VOLT:
-                    activeItems[c] = new OsdItemMainBattVoltageArduPilot(item);
+                    activeItems[c] = new OsdItemMainBattVoltageMavlink(item);
                     break;
                 case OsdCommon.AP_OSD_RSSI:
                     activeItems[c] = new OsdItemRssi(item);
@@ -1623,7 +1715,7 @@ public class Osd {
                     activeItems[c] = new OsdItemFlyModeArduPilot(item);
                     break;
                 case OsdCommon.AP_OSD_MESSAGE:
-                    activeItems[c] = new OsdItemMessagesArduPilot(item);
+                    activeItems[c] = new OsdItemMessagesMavlink(item);
                     break;
                 case OsdCommon.AP_OSD_GSPEED:
                     activeItems[c] = new OsdItemGpsSpeed(item);
@@ -1671,13 +1763,94 @@ public class Osd {
                     activeItems[c] = new OsdItemHomeDir(item);
                     break;
                 case OsdCommon.AP_OSD_CELLVOLT:
-                    activeItems[c] = new OsdItemMainBattCellVoltageArduPilot(item);
+                    activeItems[c] = new OsdItemMainBattCellVoltageMavlink(item);
                     break;
                 case OsdCommon.AP_OSD_VTX_PWR:
                     activeItems[c] = new OsdItemVtxPower(item);
                     break;
                 case OsdCommon.AP_OSD_THROTTLE:
                     activeItems[c] = new OsdItemThrottle(item);
+                    break;
+            }
+            if (activeItems[c] == null) activeItems[c] = item;// OSD item not implemented. Use parent class
+            c++;
+        }
+    }
+
+    private void initOsdItemsPx4(OsdConfig osdConfig) {
+        OsdItem[] allItems = osdConfig.osdItems;
+        int activeCount = 0;
+        int c = 0;
+        for (OsdItem item : allItems) {
+            if (item != null && item.isVisible) activeCount++;
+        }
+        updateLastDataTimestamp();
+        activeItems = new OsdItem[activeCount];
+        for (OsdItem item : allItems) {
+            if (item == null || !item.isVisible) continue;
+            switch (item.id) {
+                case OsdCommon.PX4_OSD_ALTITUDE:
+                    activeItems[c] = new OsdItemAltitude(item);
+                    break;
+                case OsdCommon.PX4_OSD_MAIN_BATT_VOLTAGE:
+                    activeItems[c] = new OsdItemMainBattVoltageMavlink(item);
+                    break;
+                case OsdCommon.PX4_OSD_RSSI_VALUE:
+                    activeItems[c] = new OsdItemRssi(item);
+                    break;
+                case OsdCommon.PX4_OSD_CURRENT_DRAW:
+                    activeItems[c] = new OsdItemCurrentDraw(item);
+                    break;
+                case OsdCommon.PX4_OSD_MAH_DRAWN:
+                    activeItems[c] = new OsdItemMahDraw(item);
+                    break;
+                case OsdCommon.PX4_OSD_GPS_SATS:
+                    activeItems[c] = new OsdItemGpsSats(item);
+                    break;
+                case OsdCommon.PX4_OSD_FLYMODE:
+                    activeItems[c] = new OsdItemFlyModePx4(item);
+                    break;
+                case OsdCommon.PX4_OSD_MESSAGE:
+                    activeItems[c] = new OsdItemMessagesMavlink(item);
+                    break;
+                case OsdCommon.PX4_OSD_GPS_SPEED:
+                    activeItems[c] = new OsdItemGpsSpeed(item);
+                    break;
+                case OsdCommon.PX4_OSD_HORIZON:
+                    activeItems[c] = new OsdItemArtificialHorizon(item);
+                    break;
+                case OsdCommon.PX4_OSD_COMPASS:
+                    activeItems[c] = new OsdItemCompassBar(item);
+                    break;
+                case OsdCommon.PX4_OSD_GPS_LAT:
+                    activeItems[c] = new OsdItemGpsLat(item);
+                    break;
+                case OsdCommon.PX4_OSD_GPS_LON:
+                    activeItems[c] = new OsdItemGpsLon(item);
+                    break;
+                case OsdCommon.PX4_OSD_TRIP_DIST:
+                    activeItems[c] = new OsdItemTripDistance(item);
+                    break;
+                case OsdCommon.PX4_OSD_FLY_TIME:
+                    activeItems[c] = new OsdItemFlyTime(item);
+                    break;
+                case OsdCommon.PX4_OSD_EFFICIENCY:
+                    activeItems[c] = new OsdItemEfficiencyMahPerKm(item);
+                    break;
+                case OsdCommon.PX4_OSD_HORIZON_SIDEBARS:
+                    activeItems[c] = new OsdItemHorizonSidebars(item);
+                    break;
+                case OsdCommon.PX4_OSD_CROSSHAIRS:
+                    activeItems[c] = new OsdItemCrosshairs(item);
+                    break;
+                case OsdCommon.PX4_OSD_HOME_DIST:
+                    activeItems[c] = new OsdItemHomeDist(item);
+                    break;
+                case OsdCommon.PX4_OSD_HOME_DIR:
+                    activeItems[c] = new OsdItemHomeDir(item);
+                    break;
+                case OsdCommon.PX4_OSD_AVG_CELL_VOLTAGE:
+                    activeItems[c] = new OsdItemMainBattCellVoltageMavlink(item);
                     break;
             }
             if (activeItems[c] == null) activeItems[c] = item;// OSD item not implemented. Use parent class
@@ -1897,6 +2070,96 @@ public class Osd {
         initOsdItemsArduPilot(osdConfig);
     }
 
+    private OsdConfig getDefaultPx4OsdConfig(){
+        setCanvasSize(OsdCommon.canvasSizes.DJI_COLS, OsdCommon.canvasSizes.DJI_ROWS);
+        byte msgTime = 6;
+        byte rssiAlarm = 30;
+        byte warnNumSat = 6;
+        int osdItemsCount = OsdCommon.PX4_OSD_ITEMS.length;
+        OsdItem[] osdItems = new OsdItem[osdItemsCount];
+        for (int i = 0; i < osdItemsCount; i++) {
+            boolean isEnabled = true;
+            byte x, y;
+            int id = OsdCommon.PX4_OSD_ITEMS[i];
+            switch (id){
+                case OsdCommon.PX4_OSD_GPS_SATS:
+                    x = 0;
+                    y = 21;
+                    break;
+                case OsdCommon.PX4_OSD_GPS_SPEED:
+                    x = 0;
+                    y = 19;
+                    break;
+                case OsdCommon.PX4_OSD_HOME_DIST:
+                    x = 31;
+                    y = 21;
+                    break;
+                case OsdCommon.PX4_OSD_HOME_DIR:
+                    x = 29;
+                    y = 21;
+                    break;
+                case OsdCommon.PX4_OSD_MAIN_BATT_VOLTAGE:
+                    x = 0;
+                    y = 0;
+                    break;
+                case OsdCommon.PX4_OSD_AVG_CELL_VOLTAGE:
+                    x = 0;
+                    y = 1;
+                    break;
+                case OsdCommon.PX4_OSD_CURRENT_DRAW:
+                    x = 0;
+                    y = 11;
+                    break;
+                case OsdCommon.PX4_OSD_MAH_DRAWN:
+                    x = 0;
+                    y = 12;
+                    break;
+                case OsdCommon.PX4_OSD_ALTITUDE:
+                    x = 55;
+                    y = 15;
+                    break;
+                case OsdCommon.PX4_OSD_FLYMODE:
+                    x = 30;
+                    y = 20;
+                    break;
+                case OsdCommon.PX4_OSD_CROSSHAIRS:
+                case OsdCommon.PX4_OSD_HORIZON_SIDEBARS:
+                case OsdCommon.PX4_OSD_HORIZON:
+                    x = 30;
+                    y = 11;
+                    break;
+                case OsdCommon.PX4_OSD_MESSAGE:
+                    x = 20;
+                    y = 5;
+                    break;
+                case OsdCommon.PX4_OSD_COMPASS:
+                    x = 26;
+                    y = 15;
+                    break;
+                case OsdCommon.PX4_OSD_TRIP_DIST:
+                    x = 55;
+                    y = 16;
+                    break;
+                case OsdCommon.PX4_OSD_FLY_TIME:
+                    x = 54;
+                    y = 0;
+                    break;
+                case OsdCommon.PX4_OSD_EFFICIENCY:
+                    x = 0;
+                    y = 13;
+                    break;
+                default:
+                    x = 0;
+                    y = 0;
+                    isEnabled = false;
+            }
+            osdItems[i] = new OsdItem(id, isEnabled, x, y);
+        }
+        OsdConfig osdConfig = new OsdConfig(msgTime, rssiAlarm, warnNumSat, osdItems);
+        initOsdItemsPx4(osdConfig);
+        return osdConfig;
+    }
+
     private void initCanvasInav(byte videoSystem){
         switch (videoSystem){
             case OsdCommon.InavVideoSystem.VIDEO_SYSTEM_AUTO:
@@ -1950,6 +2213,9 @@ public class Osd {
     }
 
     public OsdConfig getOsdConfig(){
+        if (osdConfig == null && fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_PX4){
+            osdConfig = getDefaultPx4OsdConfig();
+        }
         return osdConfig;
     }
 
@@ -1958,7 +2224,9 @@ public class Osd {
     }
 
     public boolean isHasBoxIds(){
-        return boxIds != null || (fcInfo != null && fcInfo.getFcVariant() == FcInfo.FC_VARIANT_ARDUPILOT);
+        return boxIds != null || fcInfo != null
+                && fcInfo.getFcVariant() != FcInfo.FC_VARIANT_BETAFLIGHT
+                && fcInfo.getFcVariant() != FcInfo.FC_VARIANT_INAV;
     }
 
     public void setBoxNames(byte[] data){
@@ -2273,6 +2541,33 @@ public class Osd {
             this.warnBatVolt = warnBatVolt;
             this.warnAvgCellVolt = warnAvgCellVolt;
             this.osdCellCount = osdCellCount;
+            capacityWarning = 0;
+            timeAlarmSec = 0;
+            altAlarm = 0;
+            distAlarm = 0;
+            negAltAlarm = 0;
+            osdSelectedProfile = 1;
+            osdItemsCount = osdItems.length;
+            this.osdItems = osdItems;
+            osdStats = null;
+            rawOsdStatItems = null;
+            osdStatsCount = 0;
+            osdTimers = null;
+            rawOsdTimerItems = null;
+            osdTimersCount = 0;
+            osdWarnings = null;
+            osdWarningsCount = 0;
+            rawEnabledWarnings = 0;
+            cameraFrameWidth = 0;
+            cameraFrameHeight = 0;
+        }
+
+        public OsdConfig(byte msgTime, byte rssiAlarm, byte warnNumSat, OsdItem[] osdItems){
+            this.msgTime = msgTime;
+            this.rssiAlarm = rssiAlarm;
+            this.warnNumSat = warnNumSat;
+            videoSystem = 0;
+            units = 0;
             capacityWarning = 0;
             timeAlarmSec = 0;
             altAlarm = 0;

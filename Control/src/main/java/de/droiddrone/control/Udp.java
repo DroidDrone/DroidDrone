@@ -418,7 +418,7 @@ public class Udp {
             short code = buffer.readShort();
             if (fcInfo == null && code < FcCommon.DD_TIMERS) return;
             switch (code){
-                case FcCommon.DD_AP_ATTITUDE:
+                case FcCommon.DD_MAVLINK_ATTITUDE:
                 case FcCommon.MSP_ATTITUDE: {
                     short roll = buffer.readShort();
                     short pitch = buffer.readShort();
@@ -684,41 +684,41 @@ public class Udp {
                     osd.setOsdConfigArduPilot(buffer);
                     break;
                 }
-                case FcCommon.DD_AP_MODE: {
-                    int customMode = buffer.readUnsignedByteAsInt();
+                case FcCommon.DD_MAVLINK_MODE: {
+                    int customMode = buffer.readInt();
                     boolean isArmed = buffer.readBoolean();
-                    osd.setArduPilotMode(customMode, isArmed);
+                    osd.setMavlinkMode(customMode, isArmed);
                     break;
                 }
-                case FcCommon.DD_AP_BATTERY_STATUS: {
+                case FcCommon.DD_MAVLINK_BATTERY_STATUS: {
                     short currentBattery = buffer.readShort();
                     int currentConsumed = buffer.readInt();
                     byte batteryRemaining = buffer.readByte();
                     long faultBitmask = buffer.readUnsignedIntAsLong();
-                    osd.setArduPilotBatteryStatus(currentBattery, currentConsumed, batteryRemaining, faultBitmask);
+                    osd.setMavlinkBatteryStatus(currentBattery, currentConsumed, batteryRemaining, faultBitmask);
                     break;
                 }
-                case FcCommon.DD_AP_SYS_STATUS: {
+                case FcCommon.DD_MAVLINK_SYS_STATUS: {
                     byte batteryCellCountDetected = buffer.readByte();
                     int voltageBattery = buffer.readUnsignedShortAsInt();
                     byte batteryRemaining = buffer.readByte();
-                    osd.setArduPilotSystemStatus(batteryCellCountDetected, voltageBattery, batteryRemaining);
+                    osd.setMavlinkSystemStatus(batteryCellCountDetected, voltageBattery, batteryRemaining);
                     break;
                 }
-                case FcCommon.DD_AP_STATUS_TEXT: {
+                case FcCommon.DD_MAVLINK_STATUS_TEXT: {
                     short severity = (short)buffer.readUnsignedByteAsInt();
                     String message = buffer.readUTF();
-                    osd.setArduPilotStatusText(severity, message);
+                    osd.setMavlinkStatusText(severity, message);
                     break;
                 }
-                case FcCommon.DD_AP_GPS_RAW_INT: {
+                case FcCommon.DD_MAVLINK_GPS_RAW_INT: {
                     int fixType = buffer.readUnsignedByteAsInt();
                     int vel = buffer.readUnsignedShortAsInt();
                     int satellitesVisible = buffer.readUnsignedByteAsInt();
-                    osd.setArduPilotGpsRawInt(fixType, vel, satellitesVisible);
+                    osd.setMavlinkGpsRawInt(fixType, vel, satellitesVisible);
                     break;
                 }
-                case FcCommon.DD_AP_GLOBAL_POSITION_INT: {
+                case FcCommon.DD_MAVLINK_GLOBAL_POSITION_INT: {
                     int lat = buffer.readInt();
                     int lon = buffer.readInt();
                     int relativeAlt = buffer.readInt();
@@ -726,30 +726,30 @@ public class Udp {
                     int traveledDistance = buffer.readInt();
                     int distanceToHome = buffer.readInt();
                     short directionToHome = buffer.readShort();
-                    osd.setArduPilotGlobalPositionInt(lat, lon, relativeAlt, vz, traveledDistance, distanceToHome, directionToHome);
+                    osd.setMavlinkGlobalPositionInt(lat, lon, relativeAlt, vz, traveledDistance, distanceToHome, directionToHome);
                     break;
                 }
-                case FcCommon.DD_AP_HOME_POSITION: {
+                case FcCommon.DD_MAVLINK_HOME_POSITION: {
                     int lat = buffer.readInt();
                     int lon = buffer.readInt();
-                    osd.setArduPilotHomePosition(lat, lon);
+                    osd.setMavlinkHomePosition(lat, lon);
                     break;
                 }
-                case FcCommon.DD_AP_SYSTEM_TIME: {
+                case FcCommon.DD_MAVLINK_SYSTEM_TIME: {
                     long timeBootMs = buffer.readUnsignedIntAsLong();
                     long flightTime = buffer.readUnsignedIntAsLong();
                     long armingTime = buffer.readUnsignedIntAsLong();
-                    osd.setArduPilotSystemTime(timeBootMs, flightTime, armingTime);
+                    osd.setMavlinkSystemTime(timeBootMs, flightTime, armingTime);
                     break;
                 }
-                case FcCommon.DD_AP_RC_CHANNELS: {
+                case FcCommon.DD_MAVLINK_RC_CHANNELS: {
                     int rssi = buffer.readUnsignedByteAsInt();
-                    osd.setArduPilotRcChannels(rssi);
+                    osd.setMavlinkRcChannels(rssi);
                     break;
                 }
-                case FcCommon.DD_AP_SCALED_PRESSURE: {
+                case FcCommon.DD_MAVLINK_SCALED_PRESSURE: {
                     short temperature = buffer.readShort();
-                    osd.setArduPilotScaledPressure(temperature);
+                    osd.setMavlinkScaledPressure(temperature);
                     break;
                 }
                 case FcCommon.DD_AP_VTX_POWER: {
@@ -757,9 +757,9 @@ public class Udp {
                     osd.setArduPilotVtxPower(vtxPower);
                     break;
                 }
-                case FcCommon.DD_AP_VFR_HUD: {
+                case FcCommon.DD_MAVLINK_VFR_HUD: {
                     int throttle = buffer.readUnsignedByteAsInt();
-                    osd.setArduPilotVfrHud(throttle);
+                    osd.setMavlinkVfrHud(throttle);
                     break;
                 }
                 default:

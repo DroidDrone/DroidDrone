@@ -40,6 +40,7 @@ import com.MAVLink.common.msg_statustext;
 import com.MAVLink.common.msg_sys_status;
 import com.MAVLink.common.msg_system_time;
 import com.MAVLink.common.msg_vfr_hud;
+import com.MAVLink.enums.MAV_AUTOPILOT;
 import com.MAVLink.enums.MAV_CMD;
 import com.MAVLink.enums.MAV_MODE_FLAG;
 import com.MAVLink.minimal.msg_heartbeat;
@@ -65,15 +66,15 @@ public class Mavlink {
     private final ArrayBlockingQueue<byte[]> serialRawData = new ArrayBlockingQueue<>(30);
     private final int componentId = 1;
     private final short targetComponent = 1;
-    private final int fcVariant;
+    private int fcVariant;
     private final int apiProtocolVersion;
-    private int apiVersionMajor;
+    private final int apiVersionMajor;
     private int apiVersionMinor;
     private int fcVersionMajor;
     private int fcVersionMinor;
     private int fcVersionPatchLevel;
     private FcInfo fcInfo;
-    private boolean isMavlink2;
+    private final boolean isMavlink2;
     private int threadsId;
     private boolean isHeartBeatReceived;
     private int sequence = 0;
@@ -102,7 +103,7 @@ public class Mavlink {
     private long rcLastFrame;
     private byte cameraRecordVideoChannel = -1;
     private boolean cameraRecordLastState = false;
-    private FcCommon.GpsFixTypesArduPilot fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS;
+    private FcCommon.GpsFixTypesMavlink fixTypeArduPilot = FcCommon.GpsFixTypesMavlink.GPS_FIX_TYPE_NO_GPS;
     private float latDeg;
     private float lonDeg;
     private float homeLatDeg;
@@ -117,9 +118,9 @@ public class Mavlink {
         this.serial = serial;
         this.config = config;
         isMavlink2 = true;
-        fcVariant = FcInfo.FC_VARIANT_ARDUPILOT;
+        fcVariant = FcInfo.FC_VARIANT_UNKNOWN;
         apiProtocolVersion = 0;
-        apiVersionMajor = -1;
+        apiVersionMajor = 2;
         apiVersionMinor = -1;
         fcVersionMajor = -1;
         fcVersionMinor = -1;
@@ -139,7 +140,7 @@ public class Mavlink {
     public boolean isInitialized(){
         boolean isInitialized = (apiVersionMajor != -1 && apiVersionMinor != -1
                 && fcVersionMajor != -1 && fcVersionMinor != -1 && fcVersionPatchLevel != -1
-                && platformType != -1);
+                && platformType != -1 && fcVariant != FcInfo.FC_VARIANT_UNKNOWN);
         if (isInitialized && fcInfo == null) setFcInfo();
         return isInitialized;
     }
@@ -191,12 +192,18 @@ public class Mavlink {
                         Thread.sleep(timerDelayMs);
                         continue;
                     }
-                    if (runGetOsdConfig) {
-                        if (fcParams.isFcConfigInitialized()){
-                            runGetOsdConfig = false;
-                            fcParams.sendOsdConfig();
-                            cameraRecordVideoChannel = fcParams.getOptionChannelForValue(FcCommon.AP_RC_OPTION_CAMERA_RECORD_VIDEO);
-                        } else {
+                    if (fcVariant == FcInfo.FC_VARIANT_ARDUPILOT) {
+                        if (runGetOsdConfig) {
+                            if (fcParams.isFcConfigInitialized()) {
+                                runGetOsdConfig = false;
+                                fcParams.sendOsdConfig();
+                                cameraRecordVideoChannel = fcParams.getOptionChannelForValue(FcCommon.AP_RC_OPTION_CAMERA_RECORD_VIDEO);
+                            } else {
+                                fcParams.initializeFcConfig();
+                            }
+                        }
+                    }else if (fcVariant == FcInfo.FC_VARIANT_PX4) {
+                        if (!fcParams.isFcConfigInitialized()) {
                             fcParams.initializeFcConfig();
                         }
                     }
@@ -212,7 +219,9 @@ public class Mavlink {
                         getRcChannels(telemetryIntervalUs * 10);
                         getScaledPressure(telemetryIntervalUs * 10);
                         getVfrHud(telemetryIntervalUs * 10);
-                        requestFcParameter(FcCommon.AP_PARAM_VTX_POWER);
+                        if (fcVariant == FcInfo.FC_VARIANT_ARDUPILOT) {
+                            requestFcParameter(FcCommon.AP_PARAM_VTX_POWER);
+                        }
                     }
                     Thread.sleep(timerDelayMs);
                 } catch (Exception e) {
@@ -417,15 +426,21 @@ public class Mavlink {
                         }
                         if (fcParams != null && fcParams.isFcConfigInitialized()) {
                             DataWriter buffer = new DataWriter(true);
-                            buffer.writeByte((byte) message.custom_mode);
+                            buffer.writeInt((int) message.custom_mode);
                             buffer.writeBoolean(isArmed);
-                            telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_MODE, buffer.getData()));
+                            telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_MODE, buffer.getData()));
                         }
                         if (isHeartBeatReceived) break;
-                        isMavlink2 = message.isMavlink2;
-                        apiVersionMajor = message.isMavlink2 ? 2 : 1;
                         apiVersionMinor = message.mavlink_version;
                         platformType = message.type;
+                        switch (message.autopilot) {
+                            case MAV_AUTOPILOT.MAV_AUTOPILOT_PX4:
+                                fcVariant = FcInfo.FC_VARIANT_PX4;
+                                break;
+                            case MAV_AUTOPILOT.MAV_AUTOPILOT_ARDUPILOTMEGA:
+                                fcVariant = FcInfo.FC_VARIANT_ARDUPILOT;
+                                break;
+                        }
                         isHeartBeatReceived = true;
                         break;
                     }
@@ -450,7 +465,7 @@ public class Mavlink {
                         buffer.writeShort((short) (Math.toDegrees(message.roll) * 10));
                         buffer.writeShort((short) (Math.toDegrees(message.pitch) * -10));
                         buffer.writeShort((short) Math.toDegrees(message.yaw));
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_ATTITUDE, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_ATTITUDE, buffer.getData()));
                         break;
                     }
                     case msg_battery_status.MAVLINK_MSG_ID_BATTERY_STATUS: {
@@ -461,7 +476,7 @@ public class Mavlink {
                         buffer.writeInt(message.current_consumed);
                         buffer.writeByte(message.battery_remaining);
                         buffer.writeInt((int) message.fault_bitmask);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_BATTERY_STATUS, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_BATTERY_STATUS, buffer.getData()));
                         break;
                     }
                     case msg_sys_status.MAVLINK_MSG_ID_SYS_STATUS: {
@@ -477,7 +492,7 @@ public class Mavlink {
                         buffer.writeByte((byte) batteryCellCountDetected);
                         buffer.writeShort((short) message.voltage_battery);
                         buffer.writeByte(message.battery_remaining);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYS_STATUS, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_SYS_STATUS, buffer.getData()));
                         break;
                     }
                     case msg_statustext.MAVLINK_MSG_ID_STATUSTEXT: {
@@ -488,22 +503,22 @@ public class Mavlink {
                             break;
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeByte((byte) message.severity);
-                        buffer.writeUTF(msg);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_STATUS_TEXT, buffer.getData()));
+                        buffer.writeUTF(msg.trim());
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_STATUS_TEXT, buffer.getData()));
                         break;
                     }
                     case msg_gps_raw_int.MAVLINK_MSG_ID_GPS_RAW_INT: {
                         msg_gps_raw_int message = new msg_gps_raw_int(packet);
                         lastGpsRawIntTs = System.currentTimeMillis();
-                        if (message.fix_type >= 0 && message.fix_type < FcCommon.GpsFixTypesArduPilot.values().length) {
-                            this.fixTypeArduPilot = FcCommon.GpsFixTypesArduPilot.values()[message.fix_type];
+                        if (message.fix_type >= 0 && message.fix_type < FcCommon.GpsFixTypesMavlink.values().length) {
+                            this.fixTypeArduPilot = FcCommon.GpsFixTypesMavlink.values()[message.fix_type];
                         }
                         if (message.vel != Utils.UINT16_MAX) groundSpeed = message.vel * 0.036f;
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeByte((byte) message.fix_type);
                         buffer.writeShort((short) message.vel);
                         buffer.writeByte((byte) message.satellites_visible);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_GPS_RAW_INT, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_GPS_RAW_INT, buffer.getData()));
                         break;
                     }
                     case msg_global_position_int.MAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
@@ -521,7 +536,7 @@ public class Mavlink {
                         buffer.writeInt(Math.round(traveledDistance));
                         buffer.writeInt(distanceToHome);
                         buffer.writeShort((short)Math.round(directionToHome));
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_GLOBAL_POSITION_INT, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_GLOBAL_POSITION_INT, buffer.getData()));
                         break;
                     }
                     case msg_home_position.MAVLINK_MSG_ID_HOME_POSITION: {
@@ -533,7 +548,7 @@ public class Mavlink {
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeInt(message.latitude);
                         buffer.writeInt(message.longitude);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_HOME_POSITION, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_HOME_POSITION, buffer.getData()));
                         break;
                     }
                     case msg_system_time.MAVLINK_MSG_ID_SYSTEM_TIME: {
@@ -553,7 +568,7 @@ public class Mavlink {
                         buffer.writeInt((int) message.time_boot_ms);
                         buffer.writeInt((int) flightTime);
                         buffer.writeInt((int) armingTime);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SYSTEM_TIME, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_SYSTEM_TIME, buffer.getData()));
                         break;
                     }
                     case msg_rc_channels.MAVLINK_MSG_ID_RC_CHANNELS: {
@@ -561,7 +576,7 @@ public class Mavlink {
                         lastRcChannelsTs = System.currentTimeMillis();
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeByte((byte) message.rssi);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_RC_CHANNELS, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_RC_CHANNELS, buffer.getData()));
                         break;
                     }
                     case msg_scaled_pressure.MAVLINK_MSG_ID_SCALED_PRESSURE: {
@@ -569,7 +584,7 @@ public class Mavlink {
                         lastScaledPressureTs = System.currentTimeMillis();
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeShort(message.temperature);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_SCALED_PRESSURE, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_SCALED_PRESSURE, buffer.getData()));
                         break;
                     }
                     case msg_vfr_hud.MAVLINK_MSG_ID_VFR_HUD: {
@@ -578,7 +593,7 @@ public class Mavlink {
                         throttle = message.throttle;
                         DataWriter buffer = new DataWriter(true);
                         buffer.writeByte((byte) message.throttle);
-                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_AP_VFR_HUD, buffer.getData()));
+                        telemetryOutputBuffer.offer(new TelemetryData(FcCommon.DD_MAVLINK_VFR_HUD, buffer.getData()));
                         break;
                     }
                 }
@@ -617,9 +632,9 @@ public class Mavlink {
     }
 
     private boolean checkGpsFix() {
-        return fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_GPS
-                && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_NO_FIX
-                && fixTypeArduPilot != FcCommon.GpsFixTypesArduPilot.GPS_FIX_TYPE_2D_FIX;
+        return fixTypeArduPilot != FcCommon.GpsFixTypesMavlink.GPS_FIX_TYPE_NO_GPS
+                && fixTypeArduPilot != FcCommon.GpsFixTypesMavlink.GPS_FIX_TYPE_NO_FIX
+                && fixTypeArduPilot != FcCommon.GpsFixTypesMavlink.GPS_FIX_TYPE_2D_FIX;
     }
 
     private static class OsdItemParam{
@@ -819,6 +834,11 @@ public class Mavlink {
         }
 
         public void initializeFcConfig(){
+            if (mavlink.fcVariant == FcInfo.FC_VARIANT_ARDUPILOT) initializeFcConfigAp();
+            if (mavlink.fcVariant == FcInfo.FC_VARIANT_PX4) initializeFcConfigPx4();
+        }
+
+        private void initializeFcConfigAp(){
             new Thread(() -> {
                 if (!osd1EnabledReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD1_ENABLE);
                 if (!osd1TxtResReceived) mavlink.requestFcParameter(FcCommon.AP_PARAM_OSD1_TXT_RES);
@@ -862,7 +882,16 @@ public class Mavlink {
             }).start();
         }
 
-        public boolean isFcConfigInitialized(){
+        private void initializeFcConfigPx4(){
+            new Thread(() -> {
+                if (!rcMapPitchReceived) mavlink.requestFcParameter(FcCommon.PX4_PARAM_RC_MAP_PITCH);
+                if (!rcMapRollReceived) mavlink.requestFcParameter(FcCommon.PX4_PARAM_RC_MAP_ROLL);
+                if (!rcMapThrottleReceived) mavlink.requestFcParameter(FcCommon.PX4_PARAM_RC_MAP_THROTTLE);
+                if (!rcMapYawReceived) mavlink.requestFcParameter(FcCommon.PX4_PARAM_RC_MAP_YAW);
+            }).start();
+        }
+
+        private boolean isFcConfigInitializedAp(){
             if (!osd1EnabledReceived || !osd1TxtResReceived || !osdUnitsReceived
                     || !osdMsgTimeReceived || !osdWarnRssiReceived || !osdWarnNumSatReceived
                     || !osdWarnBatVoltReceived || !osdWarnAvgCellVoltReceived || !osdCellCountReceived
@@ -877,6 +906,18 @@ public class Mavlink {
                 }
             }
             return true;
+        }
+
+        private boolean isFcConfigInitializedPx4(){
+            if (!rcMapPitchReceived || !rcMapRollReceived
+                    || !rcMapThrottleReceived || !rcMapYawReceived) return false;
+            return true;
+        }
+
+        public boolean isFcConfigInitialized(){
+            if (mavlink.fcVariant == FcInfo.FC_VARIANT_ARDUPILOT) return isFcConfigInitializedAp();
+            if (mavlink.fcVariant == FcInfo.FC_VARIANT_PX4) return isFcConfigInitializedPx4();
+            return false;
         }
 
         public void sendOsdConfig(){
@@ -959,15 +1000,40 @@ public class Mavlink {
                     rcMapYaw = (byte)paramValue;
                     rcMapYawReceived = true;
                     break;
+                case FcCommon.PX4_PARAM_RC_MAP_PITCH:
+                    rcMapPitch = (byte)convertParamValueToInt(paramValue);
+                    rcMapPitchReceived = true;
+                    break;
+                case FcCommon.PX4_PARAM_RC_MAP_ROLL:
+                    rcMapRoll = (byte)convertParamValueToInt(paramValue);
+                    rcMapRollReceived = true;
+                    break;
+                case FcCommon.PX4_PARAM_RC_MAP_THROTTLE:
+                    rcMapThrottle = (byte)convertParamValueToInt(paramValue);
+                    rcMapThrottleReceived = true;
+                    break;
+                case FcCommon.PX4_PARAM_RC_MAP_YAW:
+                    rcMapYaw = (byte)convertParamValueToInt(paramValue);
+                    rcMapYawReceived = true;
+                    break;
                 default:
-                    if (paramId.contains("OSD1_") &&
-                            (paramId.contains("_EN") || paramId.contains("_X") || paramId.contains("_Y"))) {
-                        setOsdItemParam(paramId, paramValue);
-                    }else if (Arrays.asList(FcCommon.AP_PARAM_RC_OPTIONS).contains(paramId)){
-                        setRcOptionParam(paramId, paramValue);
+                    if (mavlink.fcVariant == FcInfo.FC_VARIANT_ARDUPILOT) {
+                        if (paramId.contains("OSD1_") &&
+                                (paramId.contains("_EN") || paramId.contains("_X") || paramId.contains("_Y"))) {
+                            setOsdItemParam(paramId, paramValue);
+                        } else if (Arrays.asList(FcCommon.AP_PARAM_RC_OPTIONS).contains(paramId)) {
+                            setRcOptionParam(paramId, paramValue);
+                        }
                     }
                     break;
             }
+        }
+
+        private int convertParamValueToInt(float paramValue){
+            DataWriter dw = new DataWriter(true);
+            dw.writeFloat(paramValue);
+            DataReader dr = new DataReader(dw.getData(), true);
+            return dr.readInt();
         }
     }
 
@@ -1045,8 +1111,8 @@ public class Mavlink {
     public void close(){
         threadsId++;
         if (isInitialized()) disableIntervalMessages();
-        apiVersionMajor = -1;
         apiVersionMinor = -1;
+        fcVariant = FcInfo.FC_VARIANT_UNKNOWN;
         fcVersionMajor = -1;
         fcVersionMinor = -1;
         fcVersionPatchLevel = -1;

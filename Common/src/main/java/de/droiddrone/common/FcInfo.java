@@ -22,12 +22,14 @@ public class FcInfo {
     public static final byte FC_VARIANT_INAV = 1;
     public static final byte FC_VARIANT_BETAFLIGHT = 2;
     public static final byte FC_VARIANT_ARDUPILOT = 3;
+    public static final byte FC_VARIANT_PX4 = 4;
     public static final String INAV_ID = "INAV";
     public static final String BETAFLIGHT_ID = "BTFL";
     public static final String ARDUPILOT_ID = "ARDU";
     public static final String INAV_NAME = "INAV";
     public static final String BETAFLIGHT_NAME = "Betaflight";
     public static final String ARDUPILOT_NAME = "ArduPilot";
+    public static final String PX4_NAME = "PX4";
     private final int fcVariant;
     private final int fcVersionMajor;
     private final int fcVersionMinor;
@@ -57,19 +59,17 @@ public class FcInfo {
     }
 
     public String getFcName(){
-        String name = "UNKNOWN";
         switch (fcVariant){
             case FC_VARIANT_INAV:
-                name = INAV_NAME;
-                break;
+                return INAV_NAME;
             case FC_VARIANT_BETAFLIGHT:
-                name = BETAFLIGHT_NAME;
-                break;
+                return BETAFLIGHT_NAME;
             case FC_VARIANT_ARDUPILOT:
-                name = ARDUPILOT_NAME;
-                break;
+                return ARDUPILOT_NAME;
+            case FC_VARIANT_PX4:
+                return PX4_NAME;
         }
-        return name;
+        return "UNKNOWN";
     }
 
     public int getFcVariant() {
@@ -111,7 +111,8 @@ public class FcInfo {
             case FC_VARIANT_BETAFLIGHT:
                 return FcCommon.PlatformTypesBtfl.getPlatforTypeName(platformType);
             case FC_VARIANT_ARDUPILOT:
-                return FcCommon.PlatformTypesArduPilot.getPlatforTypeName(platformType);
+            case FC_VARIANT_PX4:
+                return FcCommon.PlatformTypesMavlink.getPlatforTypeName(platformType);
         }
         return null;
     }

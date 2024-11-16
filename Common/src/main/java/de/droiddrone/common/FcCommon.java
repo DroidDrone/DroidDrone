@@ -67,19 +67,19 @@ public class FcCommon {
     public static final short DD_VIDEO_RECORDER_START_STOP = 0x4005;
     public static final short DD_NETWORK_STATE = 0x4006;
     public static final short DD_AP_OSD_CONFIG = 0x4007;
-    public static final short DD_AP_ATTITUDE = 0x4008;
-    public static final short DD_AP_MODE = 0x4009;
-    public static final short DD_AP_BATTERY_STATUS = 0x400A;
-    public static final short DD_AP_SYS_STATUS = 0x400B;
-    public static final short DD_AP_STATUS_TEXT = 0x400C;
-    public static final short DD_AP_GPS_RAW_INT = 0x400D;
-    public static final short DD_AP_GLOBAL_POSITION_INT = 0x400E;
-    public static final short DD_AP_HOME_POSITION = 0x400F;
-    public static final short DD_AP_SYSTEM_TIME = 0x4010;
-    public static final short DD_AP_RC_CHANNELS = 0x4011;
-    public static final short DD_AP_SCALED_PRESSURE = 0x4012;
+    public static final short DD_MAVLINK_ATTITUDE = 0x4008;
+    public static final short DD_MAVLINK_MODE = 0x4009;
+    public static final short DD_MAVLINK_BATTERY_STATUS = 0x400A;
+    public static final short DD_MAVLINK_SYS_STATUS = 0x400B;
+    public static final short DD_MAVLINK_STATUS_TEXT = 0x400C;
+    public static final short DD_MAVLINK_GPS_RAW_INT = 0x400D;
+    public static final short DD_MAVLINK_GLOBAL_POSITION_INT = 0x400E;
+    public static final short DD_MAVLINK_HOME_POSITION = 0x400F;
+    public static final short DD_MAVLINK_SYSTEM_TIME = 0x4010;
+    public static final short DD_MAVLINK_RC_CHANNELS = 0x4011;
+    public static final short DD_MAVLINK_SCALED_PRESSURE = 0x4012;
     public static final short DD_AP_VTX_POWER = 0x4013;
-    public static final short DD_AP_VFR_HUD = 0x4014;
+    public static final short DD_MAVLINK_VFR_HUD = 0x4014;
 
     public static final short MAX_RSSI = 1023;
     public static final byte BF_BOXMODES_PAGE_COUNT = 2;
@@ -107,6 +107,12 @@ public class FcCommon {
 
     public static final short AP_RC_OPTION_CAMERA_RECORD_VIDEO = 166;
 
+    // PX4 parameters
+    public static final String PX4_PARAM_RC_MAP_PITCH = "RC_MAP_PITCH";
+    public static final String PX4_PARAM_RC_MAP_ROLL = "RC_MAP_ROLL";
+    public static final String PX4_PARAM_RC_MAP_THROTTLE = "RC_MAP_THROTTLE";
+    public static final String PX4_PARAM_RC_MAP_YAW = "RC_MAP_YAW";
+
     public enum VtxLowerPowerDisarm{
         VTX_LOW_POWER_DISARM_OFF,
         VTX_LOW_POWER_DISARM_ALWAYS,
@@ -119,7 +125,7 @@ public class FcCommon {
         GPS_FIX_3D
     }
 
-    public enum GpsFixTypesArduPilot{
+    public enum GpsFixTypesMavlink {
         GPS_FIX_TYPE_NO_GPS,
         GPS_FIX_TYPE_NO_FIX,
         GPS_FIX_TYPE_2D_FIX,
@@ -144,6 +150,7 @@ public class FcCommon {
     public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_BETAFLIGHT = {new ApiSupportedVersion(0, 1, 45),
             new ApiSupportedVersion(0, 1, 46)/*, new ApiSupportedVersion(0, 1, 47)*/};
     public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_ARDUPILOT = {new ApiSupportedVersion(0, 2, 3)};
+    public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_PX4 = {new ApiSupportedVersion(0, 2, 3)};
 
     public static class ApiSupportedVersion {
         public final int protocolVersion;
@@ -466,7 +473,7 @@ public class FcCommon {
         }
     }
 
-    public static class PlatformTypesArduPilot{
+    public static class PlatformTypesMavlink {
         public static final int MAV_TYPE_GENERIC = 0;
         public static final int MAV_TYPE_FIXED_WING = 1;
         public static final int MAV_TYPE_QUADROTOR = 2;
@@ -697,6 +704,46 @@ public class FcCommon {
             new ArduPilotMode(16, "INITIALISING"),
     };
 
+    public static class PX4_CUSTOM_MAIN_MODE {
+        public static final int PX4_CUSTOM_MAIN_MODE_MANUAL = 1;
+        public static final int PX4_CUSTOM_MAIN_MODE_ALTCTL = 2;
+        public static final int PX4_CUSTOM_MAIN_MODE_POSCTL = 3;
+        public static final int PX4_CUSTOM_MAIN_MODE_AUTO = 4;
+        public static final int PX4_CUSTOM_MAIN_MODE_ACRO = 5;
+        public static final int PX4_CUSTOM_MAIN_MODE_OFFBOARD = 6;
+        public static final int PX4_CUSTOM_MAIN_MODE_STABILIZED = 7;
+        public static final int PX4_CUSTOM_MAIN_MODE_RATTITUDE_LEGACY = 8;
+        public static final int PX4_CUSTOM_MAIN_MODE_SIMPLE = 9;
+        public static final int PX4_CUSTOM_MAIN_MODE_TERMINATION = 10;
+    }
+
+    public static class PX4_CUSTOM_SUB_MODE_AUTO {
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_READY = 1;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF = 2;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_LOITER = 3;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_MISSION = 4;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_RTL = 5;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_LAND = 6;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_RESERVED_DO_NOT_USE = 7;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_FOLLOW_TARGET = 8;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_PRECLAND = 9;
+        public static final int PX4_CUSTOM_SUB_MODE_AUTO_VTOL_TAKEOFF = 10;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL1 = 11;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL2 = 12;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL3 = 13;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL4 = 14;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL5 = 15;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL6 = 16;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL7 = 17;
+        public static final int PX4_CUSTOM_SUB_MODE_EXTERNAL8 = 18;
+    }
+
+    public static class PX4_CUSTOM_SUB_MODE_POSCTL {
+        public static final int PX4_CUSTOM_SUB_MODE_POSCTL_POSCTL = 0;
+        public static final int PX4_CUSTOM_SUB_MODE_POSCTL_ORBIT = 1;
+        public static final int PX4_CUSTOM_SUB_MODE_POSCTL_SLOW = 2;
+    }
+
     public static String[] getBoxNames(byte[] data){
         if (data == null || data.length == 0) return null;
         String names = new String(data, StandardCharsets.US_ASCII);
@@ -759,6 +806,9 @@ public class FcCommon {
                 break;
             case FcInfo.FC_VARIANT_ARDUPILOT:
                 supportedVersions = FcCommon.API_SUPPORTED_VERSION_ARDUPILOT;
+                break;
+            case FcInfo.FC_VARIANT_PX4:
+                supportedVersions = FcCommon.API_SUPPORTED_VERSION_PX4;
                 break;
             default:
                 return compatibilityLevel;
