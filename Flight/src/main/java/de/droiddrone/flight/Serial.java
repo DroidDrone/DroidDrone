@@ -147,13 +147,16 @@ public class Serial {
         }
         int count = availableDrivers.size();
         for (int i = 0; i < count; i++) {
-            String name = availableDrivers.get(i).getDevice().getManufacturerName();
-            if (count == 1 || FcInfo.INAV_ID.equals(name) || FcInfo.BETAFLIGHT_ID.equals(name) || FcInfo.BETAFLIGHT_NAME.equals(name)
-                    || FcInfo.ARDUPILOT_ID.equals(name) || FcInfo.ARDUPILOT_NAME.equals(name)) {
+            String manName = availableDrivers.get(i).getDevice().getManufacturerName();
+            String prodName = availableDrivers.get(i).getDevice().getProductName();
+            if (count == 1 || FcInfo.INAV_ID.equals(manName) || FcInfo.BETAFLIGHT_ID.equals(manName) || FcInfo.BETAFLIGHT_NAME.equals(manName)
+                    || FcInfo.ARDUPILOT_ID.equals(manName) || FcInfo.ARDUPILOT_NAME.equals(manName)
+                    || prodName != null && prodName.contains(FcInfo.PX4_NAME)) {
                 driver = availableDrivers.get(i);
                 status = STATUS_DEVICE_FOUND;
-                setFcProtocol(name);
-                log("Serial device manufacturer name: " + name);
+                setFcProtocol(manName, prodName);
+                log("Serial device product name: " + prodName);
+                log("Serial device manufacturer name: " + manName);
                 log("Serial device driver version: " + driver.getDevice().getVersion());
                 log("Serial device driver vendorId: " + driver.getDevice().getVendorId());
                 log("Serial device driver productId: " + driver.getDevice().getProductId());
@@ -164,11 +167,13 @@ public class Serial {
         return false;
     }
 
-    private void setFcProtocol(String UsbDeviceManufacturerName){
+    private void setFcProtocol(String usbDeviceManufacturerName, String usbDeviceProductName){
         switch (config.getFcProtocol()){
             case FcCommon.FC_PROTOCOL_AUTO:
             default:
-                isMavlink = FcInfo.ARDUPILOT_ID.equals(UsbDeviceManufacturerName) || FcInfo.ARDUPILOT_NAME.equals(UsbDeviceManufacturerName);
+                isMavlink = FcInfo.ARDUPILOT_ID.equals(usbDeviceManufacturerName)
+                        || FcInfo.ARDUPILOT_NAME.equals(usbDeviceManufacturerName)
+                        || usbDeviceProductName != null && usbDeviceProductName.contains(FcInfo.PX4_NAME);
                 break;
             case FcCommon.FC_PROTOCOL_MSP:
                 isMavlink = false;
@@ -207,7 +212,7 @@ public class Serial {
 
     private boolean openNativeSerialPort(){
         if (status == STATUS_SERIAL_PORT_OPENED) return true;
-        setFcProtocol(null);
+        setFcProtocol(null, null);
         if (serialHelper != null) serialHelper.close();
         try {
             SerialPortFinder serialPortFinder = new SerialPortFinder();

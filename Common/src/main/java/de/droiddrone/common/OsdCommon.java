@@ -53,6 +53,43 @@ public class OsdCommon {
             AP_OSD_SIDEBARS, AP_OSD_CRSSHAIR, AP_OSD_HOMEDIST, AP_OSD_HOMEDIR, AP_OSD_CELLVOLT,
             AP_OSD_VTX_PWR, AP_OSD_THROTTLE};
 
+    public static final int PX4_OSD_CRAFT_NAME = 0;
+    public static final int PX4_OSD_DISARMED = 1;
+    public static final int PX4_OSD_GPS_LAT = 2;
+    public static final int PX4_OSD_GPS_LON = 3;
+    public static final int PX4_OSD_GPS_SATS = 4;
+    public static final int PX4_OSD_GPS_SPEED = 5;
+    public static final int PX4_OSD_HOME_DIST = 6;
+    public static final int PX4_OSD_HOME_DIR = 7;
+    public static final int PX4_OSD_MAIN_BATT_VOLTAGE = 8;
+    public static final int PX4_OSD_CURRENT_DRAW = 9;
+    public static final int PX4_OSD_MAH_DRAWN = 10;
+    public static final int PX4_OSD_RSSI_VALUE = 11;
+    public static final int PX4_OSD_ALTITUDE = 12;
+    public static final int PX4_OSD_NUMERICAL_VARIO = 13;
+    public static final int PX4_OSD_FLYMODE = 14;
+    public static final int PX4_OSD_ESC_TMP = 15;
+    public static final int PX4_OSD_PITCH_ANGLE = 16;
+    public static final int PX4_OSD_ROLL_ANGLE = 17;
+    public static final int PX4_OSD_CROSSHAIRS = 18;
+    public static final int PX4_OSD_AVG_CELL_VOLTAGE = 19;
+    public static final int PX4_OSD_HORIZON_SIDEBARS = 20;
+    public static final int PX4_OSD_POWER = 21;
+    public static final int PX4_OSD_MESSAGE = 1000;
+    public static final int PX4_OSD_HORIZON = 1001;
+    public static final int PX4_OSD_COMPASS = 1002;
+    public static final int PX4_OSD_TRIP_DIST = 1003;
+    public static final int PX4_OSD_FLY_TIME = 1004;
+    public static final int PX4_OSD_EFFICIENCY = 1005;
+
+    public static final int[] PX4_OSD_ITEMS = {PX4_OSD_CRAFT_NAME, PX4_OSD_DISARMED, PX4_OSD_GPS_LAT,
+            PX4_OSD_GPS_LON, PX4_OSD_GPS_SATS, PX4_OSD_GPS_SPEED, PX4_OSD_HOME_DIST, PX4_OSD_HOME_DIR,
+            PX4_OSD_MAIN_BATT_VOLTAGE, PX4_OSD_CURRENT_DRAW, PX4_OSD_MAH_DRAWN, PX4_OSD_RSSI_VALUE,
+            PX4_OSD_ALTITUDE, PX4_OSD_NUMERICAL_VARIO, PX4_OSD_FLYMODE, PX4_OSD_ESC_TMP,
+            PX4_OSD_PITCH_ANGLE, PX4_OSD_ROLL_ANGLE, PX4_OSD_CROSSHAIRS, PX4_OSD_AVG_CELL_VOLTAGE,
+            PX4_OSD_HORIZON_SIDEBARS, PX4_OSD_POWER, PX4_OSD_MESSAGE, PX4_OSD_HORIZON,
+            PX4_OSD_COMPASS, PX4_OSD_TRIP_DIST, PX4_OSD_FLY_TIME, PX4_OSD_EFFICIENCY};
+
     public enum InavOsdItems{
         OSD_RSSI_VALUE,
         OSD_MAIN_BATT_VOLTAGE,

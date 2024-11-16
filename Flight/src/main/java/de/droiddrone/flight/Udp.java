@@ -913,19 +913,19 @@ public class Udp {
                 // already Big Endian encoded, can be written as a whole array
                 case FcCommon.MSP_RAW_GPS:
                 case FcCommon.DD_AP_OSD_CONFIG:
-                case FcCommon.DD_AP_MODE:
-                case FcCommon.DD_AP_BATTERY_STATUS:
-                case FcCommon.DD_AP_SYS_STATUS:
-                case FcCommon.DD_AP_STATUS_TEXT:
-                case FcCommon.DD_AP_GPS_RAW_INT:
-                case FcCommon.DD_AP_GLOBAL_POSITION_INT:
-                case FcCommon.DD_AP_HOME_POSITION:
-                case FcCommon.DD_AP_SYSTEM_TIME:
-                case FcCommon.DD_AP_RC_CHANNELS:
-                case FcCommon.DD_AP_SCALED_PRESSURE:
+                case FcCommon.DD_MAVLINK_MODE:
+                case FcCommon.DD_MAVLINK_BATTERY_STATUS:
+                case FcCommon.DD_MAVLINK_SYS_STATUS:
+                case FcCommon.DD_MAVLINK_STATUS_TEXT:
+                case FcCommon.DD_MAVLINK_GPS_RAW_INT:
+                case FcCommon.DD_MAVLINK_GLOBAL_POSITION_INT:
+                case FcCommon.DD_MAVLINK_HOME_POSITION:
+                case FcCommon.DD_MAVLINK_SYSTEM_TIME:
+                case FcCommon.DD_MAVLINK_RC_CHANNELS:
+                case FcCommon.DD_MAVLINK_SCALED_PRESSURE:
                 case FcCommon.DD_AP_VTX_POWER:
-                case FcCommon.DD_AP_VFR_HUD:
-                case FcCommon.DD_AP_ATTITUDE: {
+                case FcCommon.DD_MAVLINK_VFR_HUD:
+                case FcCommon.DD_MAVLINK_ATTITUDE: {
                     packetData.daos.write(buffer.getData());
                     break;
                 }
