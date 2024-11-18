@@ -48,6 +48,7 @@ public class UdpCommon {
     public static final byte VersionMismatch = 23;
     public static final byte RcFrame = 24;
     public static final byte ChangeCamera = 25;
+    public static final byte MavlinkRawPacket = 26;// MavlinkUdpBridge.redirectFromControlDevice mode
     //endregion
 
     public static boolean isPacketNumbered(byte packetName){
@@ -68,6 +69,7 @@ public class UdpCommon {
             case ConfigReceived:
             case VersionMismatch:
             case ChangeCamera:
+            case MavlinkRawPacket:
                 return true;
             default:
                 return false;

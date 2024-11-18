@@ -428,6 +428,27 @@ public class Udp {
                 t1.start();
                 break;
             }
+            case UdpCommon.MavlinkRawPacket:
+            {
+                int dataSize = buffer.getRemaining();
+                byte[] buf = new byte[dataSize];
+                int read = buffer.read(buf, 0, dataSize);
+                if (read == dataSize) {
+                    mavlink.processReceivedUdpData(buf);
+                }
+                break;
+            }
+        }
+    }
+
+    public void sendMavlinkPacket(byte[] buf) {
+        if (socket == null || socket.isClosed() || buf == null) return;
+        try {
+            UdpPacketData packetData = new UdpPacketData(UdpCommon.MavlinkRawPacket);
+            packetData.daos.write(buf, 0, buf.length);
+            udpSender.sendPacket(packetData.getData());
+        } catch (Exception e) {
+            log("sendMavlinkPacket error: " + e);
         }
     }
 
@@ -443,7 +464,8 @@ public class Udp {
         }
         if (config.isMavlinkUdpBridgeConfigChanged()){
             mavlinkUdpBridge.close();
-            if (config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.disabled){
+            if (config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.disabled
+                    || config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice){
                 mavlinkUdpBridge.initialize();
             }
             config.mavlinkUdpBridgeConfigUpdated();

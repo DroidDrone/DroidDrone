@@ -338,11 +338,13 @@
         <item>Disabled</item>
         <item>Send to connected IP</item>
         <item>Send to specific IP</item>
+        <item>Send to control device and then forward to IP</item>
     </string-array>
 
     <string-array name="mavlinkUdpBridgeValues">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>3</item>
     </string-array>
 </resources>

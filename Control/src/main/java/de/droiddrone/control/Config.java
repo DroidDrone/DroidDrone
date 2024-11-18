@@ -87,6 +87,7 @@ public class Config {
     private int mavlinkUdpBridgePort;
     private boolean decoderConfigChanged;
     private boolean videoFrameOrientationChanged;
+    private boolean mavlinkUdpBridgeConfigChanged;
 
     public Config(MainActivity activity, int versionCode) {
         this.activity = activity;
@@ -109,6 +110,14 @@ public class Config {
 
     public void videoFrameOrientationUpdated(){
         videoFrameOrientationChanged = false;
+    }
+
+    public boolean isMavlinkUdpBridgeConfigChanged(){
+        return mavlinkUdpBridgeConfigChanged;
+    }
+
+    public void mavlinkUdpBridgeConfigUpdated(){
+        mavlinkUdpBridgeConfigChanged = false;
     }
 
     private void loadConfig(){
@@ -171,9 +180,17 @@ public class Config {
         fcProtocol = Utils.parseInt(preferences.getString("fcProtocol", ""), SettingsCommon.fcProtocol);
         mavlinkTargetSysId = Utils.parseInt(preferences.getString("mavlinkTargetSysId", ""), SettingsCommon.mavlinkTargetSysId);
         mavlinkGcsSysId = Utils.parseInt(preferences.getString("mavlinkGcsSysId", ""), SettingsCommon.mavlinkGcsSysId);
-        mavlinkUdpBridge = Utils.parseInt(preferences.getString("mavlinkUdpBridge", ""), SettingsCommon.mavlinkUdpBridge);
-        mavlinkUdpBridgeIp = preferences.getString("mavlinkUdpBridgeIp", SettingsCommon.mavlinkUdpBridgeIp);
-        mavlinkUdpBridgePort = Utils.parseInt(preferences.getString("mavlinkUdpBridgePort", ""), SettingsCommon.mavlinkUdpBridgePort);
+        int mavlinkUdpBridge = Utils.parseInt(preferences.getString("mavlinkUdpBridge", ""), SettingsCommon.mavlinkUdpBridge);
+        String mavlinkUdpBridgeIp = preferences.getString("mavlinkUdpBridgeIp", SettingsCommon.mavlinkUdpBridgeIp);
+        int mavlinkUdpBridgePort = Utils.parseInt(preferences.getString("mavlinkUdpBridgePort", ""), SettingsCommon.mavlinkUdpBridgePort);
+        if (mavlinkUdpBridge != this.mavlinkUdpBridge
+                || !mavlinkUdpBridgeIp.equals(this.mavlinkUdpBridgeIp)
+                || mavlinkUdpBridgePort != this.mavlinkUdpBridgePort) {
+            mavlinkUdpBridgeConfigChanged = true;
+        }
+        this.mavlinkUdpBridge = mavlinkUdpBridge;
+        this.mavlinkUdpBridgeIp = mavlinkUdpBridgeIp;
+        this.mavlinkUdpBridgePort = mavlinkUdpBridgePort;
         boolean invertVideoAxisX = preferences.getBoolean("invertVideoAxisX", SettingsCommon.invertVideoAxisX);
         boolean invertVideoAxisY = preferences.getBoolean("invertVideoAxisY", SettingsCommon.invertVideoAxisY);
         if (invertVideoAxisX != this.invertVideoAxisX || invertVideoAxisY != this.invertVideoAxisY) videoFrameOrientationChanged = true;

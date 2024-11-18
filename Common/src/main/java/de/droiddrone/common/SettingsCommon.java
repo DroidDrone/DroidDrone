@@ -96,6 +96,7 @@ public class SettingsCommon {
         public static final int disabled = 0;
         public static final int connectedIp = 1;
         public static final int specificIp = 2;
+        public static final int redirectFromControlDevice = 3;
     }
 
     public static class VrMode {

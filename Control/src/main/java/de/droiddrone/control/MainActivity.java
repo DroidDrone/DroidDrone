@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private Config config;
     private MapData mapData;
     private HeadTracker headTracker;
+    private MavlinkUdpBridge mavlinkUdpBridge;
     private boolean connectionThreadRunning = false;
     private TelephonyService telephonyService;
     private boolean phoneStatePermissionRequested = false;
@@ -315,6 +316,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             }
             config.decoderConfigUpdated();
         }
+        if (config.isMavlinkUdpBridgeConfigChanged()){
+            mavlinkUdpBridge.close();
+            if (config.getMavlinkUdpBridge() == SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice){
+                mavlinkUdpBridge.initialize();
+            }
+            config.mavlinkUdpBridgeConfigUpdated();
+        }
     }
 
     public void runConnectDisconnect(){
@@ -331,8 +339,10 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             if (decoder == null) decoder = new Decoder(renderer);
             osd = new Osd(renderer, config, mapData);
             renderer.setOsd(osd);
+            mavlinkUdpBridge = new MavlinkUdpBridge(config);
             if (udp != null) udp.close();
-            udp = new Udp(config, decoder, osd, rc, activity);
+            udp = new Udp(config, decoder, osd, rc, activity, mavlinkUdpBridge);
+            mavlinkUdpBridge.setUdp(udp);
             Thread t1 = new Thread(() -> {
                 if (udp.initialize()){
                     startConnectionThread();
