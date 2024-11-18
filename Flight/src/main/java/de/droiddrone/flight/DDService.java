@@ -113,6 +113,7 @@ public class DDService extends Service {
         if (udp != null) udp.close();
         udp = new Udp(destIp, port, key, connectionMode, streamEncoder, mp4Recorder, cameraManager, msp, mavlink, phoneTelemetry, MainActivity.config, serial, mavlinkUdpBridge);
         mavlinkUdpBridge.setUdp(udp);
+        mavlink.setUdp(udp);
         Thread t1 = new Thread(() -> {
             if (!udp.initialize()){
                 log("UDP initialize error.");
@@ -163,7 +164,8 @@ public class DDService extends Service {
                 }
                 isConnected = udp.isConnected();
                 if (isConnected){
-                    if (MainActivity.config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.disabled) {
+                    if (MainActivity.config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.disabled
+                            && MainActivity.config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice) {
                         if (!mavlinkUdpBridge.isInitialized() && mavlink.isInitialized()) {
                             mavlinkUdpBridge.initialize();
                         }

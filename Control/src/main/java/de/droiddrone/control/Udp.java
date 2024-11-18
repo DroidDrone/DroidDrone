@@ -64,6 +64,7 @@ public class Udp {
     private final MainActivity activity;
     private final Config config;
     private final Rc rc;
+    private final MavlinkUdpBridge mavlinkUdpBridge;
     private boolean videoInitialFrameReceived;
     private boolean configReceived;
     private boolean versionMismatch;
@@ -71,7 +72,7 @@ public class Udp {
     private long lastPingTimestamp;
     private int cameraFps;
 
-    public Udp(Config config, Decoder decoder, Osd osd, Rc rc, MainActivity activity) {
+    public Udp(Config config, Decoder decoder, Osd osd, Rc rc, MainActivity activity, MavlinkUdpBridge mavlinkUdpBridge) {
         this.config = config;
         this.destIpStr = config.getIp();
         this.port = config.getPort();
@@ -81,6 +82,7 @@ public class Udp {
         this.osd = osd;
         this.rc = rc;
         this.activity = activity;
+        this.mavlinkUdpBridge = mavlinkUdpBridge;
     }
 
     public boolean initialize() {
@@ -119,6 +121,9 @@ public class Udp {
                 rcThread.setDaemon(false);
                 rcThread.setName("rcThread");
                 rcThread.start();
+                if (config.getMavlinkUdpBridge() == SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice){
+                    mavlinkUdpBridge.initialize();
+                }
             }
             return true;
         } catch (Exception e) {
@@ -371,6 +376,27 @@ public class Udp {
                 versionMismatch = true;
                 break;
             }
+            case UdpCommon.MavlinkRawPacket:
+            {
+                int dataSize = buffer.getRemaining();
+                byte[] buf = new byte[dataSize];
+                int read = buffer.read(buf, 0, dataSize);
+                if (read == dataSize) {
+                    mavlinkUdpBridge.sendPacket(buf);
+                }
+                break;
+            }
+        }
+    }
+
+    public void sendMavlinkPacket(byte[] buf) {
+        if (socket == null || socket.isClosed() || buf == null) return;
+        try {
+            UdpPacketData packetData = new UdpPacketData(UdpCommon.MavlinkRawPacket);
+            packetData.daos.write(buf, 0, buf.length);
+            udpSender.sendPacket(packetData.getData());
+        } catch (Exception e) {
+            log("sendMavlinkPacket error: " + e);
         }
     }
 
@@ -1012,6 +1038,7 @@ public class Udp {
         }
         if (socket != null) socket.close();
         receivedFrames.clear();
+        mavlinkUdpBridge.close();
         videoInitialFrameReceived = false;
         configReceived = false;
         versionMismatch = false;

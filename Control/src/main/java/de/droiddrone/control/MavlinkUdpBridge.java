@@ -15,11 +15,9 @@
  *  along with DroidDrone.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.droiddrone.flight;
+package de.droiddrone.control;
 
 import static de.droiddrone.common.Logcat.log;
-
-import com.MAVLink.MAVLinkPacket;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -30,12 +28,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.UdpCommon;
 
-// sends Mavlink UDP packets directly from drone - connectedIp & specificIp modes
+// sends Mavlink UDP packets from control device - redirectFromControlDevice mode
 public class MavlinkUdpBridge {
+    public static final int MAVLINK1_HEADER_LEN = 6;
+    public static final int MAVLINK2_HEADER_LEN = 10;
+    public static final int MAVLINK1_NONPAYLOAD_LEN = MAVLINK1_HEADER_LEN + 2;
+    public static final int MAVLINK2_NONPAYLOAD_LEN = MAVLINK2_HEADER_LEN + 2;
+
     private final byte[] receiverBuf = new byte[UdpCommon.packetLength];
     private final ConcurrentLinkedQueue<byte[]> receivedPackets = new ConcurrentLinkedQueue<>();
     private final Config config;
-    private final Mavlink mavlink;
     private Udp udp;
     private DatagramSocket socket;
     private DatagramPacket receiverPacket;
@@ -44,9 +46,8 @@ public class MavlinkUdpBridge {
     private boolean initialized;
     private int threadsId;
 
-    public MavlinkUdpBridge(Config config, Mavlink mavlink) {
+    public MavlinkUdpBridge(Config config) {
         this.config = config;
-        this.mavlink = mavlink;
         initialized = false;
     }
 
@@ -54,20 +55,14 @@ public class MavlinkUdpBridge {
         this.udp = udp;
     }
 
-    public void initialize(){
-        if (udp == null || config.getMavlinkUdpBridge() == SettingsCommon.MavlinkUdpBridge.disabled
-                || config.getMavlinkUdpBridge() == SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice) return;
-        if (config.getMavlinkUdpBridge() == SettingsCommon.MavlinkUdpBridge.connectedIp) {
-            ip = udp.getSenderIp();
-        }else{
-            try {
-                ip = InetAddress.getByName(config.getMavlinkUdpBridgeIp());
-            } catch (UnknownHostException e) {
-                log("MavlinkUdpBridge InetAddress error: " + e);
-                return;
-            }
+    public void initialize() {
+        if (udp == null || config.getMavlinkUdpBridge() != SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice) return;
+        try {
+            ip = InetAddress.getByName(config.getMavlinkUdpBridgeIp());
+        } catch (UnknownHostException e) {
+            log("MavlinkUdpBridge InetAddress error: " + e);
+            return;
         }
-        if (ip == null) return;
         port = config.getMavlinkUdpBridgePort();
         try {
             if (socket != null) socket.close();
@@ -112,7 +107,7 @@ public class MavlinkUdpBridge {
     private void addPacket(DatagramPacket packet) {
         if (!initialized) return;
         int packetSize = packet.getLength();
-        if (packetSize < MAVLinkPacket.MAVLINK2_NONPAYLOAD_LEN) return;
+        if (packetSize < MAVLINK2_NONPAYLOAD_LEN) return;
         byte[] tmp = packet.getData();
         byte[] data = new byte[packetSize];
         System.arraycopy(tmp, 0, data, 0, packetSize);
@@ -132,7 +127,7 @@ public class MavlinkUdpBridge {
                 try {
                     do{
                         packet = getNextPacket();
-                        if (packet != null) mavlink.processReceivedUdpData(packet);
+                        if (packet != null) udp.sendMavlinkPacket(packet);
                     }while (packet != null);
                     Thread.sleep(1);
                 } catch (Exception e) {

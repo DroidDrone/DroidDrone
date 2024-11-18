@@ -235,6 +235,11 @@ public class Udp {
 					senders[0].sendPacket(packet.data);
 					break;
 				}
+			case UdpCommon.MavlinkRawPacket:
+				// controller <-> drone communication only
+				if (clientId == 0 && senders[1] != null) senders[1].sendPacket(packet.data);
+				if (clientId == 1 && senders[0] != null) senders[0].sendPacket(packet.data);
+			break;
 			default:
 				for (int i = 0; i < clientsCount; i++) {
 					if (i == clientId || senders[i] == null || !senders[i].isActive()) continue;

@@ -106,7 +106,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         if (mavlinkUdpBridge != null) {
             mavlinkUdpBridge.setOnPreferenceChangeListener((preference, newValue) -> {
                 int value = Utils.parseInt((String) newValue, SettingsCommon.mavlinkUdpBridge);
-                if (mavlinkUdpBridgeIp != null) mavlinkUdpBridgeIp.setEnabled(value == SettingsCommon.MavlinkUdpBridge.specificIp);
+                if (mavlinkUdpBridgeIp != null){
+                    mavlinkUdpBridgeIp.setEnabled(value == SettingsCommon.MavlinkUdpBridge.specificIp
+                            || value == SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice);
+                }
                 if (mavlinkUdpBridgePort != null) mavlinkUdpBridgePort.setEnabled(value != SettingsCommon.MavlinkUdpBridge.disabled);
                 return true;
             });
@@ -190,7 +193,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             mavlinkUdpBridge.setEnabled(!isMsp);
             mavlinkUdpBridgeValue = Utils.parseInt(mavlinkUdpBridge.getValue(), SettingsCommon.mavlinkUdpBridge);
         }
-        if (mavlinkUdpBridgeIp != null) mavlinkUdpBridgeIp.setEnabled(!isMsp && mavlinkUdpBridgeValue == SettingsCommon.MavlinkUdpBridge.specificIp);
+        if (mavlinkUdpBridgeIp != null) {
+            mavlinkUdpBridgeIp.setEnabled(!isMsp &&
+                    (mavlinkUdpBridgeValue == SettingsCommon.MavlinkUdpBridge.specificIp
+                            || mavlinkUdpBridgeValue == SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice));
+        }
         if (mavlinkUdpBridgePort != null) mavlinkUdpBridgePort.setEnabled(!isMsp && mavlinkUdpBridgeValue != SettingsCommon.MavlinkUdpBridge.disabled);
     }
 

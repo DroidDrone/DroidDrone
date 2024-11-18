@@ -56,6 +56,7 @@ import de.droiddrone.common.DataWriter;
 import de.droiddrone.common.FcCommon;
 import de.droiddrone.common.OsdCommon;
 import de.droiddrone.common.FcInfo;
+import de.droiddrone.common.SettingsCommon;
 import de.droiddrone.common.TelemetryData;
 import de.droiddrone.common.Utils;
 
@@ -113,6 +114,7 @@ public class Mavlink {
     private float traveledDistance; // m
     private float directionToHome; // grad
     private MavlinkUdpBridge mavlinkUdpBridge;
+    private Udp udp;
 
     public Mavlink(Serial serial, Config config) {
         this.serial = serial;
@@ -131,6 +133,10 @@ public class Mavlink {
         isHomePositionReceived = false;
         isArmed = false;
         batteryCellCountDetected = 0;
+    }
+
+    public void setUdp(Udp udp){
+        this.udp = udp;
     }
 
     public void setMavlinkUdpBridge(MavlinkUdpBridge mavlinkUdpBridge) {
@@ -392,13 +398,21 @@ public class Mavlink {
         }
     }
 
-    private void sendUdpPackets(List<MAVLinkPacket> packets){
-        if (mavlinkUdpBridge == null || !mavlinkUdpBridge.isInitialized()) return;
+    private void sendUdpPackets(List<MAVLinkPacket> packets) {
         try {
+            if (config.getMavlinkUdpBridge() == SettingsCommon.MavlinkUdpBridge.redirectFromControlDevice) {
+                if (udp != null) {
+                    for (MAVLinkPacket packet : packets) {
+                        udp.sendMavlinkPacket(packet.encodePacket());
+                    }
+                }
+                return;
+            }
+            if (mavlinkUdpBridge == null || !mavlinkUdpBridge.isInitialized()) return;
             for (MAVLinkPacket packet : packets) {
                 mavlinkUdpBridge.sendPacket(packet.encodePacket());
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             log("Mavlink - sendUdpPackets error: " + e);
         }
     }
