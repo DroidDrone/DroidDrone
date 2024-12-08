@@ -1,6 +1,6 @@
 ## What is DroidDrone
 
-With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav), [ArduPilot](https://github.com/ArduPilot/ardupilot) or [Betaflight](https://github.com/betaflight/betaflight) drone via the Internet. You only need two Android phones (requires min version 7, Android 11+ is recommended) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
+With the DroidDrone you can easily control your [INAV](https://github.com/iNavFlight/inav), [ArduPilot](https://github.com/ArduPilot/ardupilot), [Betaflight](https://github.com/betaflight/betaflight) or [PX4](https://github.com/PX4/PX4-Autopilot) drone via the Internet. You only need two Android phones (requires min version 8, Android 11+ is recommended) - one is on the drone and connects to the flight controller with the OTG USB and the other connects to your remote controller.
 
 ## Install and configure
 
@@ -84,6 +84,7 @@ The recorded video should be saved in the "Android/media/de.droiddrone.flight/Vi
 * INAV version 7+ ([MSP API](https://github.com/iNavFlight/inav/blob/master/src/main/msp/msp_protocol.h) 2.5)
 * Betaflight 4.4.2+ ([MSP API](https://github.com/betaflight/betaflight/blob/master/src/main/msp/msp_protocol.h) 1.45, 1.46)
 * ArduPilot 4.5.4+ ([Mavlink](https://mavlink.io/en/messages/common.html) 2.3)
+* PX4 1.15.0+ ([Mavlink](https://mavlink.io/en/messages/common.html) 2.3)
 
 ## Contributing & Development
 
