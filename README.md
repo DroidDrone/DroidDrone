@@ -79,6 +79,15 @@ Not all OSD elements (but many important ones) are supported by DroidDrone.
 At the top of the screen you can see the specific OSD items such as the battery level and cellular signal strength for both phones, camera and OpenGL FPS, video bitrate and network latency. You can also start and stop video recording with the button on the right.
 The recorded video should be saved in the "Android/media/de.droiddrone.flight/Video" folder.
 
+#### QGroundControl or Mission Planner connect
+
+If you are using an ArduPilot or PX4 drone, you can connect it to QGroundControl or Mission Planner via UDP. You need to configure the Mavlink UDP bridge in the control App settings:
+- Send to connected IP - Use it when GCS is running on the same PC as the DroidDrone server.
+- Send to specific IP - If the GCS PC has a public IP or is on the same VPN network.
+- Send to control device and then forward to IP - If the GCS PC is behind the NAT but in the same local network as the control app.
+
+Note that UDP port 14550 should be open in your router/firewall.
+
 #### DroidDrone currently supports:
 
 * INAV version 7+ ([MSP API](https://github.com/iNavFlight/inav/blob/master/src/main/msp/msp_protocol.h) 2.5)
