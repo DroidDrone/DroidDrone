@@ -91,7 +91,7 @@ Note that UDP port 14550 should be open in your router/firewall.
 #### DroidDrone currently supports:
 
 * INAV version 7+ ([MSP API](https://github.com/iNavFlight/inav/blob/master/src/main/msp/msp_protocol.h) 2.5)
-* Betaflight 4.4.2+ ([MSP API](https://github.com/betaflight/betaflight/blob/master/src/main/msp/msp_protocol.h) 1.45, 1.46)
+* Betaflight 4.4.2+ ([MSP API](https://github.com/betaflight/betaflight/blob/master/src/main/msp/msp_protocol.h) 1.45, 1.46, 1.47)
 * ArduPilot 4.5.4+ ([Mavlink](https://mavlink.io/en/messages/common.html) 2.3)
 * PX4 1.15.0+ ([Mavlink](https://mavlink.io/en/messages/common.html) 2.3)
 
