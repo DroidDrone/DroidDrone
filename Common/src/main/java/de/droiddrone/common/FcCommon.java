@@ -148,7 +148,7 @@ public class FcCommon {
     // all supported API versions here
     public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_INAV = {new ApiSupportedVersion(0, 2, 5)};
     public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_BETAFLIGHT = {new ApiSupportedVersion(0, 1, 45),
-            new ApiSupportedVersion(0, 1, 46)/*, new ApiSupportedVersion(0, 1, 47)*/};
+            new ApiSupportedVersion(0, 1, 46), new ApiSupportedVersion(0, 1, 47)};
     public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_ARDUPILOT = {new ApiSupportedVersion(0, 2, 3)};
     public static final ApiSupportedVersion[] API_SUPPORTED_VERSION_PX4 = {new ApiSupportedVersion(0, 2, 3)};
 
